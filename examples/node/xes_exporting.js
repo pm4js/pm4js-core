@@ -4,5 +4,7 @@ require('../../pm4js/objects/log/exporter/xes/exporter.js');
 fs.readFile('../input_data/running-example.xes', {encoding: 'utf-8'}, (err, data) => {
 	var eventLog = XesImporter.apply(data);
 	let xmlStri = XesExporter.apply(eventLog);
-	console.log(xmlStri);
+	fs.writeFile('temp_output_xes_exporting.xes', xmlStri, function (err) {
+		
+	});
 });
