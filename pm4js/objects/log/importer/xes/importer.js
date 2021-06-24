@@ -58,4 +58,5 @@ try {
 	global.DOMParser = require('xmldom').DOMParser;
 }
 catch (err) {
+	// not in node
 }
