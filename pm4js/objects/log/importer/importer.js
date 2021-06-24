@@ -1,6 +1,6 @@
 class XesImporter {
-	static parse(xmlString) {
-		parser = new DOMParser();
+	static apply(xmlString) {
+		let parser = new DOMParser();
 		var xmlDoc = parser.parseFromString(xmlString, "text/xml");
 		let xmlLog = xmlDoc.getElementsByTagName("log")[0];
 		let eventLog = new EventLog();
@@ -55,6 +55,7 @@ try {
 	require('../log.js');
 	module.exports = {XesImporter: XesImporter};
 	global.XesImporter = XesImporter;
+	global.DOMParser = require('xmldom').DOMParser;
 }
 catch (err) {
 }
