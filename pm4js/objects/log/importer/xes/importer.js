@@ -52,7 +52,7 @@ class XesImporter {
 }
 
 try {
-	require('../log.js');
+	require('../../log.js');
 	module.exports = {XesImporter: XesImporter};
 	global.XesImporter = XesImporter;
 	global.DOMParser = require('xmldom').DOMParser;
