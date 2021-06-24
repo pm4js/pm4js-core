@@ -1,0 +1,30 @@
+<html>
+	<head>
+		<script src="../../pm4js/utils/browser/jquery.min.js"></script>
+		<script src="../../pm4js/objects/log/log.js"></script>
+		<script src="../../pm4js/objects/log/importer/csv/importer.js"></script>
+	</head>
+	<body>
+		<div id="showEventLog">
+		
+		</div>
+		<script type="text/javascript">
+			$.get("../input_data/running-example.csv", function(data) {
+				let eventLog = CsvImporter.apply(data);
+				let showEventLog = document.getElementById("showEventLog");
+				for (let trace of eventLog.traces) {
+					let traceCaseId = document.createElement("span");
+					let traceEvents = document.createElement("ul");
+					showEventLog.appendChild(traceCaseId);
+					showEventLog.appendChild(traceEvents);
+					traceCaseId.innerHTML = "case "+trace.attributes["concept:name"].value;
+					for (let eve of trace.events) {
+						let eveLi = document.createElement("li");
+						traceEvents.appendChild(eveLi);
+						eveLi.innerHTML = "event (activity: "+eve.attributes["concept:name"].value+"; timestamp: "+eve.attributes["time:timestamp"].value;
+					}
+				}
+			});
+		</script>
+	</body>
+</html>
