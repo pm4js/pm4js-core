@@ -1,0 +1,25 @@
+<html>
+	<head>
+		<script src="../../pm4js/utils/browser/jquery.min.js"></script>
+		<script src="../../pm4js/objects/log/log.js"></script>
+		<script src="../../pm4js/objects/log/importer/xes/importer.js"></script>
+		<script src="../../pm4js/objects/log/exporter/xes/exporter.js"></script>
+		<script src="../../pm4js/utils/browser/download.js"></script>
+	</head>
+	<body>
+		<button id="downloadXesLog" onclick="downloadXesLog()">Download XES Log</button>
+		<script type="text/javascript">
+			var eventLog = null;
+			
+			function downloadXesLog() {
+				let xmlStri = XesExporter.apply(eventLog);
+				DownloadUtility.download(xmlStri, "downloaded_xes_exporting.xes", "text/xml");
+			}
+			
+			$.get("../input_data/running-example.xes", function(data) {
+				eventLog = XesImporter.apply(data);
+				console.log(eventLog);
+			});
+		</script>
+	</body>
+</html>
