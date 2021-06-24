@@ -1,0 +1,134 @@
+<html>
+	<head>
+		<script src="../../pm4js/utils/browser/jquery.min.js"></script>
+		<script src="../../pm4js/objects/log/log.js"></script>
+		<script src="../../pm4js/objects/log/importer/xes/importer.js"></script>
+		<script src="../../pm4js/statistics/log/general.js"></script>
+	</head>
+	<body>
+		<div id="startActivitiesDiv">
+			<b>Start activities:</b>
+			<table id="startActivitiesList" border="1">
+				<tr>
+					<td><b>Activity</b></td>
+					<td><b>Count</b></td>
+				</tr>
+			</table>
+		</div>
+		<div id="endActivitiesDiv">
+			<b>End activities:</b>
+			<table id="endActivitiesList" border="1">
+				<tr>
+					<td><b>Activity</b></td>
+					<td><b>Count</b></td>
+				</tr>
+			</table>
+		</div>
+		<div id="attributeValuesDiv">
+			<b>Activities:</b>
+			<table id="attributeValuesList" border="1">
+				<tr>
+					<td><b>Activity</b></td>
+					<td><b>Count</b></td>
+				</tr>
+			</table>
+		</div>
+		<div id="traceAttributesDiv">
+			<b>Attributes at the case level:</b>
+			<table id="traceAttributesList" border="1">
+				<tr>
+					<td><b>Attribute</b></td>
+				</tr>
+			</table>
+		</div>
+		<div id="eventAttributesDiv">
+			<b>Attributes at the event level:</b>		
+			<table id="eventAttributesList" border="1">
+				<tr>
+					<td><b>Attribute</b></td>
+				</tr>
+			</table>
+		</div>
+		<div id="variantsDiv">
+			<b>Variants:</b>
+			<table id="variantsList" border="1">
+				<tr>
+					<td><b>Variant</b></td>
+					<td><b>Count</b></td>
+				</tr>
+			</table>
+		</div>
+		<script type="text/javascript">
+			$.get("../input_data/receipt.xes", function(data) {
+				let eventLog = XesImporter.apply(data);
+				let startActivities = GeneralLogStatistics.getStartActivities(eventLog);
+				let endActivities = GeneralLogStatistics.getEndActivities(eventLog);
+				let attributeValues = GeneralLogStatistics.getAttributeValues(eventLog, "concept:name");
+				let variants = GeneralLogStatistics.getVariants(eventLog);
+				let traceAttributes = GeneralLogStatistics.getCaseAttributesList(eventLog);
+				let eventAttributes = GeneralLogStatistics.getEventAttributesList(eventLog);
+				
+				for (let sa in startActivities) {
+					let tr = document.createElement("tr");
+					let actTd = document.createElement("td");
+					actTd.innerHTML = sa;
+					let actCount = document.createElement("td");
+					actCount.innerHTML = startActivities[sa];
+					tr.appendChild(actTd);
+					tr.appendChild(actCount);
+					document.getElementById("startActivitiesList").appendChild(tr);
+				}
+				
+				for (let ea in endActivities) {
+					let tr = document.createElement("tr");
+					let actTd = document.createElement("td");
+					actTd.innerHTML = ea;
+					let actCount = document.createElement("td");
+					actCount.innerHTML = endActivities[ea];
+					tr.appendChild(actTd);
+					tr.appendChild(actCount);
+					document.getElementById("endActivitiesList").appendChild(tr);
+				}
+				
+				for (let aa in attributeValues) {
+					let tr = document.createElement("tr");
+					let actTd = document.createElement("td");
+					actTd.innerHTML = aa;
+					let actCount = document.createElement("td");
+					actCount.innerHTML = attributeValues[aa];
+					tr.appendChild(actTd);
+					tr.appendChild(actCount);
+					document.getElementById("attributeValuesList").appendChild(tr);
+				}
+				
+				for (let en of traceAttributes) {
+					let tr = document.createElement("tr");
+					document.getElementById("traceAttributesList").appendChild(tr);
+					let eeTd = document.createElement("td");
+					eeTd.innerHTML = en;
+					tr.appendChild(eeTd);
+				}
+				
+				for (let en of eventAttributes) {
+					let tr = document.createElement("tr");
+					document.getElementById("eventAttributesList").appendChild(tr);
+					let eeTd = document.createElement("td");
+					eeTd.innerHTML = en;
+					tr.appendChild(eeTd);
+				}
+				
+				for (let va in variants) {
+					let tr = document.createElement("tr");
+					let actTd = document.createElement("td");
+					actTd.innerHTML = va;
+					let actCount = document.createElement("td");
+					actCount.innerHTML = variants[va];
+					tr.appendChild(actTd);
+					tr.appendChild(actCount);
+					document.getElementById("variantsList").appendChild(tr);
+				}
+				
+			});
+		</script>
+	</body>
+</html>
