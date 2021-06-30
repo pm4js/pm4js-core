@@ -20,7 +20,7 @@ function handleFileSelect(evt) {
 		operation = "importing";
 		document.getElementById("level1Title").innerHTML = "<h3>Select the importer among the available ones</h3>";
 		populateLevel(document.getElementById("availableMethods"), 1, getAvailableImportersGivenExtension(extension));
-		$('.hover_bkgr_fricc').show();
+		$('#pm4jsAlgoPopup').show();
 	}
 	reader.readAsText(f);
 }
@@ -90,7 +90,7 @@ function getAvailableImportersGivenExtension(extension) {
 
 function level1Apply() {
 	if (levelsSelected["1"].length > 0) {
-		$('.hover_bkgr_fricc').hide();
+		$('#pm4jsAlgoPopup').hide();
 		console.log(operation);
 		if (operation == "importing") {
 			let availableMethods = getAvailableImportersGivenExtension(extension);
@@ -116,7 +116,7 @@ function updateObjects() {
 }
 
 function level1Cancel() {
-	$('.hover_bkgr_fricc').hide();
+	$('#pm4jsAlgoPopup').hide();
 }
 
 Pm4JS.registerCallback(objectRegisteredCallback);
@@ -125,6 +125,6 @@ document.getElementById('pm4jsMainApplication').style.display = '';
 /*$('.hover_bkgr_fricc').click(function(){
 	$('.hover_bkgr_fricc').hide();
 });*/
-$('.popupCloseButton').click(function(){
-	$('.hover_bkgr_fricc').hide();
+$('#pm4jsAlgoPopupClose').click(function(){
+	$('#pm4jsAlgoPopup').hide();
 });
