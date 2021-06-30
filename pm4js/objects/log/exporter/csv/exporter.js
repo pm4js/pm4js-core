@@ -76,6 +76,7 @@ CsvExporter.DEFAULT_SEPARATOR = ',';
 CsvExporter.DEFAULT_QUOTECHAR = '"';
 
 try {
+	require('../../../../pm4js.js');
 	require('../../log.js');
 	require('../../../../statistics/log/general.js');
 	module.exports = {CsvExporter: CsvExporter};

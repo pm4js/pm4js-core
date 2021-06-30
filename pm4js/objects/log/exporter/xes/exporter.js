@@ -84,6 +84,7 @@ try {
 	global.window = dom.window;
 	global.document = dom.window.document;
 	global.navigator = global.window.navigator;
+	require('../../../../pm4js.js');
 	require('../../log.js');
 	module.exports = {XesExporter: XesExporter};
 	global.XesExporter = XesExporter;

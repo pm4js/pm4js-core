@@ -94,6 +94,7 @@ class GeneralLogStatistics {
 }
 
 try {
+	require('../../pm4js.js');
 	module.exports = {GeneralLogStatistics: GeneralLogStatistics};
 	global.GeneralLogStatistics = GeneralLogStatistics;
 }

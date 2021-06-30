@@ -77,6 +77,7 @@ CsvImporter.DEFAULT_SEPARATOR = ',';
 CsvImporter.DEFAULT_QUOTECHAR = '"';
 
 try {
+	require('../../../../pm4js.js');
 	require('../../log.js');
 	module.exports = {CsvImporter: CsvImporter};
 	global.CsvImporter = CsvImporter;

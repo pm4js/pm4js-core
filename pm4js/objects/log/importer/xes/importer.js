@@ -5,6 +5,7 @@ class XesImporter {
 		let xmlLog = xmlDoc.getElementsByTagName("log")[0];
 		let eventLog = new EventLog();
 		XesImporter.parseXmlObj(xmlLog, eventLog);
+		Pm4JS.registerObject(eventLog);
 		return eventLog;
 	}
 	
@@ -52,6 +53,7 @@ class XesImporter {
 }
 
 try {
+	require('../../../../pm4js.js');
 	require('../../log.js');
 	module.exports = {XesImporter: XesImporter};
 	global.XesImporter = XesImporter;
