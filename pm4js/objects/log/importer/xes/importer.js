@@ -5,7 +5,8 @@ class XesImporter {
 		let xmlLog = xmlDoc.getElementsByTagName("log")[0];
 		let eventLog = new EventLog();
 		XesImporter.parseXmlObj(xmlLog, eventLog);
-		Pm4JS.registerObject(eventLog);
+		Pm4JS.registerObject(eventLog, "Log imported from a XES file");
+		Pm4JS.registerImporter("XesImporter", "apply", [".xes"], "XES Importer", "Alessandro Berti");
 		return eventLog;
 	}
 	

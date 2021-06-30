@@ -63,6 +63,7 @@ class CsvExporter {
 			}
 		}
 		ret = ret.join('\n');
+		Pm4JS.registerExporter("CsvExporter", "apply", ".csv", "CSV Exporter", "Alessandro Berti");
 		return ret;
 	}
 }

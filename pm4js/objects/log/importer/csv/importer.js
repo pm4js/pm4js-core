@@ -28,6 +28,8 @@ class CsvImporter {
 			trace.events.push(eve);
 			i++;
 		}
+		Pm4JS.registerObject(log, "Log imported from a CSV file");
+		Pm4JS.registerImporter("CsvImporter", "apply", [".csv"], "CSV Importer", "Alessandro Berti");
 		return log;
 	}
 	
