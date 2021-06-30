@@ -16,10 +16,8 @@ function getAvailableAlgorithms() {
 	for (let obj of selectedObjects) {
 		selectedObjectsTypes.push(obj["object"].constructor.name);
 	}
-	console.log(selectedObjectsTypes);
 	let availableAlgorithms = [];
 	for (let algo of Pm4JS.algorithms) {
-		console.log(algo);
 		if (algo["inputs"].toString() == selectedObjectsTypes.toString()) {
 			availableAlgorithms.push(algo);
 		}
