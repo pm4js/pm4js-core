@@ -4,6 +4,7 @@ var operation = null;
 var levelsSelected = {"0": [], "1": []};
 var wizardCallback = null;
 var objectToConsider = null;
+var selectedObjects = null;
 
 function objectRegisteredCallback() {
 	updateObjects();
@@ -92,6 +93,9 @@ function level1Apply() {
 		}
 		else if (operation == "visualising") {
 			level1ApplyVisualization();
+		}
+		else if (operation == "algorithm") {
+			level1ApplyAlgorithm();
 		}
 		resetSelection("0");
 		resetSelection("1");

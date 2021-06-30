@@ -30,6 +30,7 @@ function level1ApplyVisualization() {
 	}
 	catch (err) {
 		alert("Visualization failed");
+		console.log(err);
 	}
 }
 

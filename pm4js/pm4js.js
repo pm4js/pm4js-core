@@ -9,14 +9,14 @@ class Pm4JS {
 		}
 	}
 	
-	static registerAlgorithm(className, methodName, inputs, outputs, description=null, authors=null) {
+	static registerAlgorithm(className, methodName, inputs, output, description=null, authors=null) {
 		if (description == null) {
 			description = className+"."+methodName;
 		}
 		if (authors == null) {
 			authors = "";
 		}
-		Pm4JS.algorithms.push({"className": className, "methodName": methodName, "inputs": inputs, "outputs": outputs, "description": description, "authors": authors});
+		Pm4JS.algorithms.push({"className": className, "methodName": methodName, "inputs": inputs, "output": output, "description": description, "authors": authors});
 	}
 	
 	static registerImporter(className, methodName, extensions, description=null, authors=null) {
