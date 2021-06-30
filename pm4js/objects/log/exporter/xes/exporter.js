@@ -10,7 +10,6 @@ class XesExporter {
 			serializer = require('xmlserializer');
 		}
 		const xmlStr = serializer.serializeToString(xmlDoc);
-		Pm4JS.registerExporter("XesExporter", "apply", ".xes", "XES Exporter", "Alessandro Berti");
 		return xmlStr;
 	}
 	
@@ -94,3 +93,5 @@ catch (err) {
 	// not in node
 	console.log(err);
 }
+
+Pm4JS.registerExporter("XesExporter", "apply", ".xes", "XES Exporter", "Alessandro Berti");

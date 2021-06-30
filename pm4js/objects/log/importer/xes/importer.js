@@ -6,7 +6,6 @@ class XesImporter {
 		let eventLog = new EventLog();
 		XesImporter.parseXmlObj(xmlLog, eventLog);
 		Pm4JS.registerObject(eventLog, "Log imported from a XES file");
-		Pm4JS.registerImporter("XesImporter", "apply", [".xes"], "XES Importer", "Alessandro Berti");
 		return eventLog;
 	}
 	
@@ -63,3 +62,5 @@ try {
 catch (err) {
 	// not in node
 }
+
+Pm4JS.registerImporter("XesImporter", "apply", ["xes"], "XES Importer", "Alessandro Berti");

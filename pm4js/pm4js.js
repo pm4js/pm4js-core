@@ -7,14 +7,20 @@ class Pm4JS {
 		if (description == null) {
 			description = className+"."+methodName;
 		}
-		Pm4JS.algorithms.push([className, methodName, inputs, outputs, description, authors]);
+		if (authors == null) {
+			authors = "";
+		}
+		Pm4JS.algorithms.push({"className": className, "methodName": methodName, "inputs": inputs, "outputs": outputs, "description": description, "authors": authors});
 	}
 	
 	static registerImporter(className, methodName, extensions, description=null, authors=null) {
 		if (description == null) {
 			description = className+"."+methodName;
 		}
-		Pm4JS.importers.push([className, methodName, extensions, description, authors]);
+		if (authors == null) {
+			authors = "";
+		}
+		Pm4JS.importers.push({"className": className, "methodName": methodName, "extensions": extensions, "description": description, "authors": authors});
 		for (let callback of Pm4JS.objectsCallbacks) {
 			callback();
 		}
@@ -24,14 +30,20 @@ class Pm4JS {
 		if (description == null) {
 			description = className+"."+methodName;
 		}
-		Pm4JS.exporters.push([className, methodName, extension, description, authors]);
+		if (authors == null) {
+			authors = "";
+		}
+		Pm4JS.exporters.push({"className": className, "methodName": methodName, "extension": extension, "description": description, "authors": authors});
 	}
 	
 	static registerVisualizer(className, methodName, inputs, description=null, authors=null) {
 		if (description == null) {
 			description = className+"."+methodName;
 		}
-		Pm4JS.visualizers.push([className, methodName, inputs, description, authors]);
+		if (authors == null) {
+			authors = "";
+		}
+		Pm4JS.visualizers.push({"className": className, "methodName": methodName, "inputs": inputs, "description": description, "author": authors});
 	}
 	
 	static registerCallback(f) {

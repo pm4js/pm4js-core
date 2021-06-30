@@ -29,7 +29,6 @@ class CsvImporter {
 			i++;
 		}
 		Pm4JS.registerObject(log, "Log imported from a CSV file");
-		Pm4JS.registerImporter("CsvImporter", "apply", [".csv"], "CSV Importer", "Alessandro Berti");
 		return log;
 	}
 	
@@ -88,3 +87,5 @@ catch (err) {
 	// not in node
 	console.log(err);
 }
+
+Pm4JS.registerImporter("CsvImporter", "apply", ["csv"], "CSV Importer", "Alessandro Berti");
