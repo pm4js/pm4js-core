@@ -1,0 +1,27 @@
+<html>
+	<head>
+		<script src="../../pm4js/utils/browser/jquery.min.js"></script>
+		<script src="../../pm4js/utils/browser/download.js"></script>
+		<script src="../../pm4js/pm4js.js"></script>
+		<script src="../../pm4js/objects/log/log.js"></script>
+		<script src="../../pm4js/objects/log/importer/xes/importer.js"></script>
+		<script src="../../pm4js/statistics/log/general.js"></script>
+		<script src="../../pm4js/objects/log/exporter/csv/exporter.js"></script>
+	</head>
+	<body>
+		<button id="downloadCsvLog" onclick="downloadCsvLog()">Download CSV Log</button>
+		<script type="text/javascript">
+			var eventLog = null;
+			
+			function downloadCsvLog() {
+				let xmlStri = CsvExporter.apply(eventLog);
+				DownloadUtility.download(xmlStri, "downloaded_xes_exporting.csv", "text/csv");
+			}
+			
+			$.get("../input_data/running-example.xes", function(data) {
+				eventLog = XesImporter.apply(data);
+				console.log(eventLog);
+			});
+		</script>
+	</body>
+</html>
