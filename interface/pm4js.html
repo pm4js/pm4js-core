@@ -17,6 +17,7 @@
 				<span>PM4JS</span>
 				<input type="file" id="uploadHidden" style="display: none" />
 				<button id="importingButton" onclick="javascript:document.getElementById('uploadHidden').click()">Import</button>
+				<button id="applyAlgorithmButton" onclick="javascript:applyAlgorithm()">Apply Algorithm</button>
 			</div>
 			<div id="pm4jsAppObjList">
 				<div id="availableObjects" class="algoObjList">
@@ -37,10 +38,24 @@
 				<button id="level1Cancel" onclick="level1Cancel()">Cancel</button>
 			</div>
 		</div>
-		<div class="hover_bkgr_fricc" id="wizard">
+		<div class="hover_bkgr_fricc" id="wizardPopup">
 			<span class="helper"></span>
 			<div>
-				<div class="popupCloseButton" id="pm4jsAlgoPopupClose">&times;</div>
+				<div class="popupCloseButton" id="pm4jsWizardPopupClose">&times;</div>
+				<div id="wizardTitle">Wizard</div>
+				<div id="wizardContent" class="wizardContent" style="width: 100%; height: 80%; overflow-y: scroll">
+				</div>
+				<button id="wizardApply" onclick="wizardApply()">Apply</button>
+				<button id="wizardCancel" onclick="wizardCancel()">Cancel</button>
+			</div>
+		</div>
+		<div class="hover_bkgr_fricc" id="visualizationPopup">
+			<span class="helper"></span>
+			<div>
+				<div class="popupCloseButton" id="visualizationPopupClose">&times;</div>
+				<div id="visualizationTitle">Wizard</div>
+				<div id="visualizationContent" class="visualizationContent" style="width: 100%; height: 95%; overflow-y: scroll">
+				</div>
 			</div>
 		</div>
 	</body>

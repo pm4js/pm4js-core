@@ -94,4 +94,4 @@ catch (err) {
 	console.log(err);
 }
 
-Pm4JS.registerExporter("XesExporter", "apply", ".xes", "XES Exporter", "Alessandro Berti");
+Pm4JS.registerExporter("XesExporter", "apply", "EventLog", "xes", "text/xml", "XES Exporter", "Alessandro Berti");

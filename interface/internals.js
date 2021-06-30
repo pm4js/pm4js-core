@@ -1,11 +1,12 @@
 var inputContent = null;
-var outputContent = null;
 var extension = null;
 var operation = null;
 var levelsSelected = {"0": [], "1": []};
+var wizardCallback = null;
+var objectToConsider = null;
 
 function objectRegisteredCallback() {
-	console.log(Pm4JS.objects);
+	updateObjects();
 }
 
 function handleFileSelect(evt) {
@@ -16,10 +17,10 @@ function handleFileSelect(evt) {
 	reader.onload = function(e) {
 		inputContent = e.target.result;
 		extension = f.name.split('.').pop();
-		//console.log(getAvailableImportersGivenExtension(extension));
 		operation = "importing";
 		document.getElementById("level1Title").innerHTML = "<h3>Select the importer among the available ones</h3>";
 		populateLevel(document.getElementById("availableMethods"), 1, getAvailableImportersGivenExtension(extension));
+		document.getElementById("uploadHidden").value = "";
 		$('#pm4jsAlgoPopup').show();
 	}
 	reader.readAsText(f);
@@ -29,7 +30,6 @@ function populateLevel(container, level, methods) {
 	container.innerHTML = "";
 	let count = 0;
 	for (let method of methods) {
-		console.log(method);
 		let thisId = "methodDiv_"+level+"_"+count
 		let methodDiv = document.createElement("div");
 		methodDiv.classList.add("methodDiv");
@@ -38,15 +38,34 @@ function populateLevel(container, level, methods) {
 		methodDiv.setAttribute("id", thisId);
 		methodDiv.setAttribute("level", level);
 		methodDiv.setAttribute("count", count);
-		methodDiv.addEventListener("click", function() { manageClickOnElement(thisId); });
+		methodDiv.addEventListener("click", function(ev) { manageClickOnElement(ev, thisId); });
 		let innerHTML = "<span><h3>"+method["description"]+"</h3></span>";
 		if (level == 1) {
 			innerHTML += "<br /><span>"+method["authors"]+"</span>";
 		}
 		methodDiv.innerHTML = innerHTML;
+		if (level == 0) {
+			// objects
+			let exp = getAvailableExporters(method);
+			if (exp.length > 0) {
+				let butt = document.createElement("button");
+				butt.innerHTML = "Export";
+				butt.addEventListener("click", function(ev) { startExportingObj(ev, method); });
+				methodDiv.appendChild(butt);
+			}
+		}
 		container.appendChild(methodDiv);
 		count++;
 	}
+}
+
+function startExportingObj(ev, obj) {
+	objectToConsider = obj;
+	operation = "exporting";
+	document.getElementById("level1Title").innerHTML = "<h3>Select the exporter among the available ones</h3>";
+	populateLevel(document.getElementById("availableMethods"), 1, getAvailableExporters(obj));
+	$('#pm4jsAlgoPopup').show();
+	ev.preventDefault();
 }
 
 function resetSelection(level) {
@@ -58,7 +77,7 @@ function resetSelection(level) {
 	}
 }
 
-function manageClickOnElement(eleString) {
+function manageClickOnElement(ev, eleString) {
 	let eleDom = document.getElementById(eleString);
 	let level = parseInt(eleDom.getAttribute("level"));
 	let count = parseInt(eleDom.getAttribute("count"));
@@ -75,7 +94,6 @@ function manageClickOnElement(eleString) {
 		eleDom.classList.add("methodDiv_selected");
 		levelsSelected[level].push(count);
 	}
-	console.log(levelsSelected);
 }
 
 function getAvailableImportersGivenExtension(extension) {
@@ -88,10 +106,23 @@ function getAvailableImportersGivenExtension(extension) {
 	return ret;
 }
 
+function getAvailableExporters(obj) {
+	let ret = [];
+	for (let method of Pm4JS.exporters) {
+		if (method["exportedObjType"] == obj["object"].constructor.name) {
+			ret.push(method);
+		}
+	}
+	return ret;
+}
+
+function updateObjects() {
+	populateLevel(document.getElementById("availableObjects"), 0, Pm4JS.objects);
+}
+
 function level1Apply() {
 	if (levelsSelected["1"].length > 0) {
 		$('#pm4jsAlgoPopup').hide();
-		console.log(operation);
 		if (operation == "importing") {
 			let availableMethods = getAvailableImportersGivenExtension(extension);
 			let selectedMethod = availableMethods[levelsSelected["1"][0]];
@@ -100,23 +131,47 @@ function level1Apply() {
 				let body = 'let [a] = args;return '+selectedMethod['className']+"."+selectedMethod['methodName']+'(a)';
 				myFunc = new Function(args, body);
 				myFunc(inputContent);
-				updateObjects();
 			}
 			catch (err) {
 				alert("Import failed");
 			}
 		}
+		else if (operation == "exporting") {
+			try {
+				let selectedObject = objectToConsider;
+				let availableMethods = getAvailableExporters(selectedObject);
+				let selectedMethod = Pm4JS.exporters[levelsSelected["1"][0]];
+				let args = '...args';
+				let body = 'let [a]= args; return '+selectedMethod['className']+"."+selectedMethod['methodName']+'(a)';
+				myFunc = new Function(args, body);
+				let expString = myFunc(selectedObject["object"]);
+				DownloadUtility.download(expString, "prova."+selectedMethod['extension'], selectedMethod['mimeType']);
+			}
+			catch (err) {
+				alert("Export failed");
+			}
+		}
 		resetSelection("0");
 		resetSelection("1");
+		//$('#wizardPopup').show();
 	}
 }
 
-function updateObjects() {
-	populateLevel(document.getElementById("availableObjects"), 0, Pm4JS.objects);
+function wizardApply() {
+	wizardCallback();
+	$('#wizardPopup').hide();
+}
+
+function wizardCancel() {
+	$('#wizardPopup').hide();
 }
 
 function level1Cancel() {
 	$('#pm4jsAlgoPopup').hide();
+}
+
+function applyAlgorithm() {
+	
 }
 
 Pm4JS.registerCallback(objectRegisteredCallback);
@@ -127,4 +182,10 @@ document.getElementById('pm4jsMainApplication').style.display = '';
 });*/
 $('#pm4jsAlgoPopupClose').click(function(){
 	$('#pm4jsAlgoPopup').hide();
+});
+$('#pm4jsWizardPopupClose').click(function(){
+	$('#wizardPopup').hide();
+});
+$('#visualizationPopupClose').click(function(){
+	$('#visualizationPopup').hide();
 });

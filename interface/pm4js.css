@@ -9,6 +9,10 @@
 	float: right;
 }
 
+#applyAlgorithmButton {
+	float: right;
+}
+
 #pm4jsAppObjList {
 	width: 100%;
 	height: 85%;

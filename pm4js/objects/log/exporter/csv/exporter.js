@@ -87,4 +87,4 @@ catch (err) {
 	console.log(err);
 }
 
-Pm4JS.registerExporter("CsvExporter", "apply", ".csv", "CSV Exporter", "Alessandro Berti");
+Pm4JS.registerExporter("CsvExporter", "apply", "EventLog", "csv", "text/csv", "CSV Exporter", "Alessandro Berti");

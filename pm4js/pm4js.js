@@ -4,6 +4,9 @@ class Pm4JS {
 			description = obj.className;
 		}
 		Pm4JS.objects.push({"object": obj, "creationDate": new Date().getTime(), "description": description});
+		for (let callback of Pm4JS.objectsCallbacks) {
+			callback();
+		}
 	}
 	
 	static registerAlgorithm(className, methodName, inputs, outputs, description=null, authors=null) {
@@ -29,14 +32,14 @@ class Pm4JS {
 		}
 	}
 	
-	static registerExporter(className, methodName, extension, description=null, authors=null) {
+	static registerExporter(className, methodName, exportedObjType, extension, mimeType, description=null, authors=null) {
 		if (description == null) {
 			description = className+"."+methodName;
 		}
 		if (authors == null) {
 			authors = "";
 		}
-		Pm4JS.exporters.push({"className": className, "methodName": methodName, "extension": extension, "description": description, "authors": authors});
+		Pm4JS.exporters.push({"className": className, "methodName": methodName, "exportedObjType": exportedObjType, "extension": extension, "mimeType": mimeType, "description": description, "authors": authors});
 	}
 	
 	static registerVisualizer(className, methodName, inputs, description=null, authors=null) {
