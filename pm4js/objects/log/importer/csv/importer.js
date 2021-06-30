@@ -88,4 +88,4 @@ catch (err) {
 	console.log(err);
 }
 
-Pm4JS.registerImporter("CsvImporter", "apply", ["csv"], "CSV Importer", "Alessandro Berti");
+//Pm4JS.registerImporter("CsvImporter", "apply", ["csv"], "CSV Importer", "Alessandro Berti");

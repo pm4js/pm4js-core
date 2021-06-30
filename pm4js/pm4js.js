@@ -1,6 +1,9 @@
 class Pm4JS {
-	static registerObject(obj) {
-		Pm4JS.objects.push([obj, new Date().getTime()]);
+	static registerObject(obj, description) {
+		if (description == null) {
+			description = obj.className;
+		}
+		Pm4JS.objects.push({"object": obj, "creationDate": new Date().getTime(), "description": description});
 	}
 	
 	static registerAlgorithm(className, methodName, inputs, outputs, description=null, authors=null) {

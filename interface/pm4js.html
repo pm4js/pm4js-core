@@ -19,6 +19,8 @@
 				<button id="importingButton" onclick="javascript:document.getElementById('uploadHidden').click()">Import</button>
 			</div>
 			<div id="pm4jsAppObjList">
+				<div id="availableObjects" class="algoObjList">
+				</div>
 			</div>
 			<div id="pm4jsAppFooter">
 				Copyright 2021 ???
@@ -28,8 +30,11 @@
 			<span class="helper"></span>
 			<div>
 				<div class="popupCloseButton">&times;</div>
-				<div id="availableMethods" style="width: 100%; height: 100%; overflow-y: scroll">
+				<div id="level1Title"></div>
+				<div id="availableMethods" class="algoObjList" style="width: 100%; height: 80%; overflow-y: scroll">
 				</div>
+				<button id="level1Apply" onclick="level1Apply()">Apply</button>
+				<button id="level1Cancel" onclick="level1Cancel()">Cancel</button>
 			</div>
 		</div>
 	</body>
