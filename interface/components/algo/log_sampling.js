@@ -26,6 +26,4 @@ class LogSamplingWithInputBox {
 	}
 }
 
-//	static registerAlgorithm(className, methodName, inputs, outputs, description=null, authors=null) {
-
 Pm4JS.registerAlgorithm("LogSamplingWithInputBox", "apply", ["EventLog"], "EventLog", "Sample Event Log (JS prompt)", "Alessandro Berti");
