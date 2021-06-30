@@ -15,6 +15,9 @@ class Pm4JS {
 			description = className+"."+methodName;
 		}
 		Pm4JS.importers.push([className, methodName, extensions, description, authors]);
+		for (let callback of Pm4JS.objectsCallbacks) {
+			callback();
+		}
 	}
 	
 	static registerExporter(className, methodName, extension, description=null, authors=null) {
@@ -30,6 +33,10 @@ class Pm4JS {
 		}
 		Pm4JS.visualizers.push([className, methodName, inputs, description, authors]);
 	}
+	
+	static registerCallback(f) {
+		Pm4JS.objectsCallbacks.push(f);
+	}
 }
 
 Pm4JS.registrationEnabled = true;
@@ -38,6 +45,7 @@ Pm4JS.algorithms = [];
 Pm4JS.importers = [];
 Pm4JS.exporters = [];
 Pm4JS.visualizers = [];
+Pm4JS.objectsCallbacks = [];
 
 try {
 	module.exports = {Pm4JS: Pm4JS};

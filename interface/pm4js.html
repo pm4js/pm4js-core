@@ -1,0 +1,27 @@
+<html>
+	<head>
+		<script src="../pm4js/utils/browser/jquery.min.js"></script>
+		<script src="../pm4js/utils/browser/download.js"></script>
+		<script src="../pm4js/pm4js.js"></script>
+		<script src="../pm4js/objects/log/log.js"></script>
+		<script src="../pm4js/statistics/log/general.js"></script>
+		<script src="../pm4js/objects/log/importer/xes/importer.js"></script>
+		<script src="../pm4js/objects/log/exporter/csv/exporter.js"></script>
+		<link rel="stylesheet" href="../interface/pm4js.css">
+	</head>
+	<body>
+		<div id="pm4jsMainApplication" style="display: none">
+			<div id="pm4jsAppHeader">
+				<span>PM4JS</span>
+				<input type="file" id="uploadHidden" style="display: none" />
+				<button id="importingButton" onclick="javascript:document.getElementById('uploadHidden').click()">Import</button>
+			</div>
+			<div id="pm4jsAppObjList">
+			</div>
+			<div id="pm4jsAppFooter">
+				Copyright 2021 ???
+			</div>
+		</div>
+	</body>
+	<script src="internals.js"></script>
+</html>
