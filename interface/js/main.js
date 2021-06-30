@@ -40,6 +40,13 @@ function populateLevel(container, level, methods) {
 				butt.addEventListener("click", function(ev) { startExportingObj(ev, method); });
 				methodDiv.appendChild(butt);
 			}
+			let visAlg = getAvailableVisualizers(method);
+			if (visAlg.length > 0) {
+				let butt = document.createElement("button");
+				butt.innerHTML = "Visualize";
+				butt.addEventListener("click", function(ev) { startVisualizingObj(ev, method); });
+				methodDiv.appendChild(butt);
+			}
 		}
 		container.appendChild(methodDiv);
 		count++;
@@ -82,6 +89,9 @@ function level1Apply() {
 		}
 		else if (operation == "exporting") {
 			level1ApplyExporting();
+		}
+		else if (operation == "visualising") {
+			level1ApplyVisualization();
 		}
 		resetSelection("0");
 		resetSelection("1");

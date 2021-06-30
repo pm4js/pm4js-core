@@ -21,7 +21,7 @@ function level1ApplyExporting() {
 	try {
 		let selectedObject = objectToConsider;
 		let availableMethods = getAvailableExporters(selectedObject);
-		let selectedMethod = Pm4JS.exporters[levelsSelected["1"][0]];
+		let selectedMethod = availableMethods[levelsSelected["1"][0]];
 		let args = '...args';
 		let body = 'let [a]= args; return '+selectedMethod['className']+"."+selectedMethod['methodName']+'(a)';
 		myFunc = new Function(args, body);

@@ -42,14 +42,14 @@ class Pm4JS {
 		Pm4JS.exporters.push({"className": className, "methodName": methodName, "exportedObjType": exportedObjType, "extension": extension, "mimeType": mimeType, "description": description, "authors": authors});
 	}
 	
-	static registerVisualizer(className, methodName, inputs, description=null, authors=null) {
+	static registerVisualizer(className, methodName, input, description=null, authors=null) {
 		if (description == null) {
 			description = className+"."+methodName;
 		}
 		if (authors == null) {
 			authors = "";
 		}
-		Pm4JS.visualizers.push({"className": className, "methodName": methodName, "inputs": inputs, "description": description, "author": authors});
+		Pm4JS.visualizers.push({"className": className, "methodName": methodName, "input": input, "description": description, "authors": authors});
 	}
 	
 	static registerCallback(f) {

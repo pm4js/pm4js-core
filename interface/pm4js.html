@@ -1,6 +1,7 @@
 <html>
 	<head>
 		<script src="../pm4js/utils/browser/jquery.min.js"></script>
+		<script src="js/plotly-2.1.0.min.js"></script>
 		<script src="../pm4js/utils/browser/download.js"></script>
 		<script src="../pm4js/pm4js.js"></script>
 		<script src="../pm4js/objects/log/log.js"></script>
@@ -9,7 +10,8 @@
 		<script src="../pm4js/objects/log/importer/csv/importer.js"></script>
 		<script src="../pm4js/objects/log/exporter/csv/exporter.js"></script>
 		<script src="../pm4js/objects/log/exporter/xes/exporter.js"></script>
-		<link rel="stylesheet" href="../interface/pm4js.css">
+		<script src="components/visualization/plotly_activities.js"></script>
+		<link rel="stylesheet" href="pm4js.css">
 	</head>
 	<body>
 		<div id="pm4jsMainApplication" style="display: none">
@@ -53,7 +55,7 @@
 			<span class="helper"></span>
 			<div>
 				<div class="popupCloseButton" id="visualizationPopupClose">&times;</div>
-				<div id="visualizationTitle">Wizard</div>
+				<div id="visualizationTitle">Visualization</div>
 				<div id="visualizationContent" class="visualizationContent" style="width: 100%; height: 95%; overflow-y: scroll">
 				</div>
 			</div>
