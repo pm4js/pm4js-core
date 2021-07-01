@@ -33,7 +33,7 @@ class PnmlImporter {
 								}
 							}
 						}
-						else if (child2.tagName == "initialMarking") {
+						else if (child2.tagName != null && child2.tagName.toLowerCase() == "initialmarking") {
 							for (let child3Id in child2.childNodes) {
 								let child3 = child2.childNodes[child3Id];
 								if (child3.tagName == "text") {
