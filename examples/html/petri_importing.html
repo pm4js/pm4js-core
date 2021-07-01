@@ -1,0 +1,22 @@
+<html>
+	<head>
+		<script src="../../pm4js/utils/browser/jquery.min.js"></script>
+		<script src="../../pm4js/pm4js.js"></script>
+		<script src="../../pm4js/objects/petri_net/petri_net.js"></script>
+		<script src="../../pm4js/visualization/petri_net/vanilla_graphviz.js"></script>
+		<script src="../../pm4js/objects/petri_net/importer/importer.js"></script>
+		<script src="http://viz-js.com/bower_components/viz.js/viz.js"></script>
+	</head>
+	<body>
+		<div id="container">
+		</div>
+		<script type="text/javascript">
+			$.get("../input_data/running-example.pnml", function(data) {
+				let acceptingPetriNet = PnmlImporter.apply(data);
+				let gv = PetriNetVanillaVisualizer.apply(acceptingPetriNet);
+				let svgXml = Viz(gv, { format: "svg"});
+				document.getElementById("container").innerHTML = svgXml;
+			});
+		</script>
+	</body>
+</html>
