@@ -12,15 +12,13 @@ class PtmlImporter {
 	static importFromXml(xmlProcessTree) {
 		let nodes = {};
 		for (let childId in xmlProcessTree.childNodes) {
-			console.log(childId);
 			let child = xmlProcessTree.childNodes[childId];
 			if (child.tagName != null) {
 				let elId = child.getAttribute("id");
 				let elLabel = child.getAttribute("name");
-				console.log(elId);
 				let elOperator = null;
 				if (child.tagName == "and") {
-					elOperator = ProcessTreeOperator.AND;
+					elOperator = ProcessTreeOperator.PARALLEL;
 				}
 				else if (child.tagName == "xorLoop") {
 					elOperator = ProcessTreeOperator.LOOP;
@@ -33,6 +31,9 @@ class PtmlImporter {
 				}
 				else if (child.tagName == "xor") {
 					elOperator = ProcessTreeOperator.EXCLUSIVE;
+				}
+				else if (child.tagName == "automaticTask") {
+					elLabel = null;
 				}
 				
 				if (child.tagName != "parentsNode") {
