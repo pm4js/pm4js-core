@@ -170,6 +170,5 @@ try {
 	global.Marking = Marking;
 }
 catch (err) {
-	require('../../pm4js.js');
 	// not in node
 }
