@@ -36,6 +36,7 @@ function level1ApplyImporting() {
 	}
 	catch (err) {
 		alert("Import failed");
+		console.log(err);
 	}
 }
 
