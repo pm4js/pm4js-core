@@ -134,6 +134,8 @@ try {
 	global.DOMParser = require('xmldom').DOMParser;
 }
 catch (err) {
+	// not in Node
+	console.log(err);
 }
 
 Pm4JS.registerImporter("PnmlImporter", "apply", ["pnml"], "PNML Importer", "Alessandro Berti");
