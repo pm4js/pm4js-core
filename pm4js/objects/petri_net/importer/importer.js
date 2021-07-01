@@ -112,7 +112,9 @@ class PnmlImporter {
 										}
 									}
 									let place = objDict[placeId];
-									fm.setTokens(place, placeTokens);
+									if (placeTokens > 0) {
+										fm.setTokens(place, placeTokens);
+									}
 								}
 							}
 							break;
