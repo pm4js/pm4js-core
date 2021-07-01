@@ -10,7 +10,10 @@ class PnmlExporter {
 		let xmlDoc = document.createElement("pnml");
 		let domNet = document.createElement("net");
 		xmlDoc.appendChild(domNet);
+		domNet.setAttribute("id", acceptingPetriNet.net.name);
+		domNet.setAttribute("type", "http://www.pnml.org/version-2009/grammar/pnmlcoremodel");
 		let page = document.createElement("page");
+		page.setAttribute("id", PnmlExporter.uuidv4());
 		domNet.appendChild(page);
 		PnmlExporter.exportXmlObjToDom(acceptingPetriNet, page);
 		let fm0Dom = document.createElement("finalmarkings");
@@ -65,7 +68,12 @@ class PnmlExporter {
 			domTrans.appendChild(transName);
 			let transNameText = document.createElement("text");
 			transName.appendChild(transNameText);
-			transNameText.textContent = trans.name;
+			if (trans.label == null) {
+				transNameText.textContent = trans.name;
+			}
+			else {
+				transNameText.textContent = trans.label;
+			}
 			if (trans.label == null) {
 				let toolSpecific = document.createElement("toolspecific");
 				domTrans.appendChild(toolSpecific);

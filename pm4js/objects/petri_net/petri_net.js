@@ -1,5 +1,5 @@
 class PetriNet {
-	constructor(name="") {
+	constructor(name="EMPTY") {
 		this.name = name;
 		this.places = {};
 		this.transitions = {};
