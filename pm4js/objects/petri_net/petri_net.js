@@ -26,6 +26,7 @@ class PetriNet {
 		source.outArcs[arc] = arc;
 		target.inArcs[arc] = arc;
 		this.arcs[arc] = arc;
+		return arc;
 	}
 	
 	toString() {
@@ -160,14 +161,23 @@ class Marking {
 	}
 }
 
+class AcceptingPetriNet {
+	constructor(net, im, fm) {
+		this.net = net;
+		this.im = im;
+		this.fm = fm;
+	}
+}
+
 try {
 	require('../../pm4js.js');
-	module.exports = {PetriNet: PetriNet, PetriNetPlace: PetriNetPlace, PetriNetTransition: PetriNetTransition, PetriNetArc: PetriNetArc, Marking: Marking};
+	module.exports = {PetriNet: PetriNet, PetriNetPlace: PetriNetPlace, PetriNetTransition: PetriNetTransition, PetriNetArc: PetriNetArc, Marking: Marking, AcceptingPetriNet: AcceptingPetriNet};
 	global.PetriNet = PetriNet;
 	global.PetriNetPlace = PetriNetPlace;
 	global.PetriNetTransition = PetriNetTransition;
 	global.PetriNetArc = PetriNetArc;
 	global.Marking = Marking;
+	global.AcceptingPetriNet = AcceptingPetriNet;
 }
 catch (err) {
 	// not in node

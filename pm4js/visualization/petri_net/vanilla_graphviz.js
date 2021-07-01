@@ -11,13 +11,16 @@ class PetriNetVanillaVisualizer {
 		return "n"+uuid.replace(/-/g, "");
 	}
 	
-	static apply(petri_net, im, fm) {
+	static apply(acceptingPetriNet) {
+		let petriNet = acceptingPetriNet.net;
+		let im = acceptingPetriNet.im;
+		let fm = acceptingPetriNet.fm;
 		let ret = [];
 		let uidMap = {};
 		ret.push("digraph G {");
 		ret.push("rankdir=\"LR\"");
-		for (let placeKey in petri_net.places) {
-			let place = petri_net.places[placeKey];
+		for (let placeKey in petriNet.places) {
+			let place = petriNet.places[placeKey];
 			let nUid = PetriNetVanillaVisualizer.nodeUuid();
 			let fillColor = "white";
 			if (place in im.tokens) {
@@ -29,8 +32,8 @@ class PetriNetVanillaVisualizer {
 			ret.push(nUid+" [shape=circle, label=\" \", style=filled, fillcolor="+fillColor+"]");
 			uidMap[place] = nUid;
 		}
-		for (let transKey in petri_net.transitions) {
-			let trans = petri_net.transitions[transKey];
+		for (let transKey in petriNet.transitions) {
+			let trans = petriNet.transitions[transKey];
 			let nUid = PetriNetVanillaVisualizer.nodeUuid();
 			if (trans.label != null) {
 				ret.push(nUid+" [shape=box, label=\""+trans.label+"\"]");
@@ -40,8 +43,8 @@ class PetriNetVanillaVisualizer {
 			}
 			uidMap[trans] = nUid;
 		}
-		for (let arcKey in petri_net.arcs) {
-			let arc = petri_net.arcs[arcKey];
+		for (let arcKey in petriNet.arcs) {
+			let arc = petriNet.arcs[arcKey];
 			let uid1 = uidMap[arc.source];
 			let uid2 = uidMap[arc.target];
 			ret.push(uid1+" -> "+uid2+"");
