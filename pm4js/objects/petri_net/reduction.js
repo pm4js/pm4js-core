@@ -1,7 +1,10 @@
 class PetriNetReduction {
-	static apply(acceptingPetriNet) {
+	static apply(acceptingPetriNet, asPlugin=true) {
 		PetriNetReduction.reduceSingleEntryTransitions(acceptingPetriNet.net);
 		PetriNetReduction.reduceSingleExitTransitions(acceptingPetriNet.net);
+		if (asPlugin) {
+			Pm4JS.registerObject(acceptingPetriNet, "Accepting Petri Net (reduced)");
+		}
 		return acceptingPetriNet;
 	}
 	
@@ -94,3 +97,5 @@ catch (err) {
 	console.log(err);
 	// not in Node
 }
+
+Pm4JS.registerAlgorithm("PetriNetReduction", "apply", ["AcceptingPetriNet"], "AcceptingPetriNet", "SESE Reduction of Accepting Petri Net", "Alessandro Berti");

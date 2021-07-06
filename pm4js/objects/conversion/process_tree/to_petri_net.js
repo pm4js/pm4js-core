@@ -90,7 +90,10 @@ class ProcessTreeToPetriNetConverter {
 		im.setTokens(sourcePlaces[processTree.id], 1);
 		fm.setTokens(targetPlaces[processTree.id], 1);
 		let acceptingPetriNet = new AcceptingPetriNet(petriNet, im, fm);
-		PetriNetReduction.apply(acceptingPetriNet);
+		PetriNetReduction.apply(acceptingPetriNet, false);
+
+		Pm4JS.registerObject(acceptingPetriNet, "Accepting Petri Net");
+
 		return acceptingPetriNet;
 	}
 	
@@ -150,3 +153,5 @@ catch (err) {
 	console.log(err);
 	// not in Node
 }
+
+Pm4JS.registerAlgorithm("ProcessTreeToPetriNetConverter", "apply", ["ProcessTree"], "AcceptingPetriNet", "Convert Process Tree to an Accepting Petri Net", "Alessandro Berti");
