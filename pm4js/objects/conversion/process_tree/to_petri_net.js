@@ -36,10 +36,42 @@ class ProcessTreeToPetriNetConverter {
 				petriNet.addArcFromTo(inv1, target);
 			}
 			else if (nodes[i].operator == ProcessTreeOperator.PARALLEL) {
+				let j = 0;
+				let inv1 = petriNet.addTransition("transParallel_"+nodes[i].id+"_first", null);
+				let inv2 = petriNet.addTransition("transParallel_"+nodes[i].id+"_last", null);
+				while (j < nodes[i].children.length) {
+					let thisNode = nodes[i].children[j];
+					let thisSource = sourcePlaces[thisNode.id];
+					let thisTarget = targetPlaces[thisNode.id];
+					petriNet.addArcFromTo(source, inv1);
+					petriNet.addArcFromTo(inv1, thisSource);
+					petriNet.addArcFromTo(thisTarget, inv2);
+					petriNet.addArcFromTo(inv2, target);
+					j++;
+				}
 			}
 			else if (nodes[i].operator == ProcessTreeOperator.EXCLUSIVE) {
+				let j = 0;
+				while (j < nodes[i].children.length) {
+					let thisNode = nodes[i].children[j];
+					let thisSource = sourcePlaces[thisNode.id];
+					let thisTarget = targetPlaces[thisNode.id];
+					let inv1 = petriNet.addTransition("transXor_"+nodes[i].id+"_"+j+"_first", null);
+					let inv2 = petriNet.addTransition("transXor_"+nodes[i].id+"_"+j+"_last", null);
+					petriNet.addArcFromTo(source, inv1);
+					petriNet.addArcFromTo(inv1, thisSource);
+					petriNet.addArcFromTo(thisTarget, inv2);
+					petriNet.addArcFromTo(inv2, target);
+					j++;
+				}
 			}
 			else if (nodes[i].operator == ProcessTreeOperator.LOOP) {
+				let inv1 = petriNet.addTransition("transLoop_"+nodes[i].id+"_first", null);
+				let inv2 = petriNet.addTransition("transLoop_"+nodes[i].id+"_last", null);
+				let inv3 = petriNet.addTransition("transLoop_"+nodes[i].id+"_loop", null);
+				let inv4 = petriNet.addTransition("transLoop_"+nodes[i].id+"_intermediate", null);
+				let doNode = nodes[i].children[0];
+				let redoNode = nodes[i].children[1];
 			}
 			i++;
 		}
