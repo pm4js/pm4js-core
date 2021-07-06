@@ -19,18 +19,23 @@ class PtmlImporter {
 				let elOperator = null;
 				if (child.tagName == "and") {
 					elOperator = ProcessTreeOperator.PARALLEL;
+					elLabel = null;
 				}
 				else if (child.tagName == "xorLoop") {
 					elOperator = ProcessTreeOperator.LOOP;
+					elLabel = null;
 				}
 				else if (child.tagName == "sequence") {
 					elOperator = ProcessTreeOperator.SEQUENCE;
+					elLabel = null;
 				}
 				else if (child.tagName == "or") {
 					elOperator = ProcessTreeOperator.INCLUSIVE;
+					elLabel = null;
 				}
 				else if (child.tagName == "xor") {
 					elOperator = ProcessTreeOperator.EXCLUSIVE;
+					elLabel = null;
 				}
 				else if (child.tagName == "automaticTask") {
 					elLabel = null;
