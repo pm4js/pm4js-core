@@ -45,7 +45,42 @@ class PetriNetReduction {
 	}
 	
 	static reduceSingleExitTransitions(net) {
-	
+		let cont = true;
+		while (cont) {
+			cont = false;
+			let singleExitInvisibleTransitions = [];
+			for (let transId in net.transitions) {
+				let trans = net.transitions[transId];
+				if (trans.label == null && Object.keys(trans.outArcs).length == 1) {
+					singleExitInvisibleTransitions.push(trans);
+				}
+			}
+			for (let trans of singleExitInvisibleTransitions) {
+				let targetPlace = null;
+				let sourcePlaces = [];
+				for (let arcId in trans.outArcs) {
+					let arc = trans.outArcs[arcId];
+					targetPlace = arc.target;
+				}
+				for (let arcId in trans.inArcs) {
+					let arc = trans.inArcs[arcId];
+					sourcePlaces.push(arc.source);
+				}
+				if (Object.keys(targetPlace.inArcs).length == 1 && Object.keys(targetPlace.outArcs).length == 1) {
+					let targetTransition = null;
+					for (let arcId in targetPlace.outArcs) {
+						targetTransition = targetPlace.outArcs[arcId].target;
+					}
+					net.removeTransition(trans);
+					net.removePlace(targetPlace);
+					for (let p of sourcePlaces) {
+						net.addArcFromTo(p, targetTransition);
+					}
+					cont = true;
+					break;
+				}
+			}
+		}
 	}
 }
 
