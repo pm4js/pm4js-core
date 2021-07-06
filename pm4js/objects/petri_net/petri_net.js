@@ -29,6 +29,34 @@ class PetriNet {
 		return arc;
 	}
 	
+	removePlace(place) {
+		for (let arcId in place.inArcs) {
+			let arc = place.inArcs[arcId];
+			delete this.arcs[arcId];
+			delete arc.source.outArcs[arcId];
+		}
+		for (let arcId in place.outArcs) {
+			let arc = place.outArcs[arcId];
+			delete this.arcs[arcId];
+			delete arc.target.inArcs[arcId];
+		}
+		delete this.places[place];
+	}
+	
+	removeTransition(transition) {
+		for (let arcId in transition.inArcs) {
+			let arc = transition.inArcs[arcId];
+			delete this.arcs[arcId];
+			delete arc.target.outArcs[arcId];
+		}
+		for (let arcId in transition.outArcs) {
+			let arc = transition.outArcs[arcId];
+			delete this.arcs[arcId];
+			delete arc.target.inArcs[arcId];
+		}
+		delete this.transitions[transition];
+	}
+	
 	toString() {
 		return "petriNet@@"+this.name;
 	}

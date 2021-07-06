@@ -90,6 +90,7 @@ class ProcessTreeToPetriNetConverter {
 		im.setTokens(sourcePlaces[processTree.id], 1);
 		fm.setTokens(targetPlaces[processTree.id], 1);
 		let acceptingPetriNet = new AcceptingPetriNet(petriNet, im, fm);
+		PetriNetReduction.apply(acceptingPetriNet);
 		return acceptingPetriNet;
 	}
 	
@@ -141,6 +142,7 @@ try {
 	require('../../../pm4js.js');
 	require('../../process_tree/process_tree.js');
 	require('../../petri_net/petri_net.js');
+	require('../../petri_net/reduction.js');
 	module.exports = {ProcessTreeToPetriNetConverter: ProcessTreeToPetriNetConverter};
 	global.ProcessTreeToPetriNetConverter = ProcessTreeToPetriNetConverter;
 }
