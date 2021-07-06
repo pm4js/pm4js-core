@@ -68,10 +68,22 @@ class ProcessTreeToPetriNetConverter {
 			else if (nodes[i].operator == ProcessTreeOperator.LOOP) {
 				let inv1 = petriNet.addTransition("transLoop_"+nodes[i].id+"_first", null);
 				let inv2 = petriNet.addTransition("transLoop_"+nodes[i].id+"_last", null);
-				let inv3 = petriNet.addTransition("transLoop_"+nodes[i].id+"_loop", null);
-				let inv4 = petriNet.addTransition("transLoop_"+nodes[i].id+"_intermediate", null);
+				let inv3 = petriNet.addTransition("transLoop_"+nodes[i].id+"_loop1", null);
+				let inv4 = petriNet.addTransition("transLoop_"+nodes[i].id+"_loop2", null);
 				let doNode = nodes[i].children[0];
+				let doNodeSource = sourcePlaces[doNode.id];
+				let doNodeTarget = targetPlaces[doNode.id];
 				let redoNode = nodes[i].children[1];
+				let redoNodeSource = sourcePlaces[redoNode.id];
+				let redoNodeTarget = targetPlaces[redoNode.id];
+				petriNet.addArcFromTo(source, inv1);
+				petriNet.addArcFromTo(inv1, doNodeSource);
+				petriNet.addArcFromTo(doNodeTarget, inv2);
+				petriNet.addArcFromTo(inv2, target);
+				petriNet.addArcFromTo(target, inv3);
+				petriNet.addArcFromTo(inv3, redoNodeSource);
+				petriNet.addArcFromTo(redoNodeTarget, inv4);
+				petriNet.addArcFromTo(inv4, source);
 			}
 			i++;
 		}

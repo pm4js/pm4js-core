@@ -11,7 +11,7 @@ class PetriNetVanillaVisualizer {
 		return "n"+uuid.replace(/-/g, "");
 	}
 	
-	static apply(acceptingPetriNet) {
+	static apply(acceptingPetriNet, debug=false) {
 		let petriNet = acceptingPetriNet.net;
 		let im = acceptingPetriNet.im;
 		let fm = acceptingPetriNet.fm;
@@ -29,7 +29,11 @@ class PetriNetVanillaVisualizer {
 			else if (place in fm.tokens) {
 				fillColor = "orange";
 			}
-			ret.push(nUid+" [shape=circle, label=\" \", style=filled, fillcolor="+fillColor+"]");
+			let placeLabel = " ";
+			if (debug == true) {
+				placeLabel = placeKey;
+			}
+			ret.push(nUid+" [shape=circle, label=\""+placeLabel+"\", style=filled, fillcolor="+fillColor+"]");
 			uidMap[place] = nUid;
 		}
 		for (let transKey in petriNet.transitions) {
@@ -39,7 +43,12 @@ class PetriNetVanillaVisualizer {
 				ret.push(nUid+" [shape=box, label=\""+trans.label+"\"]");
 			}
 			else {
-				ret.push(nUid+" [shape=box, label=\" \", style=filled, fillcolor=black]");
+				if (debug == true) {
+					ret.push(nUid+" [shape=box, label=\""+trans.name+"\"]");
+				}
+				else {
+					ret.push(nUid+" [shape=box, label=\" \", style=filled, fillcolor=black]");
+				}
 			}
 			uidMap[trans] = nUid;
 		}
