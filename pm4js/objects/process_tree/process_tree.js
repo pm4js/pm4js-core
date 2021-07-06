@@ -22,6 +22,30 @@ class ProcessTree {
 		this.id = ProcessTree.uuidv4();
 		this.children = [];
 	}
+	
+	toString() {
+		if (this.operator == null) {
+			if (this.label == null) {
+				return "tau";
+			}
+			else {
+				return "'"+this.label+"'";
+			}
+		}
+		else {
+			let opMapping = {};
+			opMapping[ProcessTreeOperator.SEQUENCE] = "->";
+			opMapping[ProcessTreeOperator.PARALLEL] = "+";
+			opMapping[ProcessTreeOperator.INCLUSIVE] = "O";
+			opMapping[ProcessTreeOperator.EXCLUSIVE] = "X";
+			opMapping[ProcessTreeOperator.LOOP] = "*";
+			let childRepr = [];
+			for (let n of this.children) {
+				childRepr.push(n.toString());
+			}
+			return opMapping[this.operator] + " ( " + childRepr.join(', ') + " ) ";
+		}
+	}
 }
 
 try {
