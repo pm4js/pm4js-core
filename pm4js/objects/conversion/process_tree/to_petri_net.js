@@ -87,8 +87,16 @@ class ProcessTreeToPetriNetConverter {
 			}
 			i++;
 		}
-		im.setTokens(sourcePlaces[processTree.id], 1);
-		fm.setTokens(targetPlaces[processTree.id], 1);
+		let source = petriNet.addPlace("generalSource");
+		let sink = petriNet.addPlace("generalSink");
+		let inv1 = petriNet.addTransition("generalSource_trans", null);
+		let inv2 = petriNet.addTransition("generalSink_trans", null);
+		petriNet.addArcFromTo(source, inv1);
+		petriNet.addArcFromTo(inv1, sourcePlaces[processTree.id]);
+		petriNet.addArcFromTo(targetPlaces[processTree.id], inv2);
+		petriNet.addArcFromTo(inv2, sink);
+		im.setTokens(source, 1);
+		fm.setTokens(sink, 1);
 		let acceptingPetriNet = new AcceptingPetriNet(petriNet, im, fm);
 		PetriNetReduction.apply(acceptingPetriNet, false);
 
