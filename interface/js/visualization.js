@@ -25,6 +25,7 @@ function level1ApplyVisualization() {
 		let args = '...args';
 		let body = 'let [a,b]= args; return '+selectedMethod['className']+"."+selectedMethod['methodName']+'(a, b)';
 		myFunc = new Function(args, body);
+		document.getElementById("visualizationContent").innerHTML = "";
 		myFunc(selectedObject["object"], "visualizationContent");
 		$('#visualizationPopup').show();
 	}

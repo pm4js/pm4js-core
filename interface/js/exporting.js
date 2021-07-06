@@ -30,5 +30,6 @@ function level1ApplyExporting() {
 	}
 	catch (err) {
 		alert("Export failed");
+		console.log(err);
 	}
 }

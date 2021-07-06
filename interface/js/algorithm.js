@@ -48,6 +48,7 @@ function level1ApplyAlgorithm() {
 		myFunc(selectedObjectsObjs);
 	}
 	catch (err) {
+		alert("Algorithm failed");
 		console.log(err);
 	}
 }

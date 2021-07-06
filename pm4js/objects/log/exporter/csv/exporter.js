@@ -28,7 +28,7 @@ class CsvExporter {
 						pref += quotechar+val+quotechar+sep;
 					}
 					else if (typeof val == "object") {
-						prefix += val.toISOString()+sep;
+						pref += val.toISOString()+sep;
 					}
 					else {
 						pref += val+sep;
