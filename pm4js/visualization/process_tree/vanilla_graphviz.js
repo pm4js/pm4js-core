@@ -53,8 +53,14 @@ class ProcessTreeVanillaVisualizer {
 	
 	static findAllDescendants(processTree, descendants) {
 		descendants[processTree.id] = processTree;
-		for (let child of processTree.children) {
-			ProcessTreeVanillaVisualizer.findAllDescendants(child, descendants);
+		if (processTree.operator == ProcessTreeOperator.LOOP) {
+			ProcessTreeVanillaVisualizer.findAllDescendants(processTree.children[0], descendants);
+			ProcessTreeVanillaVisualizer.findAllDescendants(processTree.children[1], descendants);
+		}
+		else {
+			for (let child of processTree.children) {
+				ProcessTreeVanillaVisualizer.findAllDescendants(child, descendants);
+			}
 		}
 	}
 }

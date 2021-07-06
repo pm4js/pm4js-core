@@ -2,8 +2,8 @@ class ProcessTreeToPetriNetConverter {
 	static apply(processTree) {
 		let nodes = ProcessTreeToPetriNetConverter.orderBottomUpNodes(processTree);
 		let petriNet = new PetriNet();
-		let im = new Marking();
-		let fm = new Marking();
+		let im = new Marking(petriNet);
+		let fm = new Marking(petriNet);
 		let sourcePlaces = {};
 		let targetPlaces = {};
 		let i = 0;
@@ -87,6 +87,8 @@ class ProcessTreeToPetriNetConverter {
 			}
 			i++;
 		}
+		im.setTokens(sourcePlaces[processTree.id], 1);
+		fm.setTokens(targetPlaces[processTree.id], 1);
 		let acceptingPetriNet = new AcceptingPetriNet(petriNet, im, fm);
 		return acceptingPetriNet;
 	}
@@ -123,8 +125,14 @@ class ProcessTreeToPetriNetConverter {
 	
 	static findAllDescendants(processTree, descendants) {
 		descendants[processTree.id] = processTree;
-		for (let child of processTree.children) {
-			ProcessTreeVanillaVisualizer.findAllDescendants(child, descendants);
+		if (processTree.operator == ProcessTreeOperator.LOOP) {
+			ProcessTreeToPetriNetConverter.findAllDescendants(processTree.children[0], descendants);
+			ProcessTreeToPetriNetConverter.findAllDescendants(processTree.children[1], descendants);
+		}
+		else {
+			for (let child of processTree.children) {
+				ProcessTreeToPetriNetConverter.findAllDescendants(child, descendants);
+			}
 		}
 	}
 }
