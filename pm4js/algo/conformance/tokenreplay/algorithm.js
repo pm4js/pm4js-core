@@ -1,6 +1,87 @@
+class TokenBasedReplayResult {
+	constructor(result) {
+		this.result = result;
+	}
+}
+
 class TokenBasedReplay {
-	static apply(eventLog, acceptingPetriNet) {
-		TokenBasedReplay.buildInvisibleChain(acceptingPetriNet.net);
+	static apply(eventLog, acceptingPetriNet, activityKey="concept:name") {
+		let invisibleChain = TokenBasedReplay.buildInvisibleChain(acceptingPetriNet.net);
+		let transitionsMap = {};
+		for (let transId in acceptingPetriNet.net.transitions) {
+			let trans = acceptingPetriNet.net.transitions[transId];
+			if (trans.label != null) {
+				transitionsMap[trans.label] = trans;
+			}
+		}
+		let dictioResultsVariant = {};
+		let ret = [];
+		for (let trace of eventLog.traces) {
+			let arrActivities = TokenBasedReplay.getArrActivities(trace, activityKey);
+			if (arrActivities in dictioResultsVariant) {
+				ret.push(dictioResultsVariant[arrActivities]);
+			}
+			else {
+				let thisRes = TokenBasedReplay.performTbr(arrActivities, transitionsMap, acceptingPetriNet, invisibleChain);
+				dictioResultsVariant[arrActivities] = thisRes;
+				ret.push(thisRes);
+			}
+		}
+		return new TokenBasedReplayResult(ret);
+	}
+	
+	static performTbr(activities, transitionsMap, acceptingPetriNet, invisibleChain) {
+		let marking = acceptingPetriNet.im.copy();
+		let consumed = 0;
+		let produced = 0;
+		let missing = 0;
+		let remaining = 0;
+		let visitedTransitions = [];
+		let visitedMarkings = [];
+		let missingActivitiesInModel = [];
+		for (let act of activities) {
+			if (act in transitionsMap) {
+				let trans = transitionsMap[act];
+				let transPreMarking = trans.getPreMarking();
+				let transPostMarking = trans.getPostMarking();
+				let enabled = marking.getEnabledTransitions();
+				while (!(enabled.includes(trans))) {
+					break;
+				}
+				if (!(enabled.includes(trans))) {
+					// inserts missing tokens
+					for (let place in transPreMarking) {
+						let diff = transPreMarking[place];
+						if (place in marking.tokens) {
+							diff -= marking.tokens[place];
+						}
+						marking.tokens[place] = diff;
+						missing += diff;
+					}
+				}
+				for (let place in transPreMarking) {
+					consumed += transPreMarking[place];
+				}
+				for (let place in transPostMarking) {
+					produced += transPostMarking[place];
+				}
+				marking = marking.execute(trans);
+				visitedMarkings.push(marking);
+				visitedTransitions.push(trans);
+			}
+		}
+		return {"consumed": consumed, "produced": produced, "missing": missing, "remaining": remaining, "visitedTransitions": visitedTransitions, "visitedMarkings": visitedMarkings, "missingActivitiesInModel": missingActivitiesInModel};
+	}
+	
+	static enableTransThroughInvisibles() {
+	}
+	
+	static getArrActivities(trace, activityKey) {
+		let ret = [];
+		for (let eve of trace.events) {
+			ret.push(eve.attributes[activityKey].value);
+		}
+		return ret;
 	}
 	
 	static buildInvisibleChain(net) {

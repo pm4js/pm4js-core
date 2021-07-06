@@ -145,6 +145,7 @@ class Marking {
 		for (let place of orderedKeys) {
 			ret += place + "=" + this.tokens[place] + ";"
 		}
+		return ret;
 	}
 	
 	setTokens(place, tokens) {
@@ -186,6 +187,27 @@ class Marking {
 			}
 		}
 		return newMarking;
+	}
+	
+	copy() {
+		let newMarking = new Marking(this.net);
+		for (let place in this.tokens) {
+			newMarking.setTokens(place, this.tokens[place]);
+		}
+		return newMarking;
+	}
+	
+	equals(other) {
+		for (let place in this.tokens) {
+			if (!(place in other.tokens && other.tokens[place] == this.tokens[place])) {
+				return false;
+			}
+		}
+		for (let place in other.tokens) {
+			if (!(place in this.tokens && other.tokens[place] == this.tokens[place])) {
+				return false;
+			}
+		}
 	}
 }
 
