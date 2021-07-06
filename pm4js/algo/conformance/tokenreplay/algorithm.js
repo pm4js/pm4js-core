@@ -111,6 +111,39 @@ class TokenBasedReplay {
 				missingActivitiesInModel.push(act);
 			}
 		}
+		if (!(acceptingPetriNet.fm.equals(marking))) {
+			let internalMarking = marking.copy();
+			let internalConsumed = consumed;
+			let internalProduced = produced;
+			while (!(acceptingPetriNet.fm.equals(internalMarking))) {
+				let transList = TokenBasedReplay.reachFmThroughInvisibles(internalMarking, acceptingPetriNet.fm, invisibleChain);
+				if (transList == null) {
+					break;
+				}
+				else {
+					for (let internalTrans of transList) {
+						let internalTransPreMarking = internalTrans.getPreMarking();
+						let internalTransPostMarking = internalTrans.getPostMarking();
+						internalMarking = internalMarking.execute(internalTrans);
+						if (internalMarking == null) {
+							break;
+						}
+						// counts consumed and produced tokens
+						for (let place in internalTransPreMarking) {
+							internalConsumed += internalTransPreMarking[place];
+						}
+						for (let place in internalTransPostMarking) {
+							internalProduced += internalTransPostMarking[place];
+						}
+					}
+				}
+			}
+			if (acceptingPetriNet.fm.equals(internalMarking)) {
+				marking = internalMarking;
+				consumed = internalConsumed;
+				produced = internalProduced;
+			}
+		}
 		for (let place in marking.tokens) {
 			if (!(place in acceptingPetriNet.fm.tokens)) {
 				remaining += marking.tokens[place];
@@ -142,6 +175,31 @@ class TokenBasedReplay {
 		}
 		for (let place in transPreMarking) {
 			if ((!(place in marking.tokens)) || marking.tokens[place] < transPreMarking[place]) {
+				diff2.push(place);
+			}
+		}
+		for (let place of diff1) {
+			if (place in invisibleChain) {
+				for (let place2 of diff2) {
+					if (place2 in invisibleChain[place]) {
+						return invisibleChain[place][place2];
+					}
+				}
+			}
+		}
+		return null;
+	}
+	
+	static reachFmThroughInvisibles(marking, finalMarking, invisibleChain) {
+		let diff1 = [];
+		let diff2 = [];
+		for (let place in marking.tokens) {
+			if (!(place in finalMarking.tokens)) {
+				diff1.push(place);
+			}
+		}
+		for (let place in finalMarking.tokens) {
+			if ((!(place in marking.tokens)) || marking.tokens[place] < finalMarking.tokens[place]) {
 				diff2.push(place);
 			}
 		}

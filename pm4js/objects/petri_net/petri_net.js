@@ -198,16 +198,22 @@ class Marking {
 	}
 	
 	equals(other) {
-		for (let place in this.tokens) {
-			if (!(place in other.tokens && other.tokens[place] == this.tokens[place])) {
+		let thisTokens = this.tokens;
+		let otherTokens = other.tokens;
+		for (let place in thisTokens) {
+			if (!(place in otherTokens)) {
+				return false;
+			}
+			else if (otherTokens[place] != thisTokens[place]) {
 				return false;
 			}
 		}
-		for (let place in other.tokens) {
-			if (!(place in this.tokens && other.tokens[place] == this.tokens[place])) {
+		for (let place in otherTokens) {
+			if (!(place in thisTokens)) {
 				return false;
 			}
 		}
+		return true;
 	}
 }
 
