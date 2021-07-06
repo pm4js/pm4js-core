@@ -36,6 +36,12 @@ class TokenBasedReplay {
 		let produced = 0;
 		let missing = 0;
 		let remaining = 0;
+		for (let place in acceptingPetriNet.im.tokens) {
+			produced += acceptingPetriNet.im.tokens[place];
+		}
+		for (let place in acceptingPetriNet.fm.tokens) {
+			consumed += acceptingPetriNet.fm.tokens[place];
+		}
 		let visitedTransitions = [];
 		let visitedMarkings = [];
 		let missingActivitiesInModel = [];
@@ -45,8 +51,39 @@ class TokenBasedReplay {
 				let transPreMarking = trans.getPreMarking();
 				let transPostMarking = trans.getPostMarking();
 				let enabled = marking.getEnabledTransitions();
-				while (!(enabled.includes(trans))) {
-					break;
+				if (!(enabled.includes(trans))) {
+					let internalMarking = marking.copy();
+					let internalConsumed = consumed;
+					let internalProduced = produced;
+					while (!(enabled.includes(trans))) {
+						let transList = TokenBasedReplay.enableTransThroughInvisibles(marking, transPreMarking, invisibleChain);
+						if (transList == null) {
+							break;
+						}
+						else {
+							for (let internalTrans of transList) {
+								let internalTransPreMarking = internalTrans.getPreMarking();
+								let internalTransPostMarking = internalTrans.getPostMarking();
+								internalMarking = internalMarking.execute(internalTrans);
+								if (internalMarking == null) {
+									break;
+								}
+								// counts consumed and produced tokens
+								for (let place in internalTransPreMarking) {
+									internalConsumed += internalTransPreMarking[place];
+								}
+								for (let place in internalTransPostMarking) {
+									internalProduced += internalTransPostMarking[place];
+								}
+							}
+							enabled = internalMarking.getEnabledTransitions();
+						}
+					}
+					if (enabled.includes(trans)) {
+						marking = internalMarking;
+						consumed = internalConsumed;
+						produced = internalProduced;
+					}
 				}
 				if (!(enabled.includes(trans))) {
 					// inserts missing tokens
@@ -59,6 +96,7 @@ class TokenBasedReplay {
 						missing += diff;
 					}
 				}
+				// counts consumed and produced tokens
 				for (let place in transPreMarking) {
 					consumed += transPreMarking[place];
 				}
@@ -69,11 +107,54 @@ class TokenBasedReplay {
 				visitedMarkings.push(marking);
 				visitedTransitions.push(trans);
 			}
+			else if (!(act in missingActivitiesInModel)) {
+				missingActivitiesInModel.push(act);
+			}
 		}
-		return {"consumed": consumed, "produced": produced, "missing": missing, "remaining": remaining, "visitedTransitions": visitedTransitions, "visitedMarkings": visitedMarkings, "missingActivitiesInModel": missingActivitiesInModel};
+		for (let place in marking.tokens) {
+			if (!(place in acceptingPetriNet.fm.tokens)) {
+				remaining += marking.tokens[place];
+			}
+			else if (marking.tokens[place] > acceptingPetriNet.fm.tokens[place]) {
+				remaining += marking.tokens[place] - acceptingPetriNet.fm.tokens[place];
+			}
+		}
+		let fitMC = 0.0;
+		let fitRP = 0.0;
+		if (consumed > 0) {
+			fitMC = 1.0 - missing / consumed;
+		}
+		if (produced > 0) {
+			fitRP = 1.0 - remaining / produced;
+		}
+		let fitness = 0.5*fitMC + 0.5*fitRP;
+		let isFit = (Object.keys(missingActivitiesInModel).length == 0) && (missing == 0);
+		return {"consumed": consumed, "produced": produced, "missing": missing, "remaining": remaining, "visitedTransitions": visitedTransitions, "visitedMarkings": visitedMarkings, "missingActivitiesInModel": missingActivitiesInModel, "fitness": fitness, "isFit": isFit};
 	}
 	
-	static enableTransThroughInvisibles() {
+	static enableTransThroughInvisibles(marking, transPreMarking, invisibleChain) {
+		let diff1 = [];
+		let diff2 = [];
+		for (let place in marking.tokens) {
+			if (!(place in transPreMarking)) {
+				diff1.push(place);
+			}
+		}
+		for (let place in transPreMarking) {
+			if ((!(place in marking.tokens)) || marking.tokens[place] < transPreMarking[place]) {
+				diff2.push(place);
+			}
+		}
+		for (let place of diff1) {
+			if (place in invisibleChain) {
+				for (let place2 of diff2) {
+					if (place2 in invisibleChain[place]) {
+						return invisibleChain[place][place2];
+					}
+				}
+			}
+		}
+		return null;
 	}
 	
 	static getArrActivities(trace, activityKey) {
@@ -107,6 +188,7 @@ class TokenBasedReplay {
 			}
 			changedPlaces = newChanges;
 		}
+		return invisibleChain;
 	}
 	
 	static buildInvisibleChainInitial(net) {
