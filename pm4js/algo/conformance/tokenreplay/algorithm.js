@@ -1,6 +1,35 @@
 class TokenBasedReplayResult {
 	constructor(result) {
 		this.result = result;
+		this.totalConsumed = 0;
+		this.totalProduced = 0;
+		this.totalMissing = 0;
+		this.totalRemaining = 0;
+		this.totalTraces = this.result.length;
+		this.fitTraces = 0;
+		this.logFitness = 0.0;
+		this.compute();
+	}
+	
+	compute() {
+		for (let res of this.result) {
+			if (res["isFit"]) {
+				this.fitTraces++;
+			}
+			this.totalConsumed += res["consumed"];
+			this.totalProduced += res["produced"];
+			this.totalMissing += res["missing"];
+			this.totalRemaining += res["remaining"];
+			let fitMC = 0.0;
+			let fitRP = 0.0;
+			if (this.totalConsumed > 0) {
+				fitMC = 1.0 - this.totalMissing / this.totalConsumed;
+			}
+			if (this.totalProduced > 0) {
+				fitRP = 1.0 - this.totalRemaining / this.totalProduced;
+			}
+			this.logFitness = 0.5*fitMC + 0.5*fitRP;
+		}
 	}
 }
 
