@@ -27,6 +27,58 @@ The class **Attribute** contains the following properties:
 It is possible to iterate over a log object, and its properties, as follows:
 for trace in log.traces:
 > console.log(trace.attributes["concept:name"].value); // prints the case identifier (standard XES)
+
 > for event in trace.events:
+
 > > console.log(event.attributes["concept:name"].value); // prints the activity name (standard XES)
 
+### Importing XES logs
+
+[XES] is the current standard for the storage of event logs. A XES file is an XML file with a given structure. We can import the contents of a XES file in an **EventLog** object by doing:
+**let eventLog = XesImporter.apply(xmlString);**
+A practical example (using JQuery) to read a file located in **prova.xes** :
+
+$.get("prova.xes", function(data) {
+> let eventLog = XesImporter.apply(data);
+> console.log(eventLog);
+> 
+});
+
+### Importing CSV logs
+
+Similarly to XES, also the importing of CSVs starts from the contents of a string.
+
+**let eventLog = CsvImporter.apply(txtStri, 'sep', 'quotechar', 'case ID column', 'activity column', 'timestamp column');**
+
+where:
+* **txtStri** is the string containing the CSV to be imported.
+* **sep** is the separator character (the character that splits the strings).
+* **quotechar** is the quote character (allows for the separator inside the quote).
+* **case ID column** is the column of the CSV that is the case identifier
+* **activity column** is the column of the CSV that is the activity
+* **timestamp column** is the column of the CSV that is the timestamp
+
+A pratical example (using JQuery) to read a file located in **prova.xes** is the following (where the case identifier  column is **case:concept:name**, the activity column is **concept:name**, the timestamp column is **time:timestamp** ):
+
+$.get("prova.csv", function(data) {
+> let eventLog = CsvImporter.apply(data, ",", "\"", "case:concept:name", "concept:name", "time:timestamp");
+> console.log(eventLog);
+> 
+});
+
+### Exporting XES logs
+
+An event log in PM4JS can be exported to a string representing a XES event log by doing:
+**var xmlStri = XesExporter.apply(eventLog);**
+
+### Exporting CSV logs
+
+An event log in PM4JS can be exported to a string representing a CSV event log by doing:
+**var csvStri = CsvExporter.apply(eventLog, 'sep', 'quotechar');**
+
+Where:
+* **sep**  is the separator character (the character that splits the strings).
+* **quotechar** is the quote character (allows for the separator inside the quote).
+
+A practical example follows:
+**var csvStri = CsvExporter.apply(eventLog, ",", "\"")**
