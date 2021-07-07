@@ -93,17 +93,24 @@ class TokenBasedReplay {
 							for (let internalTrans of transList) {
 								let internalTransPreMarking = internalTrans.getPreMarking();
 								let internalTransPostMarking = internalTrans.getPostMarking();
-								internalMarking = internalMarking.execute(internalTrans);
-								if (internalMarking == null) {
+								let internalEnabledTrans = internalMarking.getEnabledTransitions();
+								if (internalEnabledTrans.includes(internalTrans)) {
+									internalMarking = internalMarking.execute(internalTrans);
+									// counts consumed and produced tokens
+									for (let place in internalTransPreMarking) {
+										internalConsumed += internalTransPreMarking[place];
+									}
+									for (let place in internalTransPostMarking) {
+										internalProduced += internalTransPostMarking[place];
+									}
+								}
+								else {
+									transList = null;
 									break;
 								}
-								// counts consumed and produced tokens
-								for (let place in internalTransPreMarking) {
-									internalConsumed += internalTransPreMarking[place];
-								}
-								for (let place in internalTransPostMarking) {
-									internalProduced += internalTransPostMarking[place];
-								}
+							}
+							if (transList == null) {
+								break;
 							}
 							enabled = internalMarking.getEnabledTransitions();
 						}
@@ -153,17 +160,24 @@ class TokenBasedReplay {
 					for (let internalTrans of transList) {
 						let internalTransPreMarking = internalTrans.getPreMarking();
 						let internalTransPostMarking = internalTrans.getPostMarking();
-						internalMarking = internalMarking.execute(internalTrans);
-						if (internalMarking == null) {
+						let internalEnabledTrans = internalMarking.getEnabledTransitions();
+						if (internalEnabledTrans.includes(internalTrans)) {
+							internalMarking = internalMarking.execute(internalTrans);
+							// counts consumed and produced tokens
+							for (let place in internalTransPreMarking) {
+								internalConsumed += internalTransPreMarking[place];
+							}
+							for (let place in internalTransPostMarking) {
+								internalProduced += internalTransPostMarking[place];
+							}
+						}
+						else {
+							transList = null;
 							break;
 						}
-						// counts consumed and produced tokens
-						for (let place in internalTransPreMarking) {
-							internalConsumed += internalTransPreMarking[place];
-						}
-						for (let place in internalTransPostMarking) {
-							internalProduced += internalTransPostMarking[place];
-						}
+					}
+					if (transList == null) {
+						break;
 					}
 				}
 			}
