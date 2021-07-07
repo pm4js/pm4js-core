@@ -34,7 +34,7 @@ class TokenBasedReplayResult {
 }
 
 class TokenBasedReplay {
-	static apply(eventLog, acceptingPetriNet, activityKey="concept:name") {
+	static apply(eventLog, acceptingPetriNet, activityKey="concept:name", reachFm=true) {
 		let invisibleChain = TokenBasedReplay.buildInvisibleChain(acceptingPetriNet.net);
 		let transitionsMap = {};
 		for (let transId in acceptingPetriNet.net.transitions) {
@@ -51,7 +51,7 @@ class TokenBasedReplay {
 				ret.push(dictioResultsVariant[arrActivities]);
 			}
 			else {
-				let thisRes = TokenBasedReplay.performTbr(arrActivities, transitionsMap, acceptingPetriNet, invisibleChain);
+				let thisRes = TokenBasedReplay.performTbr(arrActivities, transitionsMap, acceptingPetriNet, invisibleChain, reachFm);
 				dictioResultsVariant[arrActivities] = thisRes;
 				ret.push(thisRes);
 			}
@@ -59,7 +59,7 @@ class TokenBasedReplay {
 		return new TokenBasedReplayResult(ret);
 	}
 	
-	static performTbr(activities, transitionsMap, acceptingPetriNet, invisibleChain) {
+	static performTbr(activities, transitionsMap, acceptingPetriNet, invisibleChain, reachFm) {
 		let marking = acceptingPetriNet.im.copy();
 		let consumed = 0;
 		let produced = 0;
@@ -147,52 +147,62 @@ class TokenBasedReplay {
 				missingActivitiesInModel.push(act);
 			}
 		}
-		if (!(acceptingPetriNet.fm.equals(marking))) {
-			let internalMarking = marking.copy();
-			let internalConsumed = consumed;
-			let internalProduced = produced;
-			while (!(acceptingPetriNet.fm.equals(internalMarking))) {
-				let transList = TokenBasedReplay.reachFmThroughInvisibles(internalMarking, acceptingPetriNet.fm, invisibleChain);
-				if (transList == null) {
-					break;
-				}
-				else {
-					for (let internalTrans of transList) {
-						let internalTransPreMarking = internalTrans.getPreMarking();
-						let internalTransPostMarking = internalTrans.getPostMarking();
-						let internalEnabledTrans = internalMarking.getEnabledTransitions();
-						if (internalEnabledTrans.includes(internalTrans)) {
-							internalMarking = internalMarking.execute(internalTrans);
-							// counts consumed and produced tokens
-							for (let place in internalTransPreMarking) {
-								internalConsumed += internalTransPreMarking[place];
-							}
-							for (let place in internalTransPostMarking) {
-								internalProduced += internalTransPostMarking[place];
-							}
-						}
-						else {
-							transList = null;
-							break;
-						}
-					}
+		if (reachFm) {
+			if (!(acceptingPetriNet.fm.equals(marking))) {
+				let internalMarking = marking.copy();
+				let internalConsumed = consumed;
+				let internalProduced = produced;
+				while (!(acceptingPetriNet.fm.equals(internalMarking))) {
+					let transList = TokenBasedReplay.reachFmThroughInvisibles(internalMarking, acceptingPetriNet.fm, invisibleChain);
 					if (transList == null) {
 						break;
 					}
+					else {
+						for (let internalTrans of transList) {
+							let internalTransPreMarking = internalTrans.getPreMarking();
+							let internalTransPostMarking = internalTrans.getPostMarking();
+							let internalEnabledTrans = internalMarking.getEnabledTransitions();
+							if (internalEnabledTrans.includes(internalTrans)) {
+								internalMarking = internalMarking.execute(internalTrans);
+								// counts consumed and produced tokens
+								for (let place in internalTransPreMarking) {
+									internalConsumed += internalTransPreMarking[place];
+								}
+								for (let place in internalTransPostMarking) {
+									internalProduced += internalTransPostMarking[place];
+								}
+							}
+							else {
+								transList = null;
+								break;
+							}
+						}
+						if (transList == null) {
+							break;
+						}
+					}
+				}
+				if (acceptingPetriNet.fm.equals(internalMarking)) {
+					marking = internalMarking;
+					consumed = internalConsumed;
+					produced = internalProduced;
 				}
 			}
-			if (acceptingPetriNet.fm.equals(internalMarking)) {
-				marking = internalMarking;
-				consumed = internalConsumed;
-				produced = internalProduced;
+			for (let place in acceptingPetriNet.fm.tokens) {
+				if (!(place in marking.tokens)) {
+					missing += acceptingPetriNet.fm.tokens[place];
+				}
+				else if (marking.tokens[place] < acceptingPetriNet.fm.tokens[place]) {
+					missing += acceptingPetriNet.fm.tokens[place] - marking.tokens[place];
+				}
 			}
-		}
-		for (let place in marking.tokens) {
-			if (!(place in acceptingPetriNet.fm.tokens)) {
-				remaining += marking.tokens[place];
-			}
-			else if (marking.tokens[place] > acceptingPetriNet.fm.tokens[place]) {
-				remaining += marking.tokens[place] - acceptingPetriNet.fm.tokens[place];
+			for (let place in marking.tokens) {
+				if (!(place in acceptingPetriNet.fm.tokens)) {
+					remaining += marking.tokens[place];
+				}
+				else if (marking.tokens[place] > acceptingPetriNet.fm.tokens[place]) {
+					remaining += marking.tokens[place] - acceptingPetriNet.fm.tokens[place];
+				}
 			}
 		}
 		let fitMC = 0.0;
@@ -205,7 +215,7 @@ class TokenBasedReplay {
 		}
 		let fitness = 0.5*fitMC + 0.5*fitRP;
 		let isFit = (Object.keys(missingActivitiesInModel).length == 0) && (missing == 0);
-		return {"consumed": consumed, "produced": produced, "missing": missing, "remaining": remaining, "visitedTransitions": visitedTransitions, "visitedMarkings": visitedMarkings, "missingActivitiesInModel": missingActivitiesInModel, "fitness": fitness, "isFit": isFit};
+		return {"consumed": consumed, "produced": produced, "missing": missing, "remaining": remaining, "visitedTransitions": visitedTransitions, "visitedMarkings": visitedMarkings, "missingActivitiesInModel": missingActivitiesInModel, "fitness": fitness, "isFit": isFit, "reachedMarking": marking};
 	}
 	
 	static enableTransThroughInvisibles(marking, transPreMarking, invisibleChain) {
