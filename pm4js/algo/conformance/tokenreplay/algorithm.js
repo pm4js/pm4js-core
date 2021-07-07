@@ -56,7 +56,11 @@ class TokenBasedReplay {
 				ret.push(thisRes);
 			}
 		}
-		return new TokenBasedReplayResult(ret);
+		let finalResult = new TokenBasedReplayResult(ret);
+		
+		Pm4JS.registerObject(finalResult, "Token-Based Replay Result");
+		
+		return finalResult;
 	}
 	
 	static performTbr(activities, transitionsMap, acceptingPetriNet, invisibleChain, reachFm) {
@@ -333,3 +337,5 @@ catch (err) {
 	// not in Node
 	console.log(err);
 }
+
+Pm4JS.registerAlgorithm("TokenBasedReplay", "apply", ["EventLog", "AcceptingPetriNet"], "TokenBasedReplayResult", "Perform Token Based Replay", "Alessandro Berti");
