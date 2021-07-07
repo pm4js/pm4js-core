@@ -1,6 +1,6 @@
 ## Process Mining for Javascript - Documentation
 
-### Working with Event Logs
+## Working with Event Logs
 
 An event log is the starting point for a process mining analysis.
 In PM4JS, we offer a data structure to store event data.
@@ -34,7 +34,7 @@ for trace in log.traces:
 
 ### Importing XES logs
 
-[XES] is the current standard for the storage of event logs. A XES file is an XML file with a given structure. We can import the contents of a XES file in an **EventLog** object by doing:
+[XES](https://xes-standard.org/) is the current standard for the storage of event logs. A XES file is an XML file with a given structure. We can import the contents of a XES file in an **EventLog** object by doing:
 **let eventLog = XesImporter.apply(xmlString);**
 A practical example (using JQuery) to read a file located in **prova.xes** :
 
@@ -82,3 +82,42 @@ Where:
 
 A practical example follows:
 **var csvStri = CsvExporter.apply(eventLog, ",", "\"")**
+
+## Process Mining for Javascript - Documentation
+
+## Petri Nets
+Petri Nets are widely used process models in process mining for their clear execution semantics. In PM4JS, we offer support for Petri nets (data structure, execution semantics, importing/exporting).
+
+### Data Structure
+The classes for the Petri net objects are the following and are located [here](./pm4js/objects/petri_net/petri_net.js)
+
+The PetriNet class contains the following properties:
+* **name**: the name of the Petri net
+* **places**: a dictionary containing places (key: place identifier; value: place object)
+* **transitions**: a dictionary containing transitions (key: transition name; value: transition object)
+* **arcs**: a dictionary containing arcs (key: arc name; value: arc object)
+
+The Place class contains the following properties:
+* **name**: the name of the place
+* **inArcs**: the set of arcs that are entering the place
+* **outArcs**: the set of arcs that are exiting the place
+
+The Transition class contains the following properties:
+* **name**: the name of the transition
+* **label**: the label associated to the transition
+* **inArcs**: the set of arcs that are entering the transition
+* **outArcs**: the set of arcs that are exiting the transition
+ 
+### Execution Semantics
+### Importing / Exporting
+An accepting Petri net can be imported from a .PNML file by reading its contents and using the importer as follows:
+
+**let acceptingPetriNet = PnmlImporter.apply(pnmlStri);**
+
+Practical example:
+**$.get("trial.pnml", function(data) {
+let acceptingPetriNet = PnmlImporter.apply(pnmlStri);
+});**
+
+An accepting Petri net can be exported to a XML string (PNML standard) by doing:
+**let xmlStri = PnmlExporter.apply(acceptingPetriNet);**
