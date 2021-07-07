@@ -1,5 +1,4 @@
-require('../../pm4js/objects/petri_net/petri_net.js');
-require('../../pm4js/visualization/petri_net/vanilla_graphviz.js');
+require('../../init.js');
 
 let petriNet = new PetriNet();
 let source = petriNet.addPlace('source');
