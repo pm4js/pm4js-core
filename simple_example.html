@@ -1,0 +1,19 @@
+<html>
+	<head>
+		<script type="text/javascript" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+		<script type="text/javascript" src="dist/pm4js_latest.js"></script>
+	</head>
+	<body>
+		<script type="text/javascript">
+			$.get("examples/input_data/receipt.xes", function(logStri) {
+				let eventLog = XesImporter.apply(logStri);
+				$.get("examples/input_data/receipt.ptml", function(treeStri) {
+					let processTree = PtmlImporter.apply(treeStri);
+					let acceptingPetriNet = ProcessTreeToPetriNetConverter.apply(processTree);
+					let replayResult = TokenBasedReplay.apply(eventLog, acceptingPetriNet);
+					console.log(replayResult);
+				});
+			});
+		</script>
+	</body>
+</html>
