@@ -1,4 +1,34 @@
 {
   "name": "pm4js",
-  "version": "0.0.1"
+  "version": "0.0.1",
+  "description": "Process Mining for Javascript",
+  "main": "init.js",
+  "directories": {
+    "example": "examples"
+  },
+  "dependencies": {
+    "jsdom": "^16.6.0",
+    "xmldom": "^0.6.0",
+    "xmlserializer": "^0.6.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pm4js/pm4js-core.git"
+  },
+  "keywords": [
+    "process",
+    "mining",
+    "javascript",
+    "pm4js"
+  ],
+  "author": "Alessandro Berti",
+  "license": "GPL-3.0-or-later",
+  "bugs": {
+    "url": "https://github.com/pm4js/pm4js-core/issues"
+  },
+  "homepage": "https://github.com/pm4js/pm4js-core#readme"
 }
