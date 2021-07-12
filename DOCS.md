@@ -229,3 +229,35 @@ A process tree object can be converted to an accepting Petri net, by using the i
 The following code provides the conversion starting from a process tree object
 **let acceptingPetriNet = ProcessTreeToPetriNetConverter.apply(processTree);**
 
+# Algorithms
+
+## Conformance Checking
+
+### Token-based Replay
+
+Token-based replay is a popular conformance checking technique, that measures conformance
+between event logs and accepting Petri nets.
+The implemented approach is described [here](ftp://ceur-ws.org/pub/publications/CEUR-WS/Vol-2371.zip#page=87).
+
+Given an event log (of class **EventLog**) and an accepting Petri net (of class **AcceptingPetriNet**), the result of token-based replay can be obtained as follows (class **TokenBasedReplayResult**):
+**let tokenBasedReplayResult = TokenBasedReplay.apply(eventLog, acceptingPetriNet);**
+The returned object contains the following properties:
+* **totalConsumed**: the number of consumed tokens among all the replayed cases.
+* **totalProduced**: the number of produced tokens among all the replayed cases.
+* **totalMissing**: the number of missing tokens among all the replayed cases.
+* **totalRemaining**: the number of remaining tokens among all the replayed cases.
+* **totalTraces**: the number of different cases in the replayed log.
+* **fitTraces**: the number of cases that are perfectly fit according to the Petri net model.
+* **logFitness**: the log fitness **0.5(1 - M/C) + 0.5(1 - R/P)**.
+* **result**: contains a dictionary (replay results) for every case of the log. This dictionary contains the following properties:
+** **consumed**: the number of consumed tokens during the replay.
+** **produced**: the number of produced tokens during the replay.
+** **missing**: the number of missing tokens during the replay.
+** **remaining**: the number of remaining tokens during the replay.
+** **visitedTransitions**: the transitions that were visited in the model during the replay
+** **visitedMarkings**: the markings that were visited during the replay
+** **missingActivitiesInModel**: activities that are in the case but not in the model.
+** **fitness**: the value of fitness for the case **0.5(1 - M/C) + 0.5(1 - R/P)**
+** **isFit**: boolean value that is True if the number of missing tokens is 0 and **missingActivitiesInModel** is empty; False otherwise
+** **reachedMarking**: the marking reached at the end of the replay.
+
