@@ -1,4 +1,4 @@
-## Process Mining for Javascript - Documentation
+## Process Mining for Javascript (PM4JS) - Documentation
 
 ## Working with Event Logs
 
@@ -179,3 +179,4 @@ An accepting Petri net can be exported to a XML string (PNML standard) by doing:
 It is possible to obtain the Graphviz representation of an accepting Petri net object, which can be represented in Javascript by using the library [Viz.js](http://viz-js.com/).
 The following code provides the visualization
 **let gv = PetriNetVanillaVisualizer.apply(acceptingPetriNet); // console.log(gv); **
+
