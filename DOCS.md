@@ -1,4 +1,6 @@
-## Process Mining for Javascript (PM4JS) - Documentation
+# Process Mining for Javascript (PM4JS) - Documentation
+
+## Menu
 
 * Objects
    * [Working with Event Logs](#working-with-event-logs)
