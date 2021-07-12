@@ -40,6 +40,16 @@ class LogGeneralFiltering {
 		}
 		return filteredLog;
 	}
+	
+	static filterCaseSize(log, minSize, maxSize) {
+		let filteredLog = new EventLog();
+		for (let trace of log.traces) {
+			if (minSize <= trace.events.length && trace.events.length <= maxSize) {
+				filteredLog.traces.push(trace);
+			}
+		}
+		return filteredLog;
+	}
 }
 
 try {
