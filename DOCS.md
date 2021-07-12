@@ -83,32 +83,66 @@ Where:
 A practical example follows:
 **var csvStri = CsvExporter.apply(eventLog, ",", "\"")**
 
-## Process Mining for Javascript - Documentation
-
 ## Petri Nets
+
 Petri Nets are widely used process models in process mining for their clear execution semantics. In PM4JS, we offer support for Petri nets (data structure, execution semantics, importing/exporting).
 
 ### Data Structure
 The classes for the Petri net objects are the following and are located [here](./pm4js/objects/petri_net/petri_net.js)
 
-The PetriNet class contains the following properties:
+The **PetriNet** class contains the following attributes:
 * **name**: the name of the Petri net
 * **places**: a dictionary containing places (key: place identifier; value: place object)
 * **transitions**: a dictionary containing transitions (key: transition name; value: transition object)
 * **arcs**: a dictionary containing arcs (key: arc name; value: arc object)
+* **properties**: a dictionary containing optional properties
+Constructor: **= new PetriNet('name')** builds a Petri net with the given name.
 
-The Place class contains the following properties:
+The **PetriNetPlace** class contains the following attributes:
 * **name**: the name of the place
 * **inArcs**: the set of arcs that are entering the place
 * **outArcs**: the set of arcs that are exiting the place
+* **properties**: a dictionary containing optional properties
+Constructor: **= new PetriNetPlace('name')** builds a place with the given unique name (but does not add it to the Petri net).
 
-The Transition class contains the following properties:
+The **PetriNetTransition** class contains the following attributes:
 * **name**: the name of the transition
 * **label**: the label associated to the transition
 * **inArcs**: the set of arcs that are entering the transition
 * **outArcs**: the set of arcs that are exiting the transition
+* **properties**: a dictionary containing optional properties
+Constructor: **= new PetriNetTransition('name', 'label')** builds a transition with the given unique name and a label not necessarily unique (but does not add it to the Petri net). The label could be possibly null if an invisible transition is added.
+
+The **PetriNetArc** class contains the following attributes:
+* **source**: the source place/transition of the arc
+* **target**: the target place/transition of the arc
+* **weight**: the weight of the arc
+* **properties**: a dictionary containing optional properties
+Constructor: **= new PetriNetArc(source, target, weight)**
+
+The **Marking** class contains the following attributes:
+* **net**: the Petri net on top of which the marking is defined
+* **tokens**: a dictionary associating to the places of the Petri net the corresponding number of tokens.
+Constructor: **= new Marking(net, tokens)**
+
+The **AcceptingPetriNet** class contains the following attributes:
+* **net**: a Petri net
+* **im**: the initial marking (state) of the Petri net
+* **fm**: the final marking (state) of the Petri net
+Constructor: **= new AcceptingPetriNet(petriNet, initialMarking, finalMarking)**
+
+### Creation of a Petri net
+
+1. A PetriNet object can be created with a name (**let petriNet = new PetriNet('name')**).
+2. A place (source place) can be added to a Petri net with a given unique name (**let source = petriNet.addPlace('source')**).
+3. A place (sink place) can be added to the Petri net (**let sink = petriNet.addPlace('sink')**).
+4. A visible transition can be added to the Petri net (**let visible = petriNet.addTransition('VIS', 'Visible transition')**).
+5. An invisible transition can be added to the Petri net (**let invisible = petriNet.addTransition('INVIS', null)**).
+6. The arcs can be added to the Petri net (**petriNet.addArcFromTo(source, visible)**, **petriNet.addArcFromTo(source, invisible)**)
  
 ### Execution Semantics
+
+
 ### Importing / Exporting
 An accepting Petri net can be imported from a .PNML file by reading its contents and using the importer as follows:
 
