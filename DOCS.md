@@ -233,7 +233,7 @@ Example (xor operator, child of root): **let child1 = new ProcessTree(root, Proc
 Example (visible leaf, child of root): **let child2 = new ProcessTree(root, null, 'label of the visibile leaf')**
 Example (invisible leaf): **let child3 = new ProcessTree(root, null, null)**
 The children must be added to the children list of their parent node:
-**root.children.push(child1); root.children.push(child3); root.children.push(child4);**
+**root.children.push(child1); root.children.push(child2); root.children.push(child3);**
 
 ### Process trees - Importing
 A process tree can be imported by a .ptml file by using the provided importer, as follows:

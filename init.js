@@ -1,5 +1,6 @@
 require('./pm4js/pm4js.js');
 require('./pm4js/objects/log/log.js');
+require('./pm4js/statistics/log/general.js');
 require('./pm4js/objects/log/importer/xes/importer.js');
 require('./pm4js/objects/log/importer/csv/importer.js');
 require('./pm4js/objects/log/exporter/csv/exporter.js');
