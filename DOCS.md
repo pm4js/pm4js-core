@@ -83,7 +83,7 @@ Where:
 A practical example follows:
 **var csvStri = CsvExporter.apply(eventLog, ",", "\"")**
 
-## Petri Nets
+# Petri Nets
 
 Petri Nets are widely used process models in process mining for their clear execution semantics. In PM4JS, we offer support for Petri nets (data structure, execution semantics, importing/exporting).
 
@@ -96,40 +96,56 @@ The **PetriNet** class contains the following attributes:
 * **transitions**: a dictionary containing transitions (key: transition name; value: transition object)
 * **arcs**: a dictionary containing arcs (key: arc name; value: arc object)
 * **properties**: a dictionary containing optional properties
-Constructor: **= new PetriNet('name')** builds a Petri net with the given name.
+_Constructor:_ **= new PetriNet('name')** builds a Petri net with the given name.
+_Methods:_
+* **.addPlace(name)**: adds a place to the Petri net with the provided (unique) name. Returns the object.
+* **.addTransition(name, label)**: adds a transition to the Petri net with the provided (unique) name and label. If the label is null, the transition is considered to be invisible.
+* **.addArcFromTo(source, target, weight)**: adds an arc to the Petri net with the provided sources, targets and weight (default weight: 1).
+* **.removePlace(place)**: removes the given place from the Petri net.
+* **.removeTransition(transition)**: removes the given transition from the Petri net.
 
 The **PetriNetPlace** class contains the following attributes:
 * **name**: the name of the place
-* **inArcs**: the set of arcs that are entering the place
-* **outArcs**: the set of arcs that are exiting the place
+* **inArcs**: the set of arcs that are entering the place. Expressed as dictionary associating to the arc identifier the arc object.
+* **outArcs**: the set of arcs that are exiting the place. Expressed as dictionary associating to the arc identifier the arc object.
 * **properties**: a dictionary containing optional properties
-Constructor: **= new PetriNetPlace('name')** builds a place with the given unique name (but does not add it to the Petri net).
+_Constructor:_ **= new PetriNetPlace('name')** builds a place with the given unique name (but does not add it to the Petri net).
 
 The **PetriNetTransition** class contains the following attributes:
 * **name**: the name of the transition
 * **label**: the label associated to the transition
-* **inArcs**: the set of arcs that are entering the transition
-* **outArcs**: the set of arcs that are exiting the transition
+* **inArcs**: the set of arcs that are entering the transition. Expressed as dictionary associating to the arc identifier the arc object.
+* **outArcs**: the set of arcs that are exiting the transition. Expressed as dictionary associating to the arc identifier the arc object.
 * **properties**: a dictionary containing optional properties
-Constructor: **= new PetriNetTransition('name', 'label')** builds a transition with the given unique name and a label not necessarily unique (but does not add it to the Petri net). The label could be possibly null if an invisible transition is added.
+_Constructor:_ **= new PetriNetTransition('name', 'label')** builds a transition with the given unique name and a label not necessarily unique (but does not add it to the Petri net). The label could be possibly null if an invisible transition is added.
+_Methods:_
+* **.getPreMarking()**: gets the marking with the minimal number of tokens that enables the given transition.
+* **.getPostMarking()**: gets the marking with the tokens that are added by the execution of the given transition.
+* **.checkPreset(marking)**: checks whether the provided marking activates the given transition.
 
 The **PetriNetArc** class contains the following attributes:
 * **source**: the source place/transition of the arc
 * **target**: the target place/transition of the arc
 * **weight**: the weight of the arc
 * **properties**: a dictionary containing optional properties
-Constructor: **= new PetriNetArc(source, target, weight)**
+_Constructor:_ **= new PetriNetArc(source, target, weight)**
 
 The **Marking** class contains the following attributes:
 * **net**: the Petri net on top of which the marking is defined
 * **tokens**: a dictionary associating to the places of the Petri net the corresponding number of tokens.
-Constructor: **= new Marking(net, tokens)**
+_Constructor:_ **= new Marking(net, tokens)**
+_Methods_:
+* **.copy()**: returns a copy of the current marking
+* **.equals(marking)**: checks if the provided marking is identical to the current one.
+* **.setTokens(place, tokens)**: changes the token dictionary to set the provided number of tokens for the provided place.
+* **.enabledTransitions()**: returns an array containing all the transitions that are activated in the current marking.
+* **.execute(transition)**: given a transition that is enabled in the current marking, returns the marking (a new one) obtained after firing the transition from the current marking.
 
 The **AcceptingPetriNet** class contains the following attributes:
 * **net**: a Petri net
 * **im**: the initial marking (state) of the Petri net
 * **fm**: the final marking (state) of the Petri net
-Constructor: **= new AcceptingPetriNet(petriNet, initialMarking, finalMarking)**
+_Constructor:_ **= new AcceptingPetriNet(petriNet, initialMarking, finalMarking)**
 
 ### Creation of a Petri net
 
@@ -141,7 +157,8 @@ Constructor: **= new AcceptingPetriNet(petriNet, initialMarking, finalMarking)**
 6. The arcs can be added to the Petri net (**petriNet.addArcFromTo(source, visible)**, **petriNet.addArcFromTo(source, invisible)**)
  
 ### Execution Semantics
-
+A marking is an object containing the execution state of the Petri net model. Usually the execution starts from an _initial marking_, and finishes in a _final marking_. Given a Petri net and a marking/state **marking** on top of the Petri net, the list of transitions which are currently enabled in the marking can be retrieved by executing the method **let enabledTransitions = marking.getEnabledTransitions()**.
+Given a transition **t** which is enabled in the current marking, it is possible to retrieve the marking obtained from **marking** after executing **t** by doing **let newMarking = marking.execute(t)**.
 
 ### Importing / Exporting
 An accepting Petri net can be imported from a .PNML file by reading its contents and using the importer as follows:
@@ -153,5 +170,12 @@ Practical example:
 let acceptingPetriNet = PnmlImporter.apply(pnmlStri);
 });**
 
+The single properties (**acceptingPetriNet.net** for the Petri net, **acceptingPetriNet.im** for the initial marking, **acceptingPetriNet.fm** for the final marking) can be accessed.
+
 An accepting Petri net can be exported to a XML string (PNML standard) by doing:
 **let xmlStri = PnmlExporter.apply(acceptingPetriNet);**
+
+### Visualization (vanilla / GraphViz)
+It is possible to obtain the Graphviz representation of an accepting Petri net object, which can be represented in Javascript by using the library [Viz.js](http://viz-js.com/).
+The following code provides the visualization
+**let gv = PetriNetVanillaVisualizer.apply(acceptingPetriNet); // console.log(gv); **
