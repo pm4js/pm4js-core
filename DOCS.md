@@ -263,3 +263,16 @@ The dictionary contains for each case the following properties:
 * **isFit**: boolean value that is True if the number of missing tokens is 0 and **missingActivitiesInModel** is empty; False otherwise
 * **reachedMarking**: the marking reached at the end of the replay.
 
+# Statistics
+
+## Log
+
+### General
+
+PM4JS offers some general log [statistics](./pm4js/statistics/log/general.js). The provided statistics are:
+* Retrieval of a dictionary of start activities. For each start activity, returns the number of cases that started with the given activity: **GeneralLogStatistics.getStartActivities(eventLog)**. As optional parameter, an activity key can be provided.
+* Retrieval of a dictionary of end activities. For each end activity, returns the number of cases that finished with the given activity: **GeneralLogStatistics.getEndActivities(eventLog)**. As optional parameter, an activity key can be provided.
+* Retrieval of the count of the occurrences of the values of an attribute (as dictionary): **GeneralLogStatistics.getAttributeValues(eventLog, attributeKey)**
+* Retrieval of the variants of an event log. A dictionary associating to each variant the number of occurrences for the given variant is returned: **GeneralLogStatistics.getVariants(eventLog)**. As optional parameter, an activity key can be provided.
+* Retrieval of the set of attributes at the event level starting from an event log: **GeneralLogStatistics.getEventAttributesList(eventLog)**
+* Retrieval of the set of attributes at the trace level starting from an event log: **GeneralLogStatistics.getCaseAttributesList(eventLog)**
