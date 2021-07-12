@@ -51,6 +51,21 @@ class LogGeneralFiltering {
 		return filteredLog;
 	}
 	
+	static filterCaseDuration(log, minDuration, maxDuration, timestamp_key="time:timestamp") {
+		let filteredLog = new EventLog();
+		for (let trace of log.traces) {
+			if (trace.events.length > 0) {
+				let st = trace.events[0].attributes[timestamp_key].value.getTime();
+				let et = trace.events[trace.events.length-1].attributes[timestamp_key].value.getTime();
+				let diff = (et - st) / 1000;
+				if (minDuration <= diff && diff <= maxDuration) {
+					filteredLog.traces.push(trace);
+				}
+			}
+		}
+		return filteredLog;
+	}
+	
 	static filterCasesHavingEventAttributeValue(log, valuesArray, positive=true, attributeKey="concept:name") {
 		let filteredLog = new EventLog();
 		for (let trace of log.traces) {
