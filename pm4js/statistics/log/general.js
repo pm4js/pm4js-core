@@ -91,6 +91,14 @@ class GeneralLogStatistics {
 		}
 		return Object.keys(ret);
 	}
+	
+	static numEvents(log) {
+		let ret = 0;
+		for (let trace of log.traces) {
+			ret += trace.events.length;
+		}
+		return ret;
+	}
 }
 
 try {
