@@ -1,0 +1,30 @@
+<html>
+	<head>
+		<script type="text/javascript" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+		<script type="text/javascript" src="../../dist/pm4js_latest.js"></script>
+	</head>
+	<body>
+		<p><b>Consumed tokens:</b><span id="consumedTokens"></span></p>
+		<p><b>Produced tokens:</b><span id="producedTokens"></span></p>
+		<p><b>Missing tokens:</b><span id="missingTokens"></span></p>
+		<p><b>Remaining tokens:</b><span id="remainingTokens"></span></p>
+		<p><b>Fit traces:</b><span id="fitTraces"></span></p>
+		<p><b>Log fitness:</b><span id="logFitness"></span></p>
+		<script type="text/javascript">
+			$.get("../input_data/receipt.xes", function(logStri) {
+				let eventLog = XesImporter.apply(logStri);
+				$.get("../input_data/receipt.ptml", function(treeStri) {
+					let processTree = PtmlImporter.apply(treeStri);
+					let acceptingPetriNet = ProcessTreeToPetriNetConverter.apply(processTree);
+					let replayResult = TokenBasedReplay.apply(eventLog, acceptingPetriNet);
+					document.getElementById("consumedTokens").innerHTML = replayResult["totalConsumed"];
+					document.getElementById("producedTokens").innerHTML = replayResult["totalProduced"];
+					document.getElementById("missingTokens").innerHTML = replayResult["totalMissing"];
+					document.getElementById("remainingTokens").innerHTML = replayResult["totalRemaining"];
+					document.getElementById("fitTraces").innerHTML = replayResult["fitTraces"]+"/"+replayResult["totalTraces"];
+					document.getElementById("logFitness").innerHTML = replayResult["logFitness"];
+				});
+			});
+		</script>
+	</body>
+</html>
