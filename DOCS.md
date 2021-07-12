@@ -1,5 +1,7 @@
 ## Process Mining for Javascript (PM4JS) - Documentation
 
+# Objects
+
 ## Working with Event Logs
 
 An event log is the starting point for a process mining analysis.
@@ -83,7 +85,7 @@ Where:
 A practical example follows:
 **var csvStri = CsvExporter.apply(eventLog, ",", "\"")**
 
-# Petri Nets
+## Petri Nets
 
 Petri Nets are widely used process models in process mining for their clear execution semantics. In PM4JS, we offer support for Petri nets (data structure, execution semantics, importing/exporting).
 
@@ -181,7 +183,7 @@ It is possible to obtain the Graphviz representation of an accepting Petri net o
 The following code provides the visualization
 **let gv = PetriNetVanillaVisualizer.apply(acceptingPetriNet); // console.log(gv); **
 
-# Process trees
+## Process trees
 
 In PM4JS, we offer support for process trees. Process trees (in alternative to Petri nets) are models which describe well block-structured process models.
 
@@ -226,3 +228,4 @@ The following code provides the visualization starting from a process tree objec
 A process tree object can be converted to an accepting Petri net, by using the included converter.
 The following code provides the conversion starting from a process tree object
 **let acceptingPetriNet = ProcessTreeToPetriNetConverter.apply(processTree);**
+
