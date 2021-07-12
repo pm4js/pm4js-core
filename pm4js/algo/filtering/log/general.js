@@ -51,16 +51,34 @@ class LogGeneralFiltering {
 		return filteredLog;
 	}
 	
-	static filterCasesHavingEventAttributeValue(log, values_array, positive=true, attributeKey="concept:name") {
+	static filterCasesHavingEventAttributeValue(log, valuesArray, positive=true, attributeKey="concept:name") {
 		let filteredLog = new EventLog();
 		for (let trace of log.traces) {
 			let bo = false;
 			for (let eve of trace.events) {
 				let val = eve.attributes[attributeKey].value;
-				bo = bo || values_array.includes(val)
+				bo = bo || valuesArray.includes(val);
 			}
 			if ((bo && positive) || (!bo && !positive)) {
 				filteredLog.traces.push(trace);
+			}
+		}
+		return filteredLog;
+	}
+	
+	static filterEventsHavingEventAttributeValues(log, valuesArray, positive=true, attributeKey="concept:name") {
+		let filteredLog = new EventLog();
+		for (let trace of log.traces) {
+			let newTrace = new Trace();
+			for (let eve of trace.events) {
+				let val = eve.attributes[attributeKey].value;
+				let bo = valuesArray.includes(val);
+				if ((bo && positive) || (!bo && !positive)) {
+					newTrace.events.push(eve);
+				}
+			}
+			if (newTrace.events.length > 0) {
+				filteredLog.traces.push(newTrace);
 			}
 		}
 		return filteredLog;
