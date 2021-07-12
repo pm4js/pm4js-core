@@ -14,6 +14,7 @@ require('./pm4js/objects/conversion/process_tree/to_petri_net.js');
 require('./pm4js/objects/process_tree/importer/importer.js');
 require('./pm4js/visualization/process_tree/vanilla_graphviz.js');
 require('./pm4js/visualization/petri_net/vanilla_graphviz.js');
+require('./pm4js/algo/filtering/log/general.js');
 require('./pm4js/algo/discovery/flower/algorithm.js');
 require('./pm4js/algo/conformance/tokenreplay/algorithm.js');
 
