@@ -249,15 +249,17 @@ The returned object contains the following properties:
 * **totalTraces**: the number of different cases in the replayed log.
 * **fitTraces**: the number of cases that are perfectly fit according to the Petri net model.
 * **logFitness**: the log fitness **0.5(1 - M/C) + 0.5(1 - R/P)**.
-* **result**: contains a dictionary (replay results) for every case of the log. This dictionary contains the following properties:
-** **consumed**: the number of consumed tokens during the replay.
-** **produced**: the number of produced tokens during the replay.
-** **missing**: the number of missing tokens during the replay.
-** **remaining**: the number of remaining tokens during the replay.
-** **visitedTransitions**: the transitions that were visited in the model during the replay
-** **visitedMarkings**: the markings that were visited during the replay
-** **missingActivitiesInModel**: activities that are in the case but not in the model.
-** **fitness**: the value of fitness for the case **0.5(1 - M/C) + 0.5(1 - R/P)**
-** **isFit**: boolean value that is True if the number of missing tokens is 0 and **missingActivitiesInModel** is empty; False otherwise
-** **reachedMarking**: the marking reached at the end of the replay.
+* **result**: contains a dictionary (replay results) for every case of the log.
+
+The dictionary contains for each case the following properties:
+* **consumed**: the number of consumed tokens during the replay.
+* **produced**: the number of produced tokens during the replay.
+* **missing**: the number of missing tokens during the replay.
+* **remaining**: the number of remaining tokens during the replay.
+* **visitedTransitions**: the transitions that were visited in the model during the replay
+* **visitedMarkings**: the markings that were visited during the replay
+* **missingActivitiesInModel**: activities that are in the case but not in the model.
+* **fitness**: the value of fitness for the case **0.5(1 - M/C) + 0.5(1 - R/P)**
+* **isFit**: boolean value that is True if the number of missing tokens is 0 and **missingActivitiesInModel** is empty; False otherwise
+* **reachedMarking**: the marking reached at the end of the replay.
 
