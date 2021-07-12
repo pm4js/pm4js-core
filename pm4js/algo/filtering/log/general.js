@@ -24,6 +24,22 @@ class LogGeneralFiltering {
 		}
 		return filteredLog;
 	}
+	
+	static filterVariants(log, variants_array, activity_key="concept:name", positive=true) {
+		let filteredLog = new EventLog();
+		for (let trace of log.traces) {
+			let varArray = [];
+			for (let eve of trace.events) {
+				varArray.push(eve.attributes[activity_key].value);
+			}
+			varArray = varArray.toString();
+			let bo = variants_array.includes(varArray);
+			if ((bo && positive) || (!bo && !positive)) {
+				filteredLog.traces.push(trace);
+			}
+		}
+		return filteredLog;
+	}
 }
 
 try {
