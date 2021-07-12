@@ -42,9 +42,16 @@ class ProcessTreeVanillaVisualizer {
 		for (let desc in descendants) {
 			let tree = descendants[desc];
 			let treeId = ProcessTreeVanillaVisualizer.nodeUuid(desc);
+			let childCount = 0;
 			for (let child of tree.children) {
 				let childId = ProcessTreeVanillaVisualizer.nodeUuid(child.id);
 				ret.push(treeId+" -> "+childId+" [dir=none]");
+				childCount++;
+				if (tree.operator == ProcessTreeOperator.LOOP) {
+					if (childCount == 2) {
+						break;
+					}
+				}
 			}
 		}
 		ret.push("}");
