@@ -11,6 +11,19 @@ class LogGeneralFiltering {
 		}
 		return filteredLog;
 	}
+	
+	static filterEndActivities(log, activities_array, activity_key="concept:name", positive=true) {
+		let filteredLog = new EventLog();
+		for (let trace of log.traces) {
+			if (trace.events.length > 0) {
+				let bo = activities_array.includes(trace.events[trace.events.length - 1].attributes[activity_key].value);
+				if ((bo && positive) || (!bo && !positive)) {
+					filteredLog.traces.push(trace);
+				}
+			}
+		}
+		return filteredLog;
+	}
 }
 
 try {
