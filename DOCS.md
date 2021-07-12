@@ -166,7 +166,7 @@ An accepting Petri net can be imported from a .PNML file by reading its contents
 **let acceptingPetriNet = PnmlImporter.apply(pnmlStri);**
 
 Practical example:
-**$.get("trial.pnml", function(data) {
+**$.get("trial.pnml", function(pnmlStri) {
 let acceptingPetriNet = PnmlImporter.apply(pnmlStri);
 });**
 
@@ -176,7 +176,53 @@ An accepting Petri net can be exported to a XML string (PNML standard) by doing:
 **let xmlStri = PnmlExporter.apply(acceptingPetriNet);**
 
 ### Visualization (vanilla / GraphViz)
+
 It is possible to obtain the Graphviz representation of an accepting Petri net object, which can be represented in Javascript by using the library [Viz.js](http://viz-js.com/).
 The following code provides the visualization
 **let gv = PetriNetVanillaVisualizer.apply(acceptingPetriNet); // console.log(gv); **
 
+# Process trees
+
+In PM4JS, we offer support for process trees. Process trees (in alternative to Petri nets) are models which describe well block-structured process models.
+
+### Data Structure
+The classes for the process tree objects are the following and are located [here](./pm4js/objects/process_tree/process_tree.js).
+The different operators are available in the **ProcessTreeOperator** class:
+* **ProcessTreeOperator.SEQUENCE**: the sequence operator
+* **ProcessTreeOperator.PARALLEL**: the parallel operator (AND)
+* **ProcessTreeOperator.INCLUSIVE**: the inclusive choice (OR)
+* **ProcessTreeOperator.EXCLUSIVE**: the exclusive choice (XOR)
+* **ProcessTreeOperator.LOOP**: the loop operator
+The **ProcessTree** class is the main class for process trees and contains the following attributes:
+* **parentNode**: the parent node of the current tree (the root of the process tree has **null** as parent.
+* **operator**: the operator of the tree (an element of **ProcessTreeOperator**). For leaf, it is **null**.
+* **label**: the label associated to the current node, if it is a visible leaf. **null** otherwise.
+* **id**: an unique identifier of the process tree.
+* **children**: a list containing all the children of the process tree (which are other process trees).
+_Constructor_: **= new ProcessTree(parent tree, operator, label)**
+Example (sequence operator, root): **= new ProcessTree(null, ProcessTreeOperator.SEQUENCE, null)**
+Example (xor operator, child of root): **let child1 = new ProcessTree(root, ProcessTreeOperator.EXCLUSIVE, null)**
+Example (visible leaf, child of root): **let child2 = new ProcessTree(root, null, 'label of the visibile leaf')**
+Example (invisible leaf): **let child3 = new ProcessTree(root, null, null)**
+The children must be added to the children list of their parent node:
+**root.children.push(child1); root.children.push(child3); root.children.push(child4);**
+
+### Importing
+A process tree can be imported by a .ptml file by using the provided importer, as follows:
+**let processTree = PtmlImporter.apply(ptmlXmlString);**
+Practical example:
+**$.get("trial.ptml", function(ptmlStri) {
+let processTree = PnmlImporter.apply(ptmlStri);
+console.log(processTree);
+});**
+
+### Visualization (vanilla / GraphViz)
+
+It is possible to obtain the Graphviz representation of a process tree object, which can be represented in Javascript by using the library [Viz.js](http://viz-js.com/).
+The following code provides the visualization starting from a process tree object
+**let gv = ProcessTreeVanillaVisualizer.apply(processTree); console.log(gv);**
+
+### Conversion to an accepting Petri net
+A process tree object can be converted to an accepting Petri net, by using the included converter.
+The following code provides the conversion starting from a process tree object
+**let acceptingPetriNet = ProcessTreeToPetriNetConverter.apply(processTree);**
