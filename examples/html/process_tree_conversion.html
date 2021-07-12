@@ -1,0 +1,21 @@
+<html>
+	<head>
+		<script src="../../pm4js/utils/browser/jquery.min.js"></script>
+		<script src="http://viz-js.com/bower_components/viz.js/viz.js"></script>
+		<script src="../../dist/pm4js_latest.js"></script>
+	</head>
+	<body>
+		<div id="container">
+		</div>
+		<script type="text/javascript">
+			$.get("../input_data/running-example.ptml", function(data) {
+				let processTree = PtmlImporter.apply(data);
+				console.log(processTree);
+				let acceptingPetriNet = ProcessTreeToPetriNetConverter.apply(processTree);
+				let gv = PetriNetVanillaVisualizer.apply(acceptingPetriNet);
+				let svgXml = Viz(gv, { format: "svg"});
+				document.getElementById("container").innerHTML = svgXml;
+			});
+		</script>
+	</body>
+</html>
