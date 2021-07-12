@@ -1,5 +1,29 @@
 ## Process Mining for Javascript (PM4JS) - Documentation
 
+* Objects
+   * [Working with Event Logs](#working-with-event-logs)
+        * [Importing XES logs](#importing-xes-logs)
+        * [Importing CSV logs](#importing-csv-logs)
+        * [Exporting XES logs](#exporting-xes-logs)
+        * [Exporting CSV logs](#exporting-csv-logs)
+    * Petri Nets
+	     * [Data Structure](#petri-nets---data-structure)
+	     * [Creation of a Petri net](#petri-nets---creation-of-a-petri-net)
+         * [Execution Semantics](#petri-nets---execution-semantics)
+         * [Importing Exporting](#petri-nets---importing-exporting)
+         * [Visualization (vanilla Graphviz)](#petri-nets---visualization-vanilla-graphviz)
+    * Process Trees
+	    * [Data Structure](#process-trees---data-structure)
+	    * [Importing](#process-trees---importing)
+	    * [Visualization (vanilla Graphviz)](#process-trees---visualization-vanilla-graphviz)
+	    * [Conversion to an accepting Petri net](#process-trees---conversion-to-an-accepting-petri-net)
+* Algorithms 
+	* Conformance Checking
+		* [Token-Based Replay](#token-based-replay)
+* Statistics
+	* Log
+		* [General Statistics](#log---general-statistics)
+
 # Objects
 
 ## Working with Event Logs
@@ -89,7 +113,7 @@ A practical example follows:
 
 Petri Nets are widely used process models in process mining for their clear execution semantics. In PM4JS, we offer support for Petri nets (data structure, execution semantics, importing/exporting).
 
-### Data Structure
+### Petri Nets - Data Structure
 The classes for the Petri net objects are the following and are located [here](./pm4js/objects/petri_net/petri_net.js)
 
 The **PetriNet** class contains the following attributes:
@@ -149,7 +173,7 @@ The **AcceptingPetriNet** class contains the following attributes:
 * **fm**: the final marking (state) of the Petri net
 _Constructor:_ **= new AcceptingPetriNet(petriNet, initialMarking, finalMarking)**
 
-### Creation of a Petri net
+### Petri Nets - Creation of a Petri net
 
 1. A PetriNet object can be created with a name (**let petriNet = new PetriNet('name')**).
 2. A place (source place) can be added to a Petri net with a given unique name (**let source = petriNet.addPlace('source')**).
@@ -158,11 +182,11 @@ _Constructor:_ **= new AcceptingPetriNet(petriNet, initialMarking, finalMarking)
 5. An invisible transition can be added to the Petri net (**let invisible = petriNet.addTransition('INVIS', null)**).
 6. The arcs can be added to the Petri net (**petriNet.addArcFromTo(source, visible)**, **petriNet.addArcFromTo(source, invisible)**)
  
-### Execution Semantics
+### Petri Nets - Execution Semantics
 A marking is an object containing the execution state of the Petri net model. Usually the execution starts from an _initial marking_, and finishes in a _final marking_. Given a Petri net and a marking/state **marking** on top of the Petri net, the list of transitions which are currently enabled in the marking can be retrieved by executing the method **let enabledTransitions = marking.getEnabledTransitions()**.
 Given a transition **t** which is enabled in the current marking, it is possible to retrieve the marking obtained from **marking** after executing **t** by doing **let newMarking = marking.execute(t)**.
 
-### Importing / Exporting
+### Petri Nets - Importing Exporting
 An accepting Petri net can be imported from a .PNML file by reading its contents and using the importer as follows:
 
 **let acceptingPetriNet = PnmlImporter.apply(pnmlStri);**
@@ -177,7 +201,7 @@ The single properties (**acceptingPetriNet.net** for the Petri net, **acceptingP
 An accepting Petri net can be exported to a XML string (PNML standard) by doing:
 **let xmlStri = PnmlExporter.apply(acceptingPetriNet);**
 
-### Visualization (vanilla / GraphViz)
+### Petri Nets - Visualization vanilla Graphviz
 
 It is possible to obtain the Graphviz representation of an accepting Petri net object, which can be represented in Javascript by using the library [Viz.js](http://viz-js.com/).
 The following code provides the visualization
@@ -187,7 +211,7 @@ The following code provides the visualization
 
 In PM4JS, we offer support for process trees. Process trees (in alternative to Petri nets) are models which describe well block-structured process models.
 
-### Data Structure
+### Process trees - Data Structure
 The classes for the process tree objects are the following and are located [here](./pm4js/objects/process_tree/process_tree.js).
 The different operators are available in the **ProcessTreeOperator** class:
 * **ProcessTreeOperator.SEQUENCE**: the sequence operator
@@ -209,7 +233,7 @@ Example (invisible leaf): **let child3 = new ProcessTree(root, null, null)**
 The children must be added to the children list of their parent node:
 **root.children.push(child1); root.children.push(child3); root.children.push(child4);**
 
-### Importing
+### Process trees - Importing
 A process tree can be imported by a .ptml file by using the provided importer, as follows:
 **let processTree = PtmlImporter.apply(ptmlXmlString);**
 Practical example:
@@ -218,13 +242,13 @@ let processTree = PnmlImporter.apply(ptmlStri);
 console.log(processTree);
 });**
 
-### Visualization (vanilla / GraphViz)
+### Process trees - Visualization vanilla Graphviz
 
 It is possible to obtain the Graphviz representation of a process tree object, which can be represented in Javascript by using the library [Viz.js](http://viz-js.com/).
 The following code provides the visualization starting from a process tree object
 **let gv = ProcessTreeVanillaVisualizer.apply(processTree); console.log(gv);**
 
-### Conversion to an accepting Petri net
+### Process trees - Conversion to an accepting Petri net
 A process tree object can be converted to an accepting Petri net, by using the included converter.
 The following code provides the conversion starting from a process tree object
 **let acceptingPetriNet = ProcessTreeToPetriNetConverter.apply(processTree);**
@@ -233,7 +257,7 @@ The following code provides the conversion starting from a process tree object
 
 ## Conformance Checking
 
-### Token-based Replay
+### Token Based Replay
 
 Token-based replay is a popular conformance checking technique, that measures conformance
 between event logs and accepting Petri nets.
@@ -267,7 +291,7 @@ The dictionary contains for each case the following properties:
 
 ## Log
 
-### General
+### Log - General Statistics
 
 PM4JS offers some general log [statistics](./pm4js/statistics/log/general.js). The provided statistics are:
 * Retrieval of a dictionary of start activities. For each start activity, returns the number of cases that started with the given activity: **GeneralLogStatistics.getStartActivities(eventLog)**. As optional parameter, an activity key can be provided.
