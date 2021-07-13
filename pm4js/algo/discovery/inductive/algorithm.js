@@ -14,6 +14,16 @@ class InductiveMiner {
 			return xor;
 		}
 		let freqDfg = FrequencyDfgDiscovery.apply(log, activityKey);
+		let andCut = InductiveMinerParallelCutDetector.detect(log, freqDfg, activityKey, removeNoise, threshold);
+		if (andCut != null) {
+			let logs = InductiveMinerParallelCutDetector.project(log, andCut, activityKey);
+			let parNode = new ProcessTree(treeParent, ProcessTreeOperator.PARALLEL, null);
+			for (let sublog of logs) {
+				let child = InductiveMiner.inductiveMiner(sublog, parNode, activityKey, false, threshold);
+				parNode.children.push(child);
+			}
+			return parNode;
+		}
 		let seqCut = InductiveMinerSequenceCutDetector.detect(log, freqDfg, activityKey, removeNoise, threshold);
 		if (seqCut != null) {
 			let logs = InductiveMinerSequenceCutDetector.project(log, seqCut, activityKey);
@@ -303,6 +313,94 @@ class InductiveMinerLoopCutDetector {
 	}
 }
 
+class InductiveMinerParallelCutDetector {
+	static detect(log, freqDfg, activityKey, removeNoise, threshold) {
+		let ret = [];
+		for (let act in freqDfg.activities) {
+			ret.push([act]);
+		}
+		let cont = true;
+		while (cont) {
+			cont = false;
+			let i = 0;
+			while (i < ret.length) {
+				let j = i + 1;
+				while (j < ret.length) {
+					for (let act1 of ret[i]) {
+						if (ret[j] != null) {
+							for (let act2 of ret[j]) {
+								if ((!([act1, act2] in freqDfg.pathsFrequency)) || (!([act2, act1] in freqDfg.pathsFrequency))) {
+									ret[i] = [...ret[i], ...ret[j]];
+									ret.splice(j, 1);
+									cont = true;
+									break;
+								}
+							}
+							if (cont) {
+								break;
+							}
+						}
+					}
+					j++;
+				}
+				i++;
+			}
+		}
+		ret.sort(function(a, b) {
+			if (a.length < b.length) {
+				return -1;
+			}
+			else if (a.length > b.length) {
+				return 1;
+			}
+			return 0;
+		});
+		if (ret.length > 1) {
+			let i = 0;
+			while (i < ret.length) {
+				let containsSa = false;
+				let containsEa = false;
+				for (let sa in freqDfg.startActivities) {
+					if (ret[i].includes(sa)) {
+						containsSa = true;
+						break;
+					}
+				}
+				for (let ea in freqDfg.endActivities) {
+					if (ret[i].includes(ea)) {
+						containsEa = true;
+						break;
+					}
+				}
+				if (!(containsSa && containsEa)) {
+					let targetIdx = i-1;
+					if (targetIdx < 0) {
+						targetIdx = i+1;
+					}
+					if (targetIdx < groups.length) {
+						groups[targetIdx] = [...groups[i], ...groups[i+1]];
+					}
+					groups.splice(i, 1);
+					continue;
+				}
+				i++;
+			}
+			if (ret.length > 1) {
+				return ret;
+			}
+		}
+		return null;
+	}
+	
+	static project(log, groups, activityKey) {
+		let ret = [];
+		for (let g of groups) {
+			ret.push(LogGeneralFiltering.filterEventsHavingEventAttributeValues(log, g, true, true, activityKey));
+		}
+		return ret;
+	}
+}
+
 class InductiveMinerGeneralUtilities {
 	static activityReachability(freqDfg) {
 		let ret = {};
@@ -352,6 +450,9 @@ class InductiveMinerGeneralUtilities {
 									cont = true;
 									break;
 								}
+							}
+							if (cont) {
+								break;
 							}
 						}
 					}
