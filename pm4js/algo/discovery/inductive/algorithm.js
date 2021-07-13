@@ -387,10 +387,10 @@ class InductiveMinerParallelCutDetector {
 					if (targetIdx < 0) {
 						targetIdx = i+1;
 					}
-					if (targetIdx < groups.length) {
-						groups[targetIdx] = [...groups[i], ...groups[i+1]];
+					if (targetIdx < ret.length) {
+						ret[targetIdx] = [...ret[targetIdx], ...ret[i]];
 					}
-					groups.splice(i, 1);
+					ret.splice(i, 1);
 					continue;
 				}
 				i++;
