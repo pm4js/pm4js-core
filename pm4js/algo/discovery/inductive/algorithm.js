@@ -5,6 +5,14 @@ class InductiveMiner {
 	
 		
 	static inductiveMiner(log, treeParent, activityKey, removeNoise, threshold) {
+		let emptyTraces = InductiveMiner.countEmptyTraces(log);
+		if (emptyTraces > 0) {
+			let xor = new ProcessTree(treeParent, ProcessTreeOperator.EXCLUSIVE, null);
+			let skip = new ProcessTree(xor, null, null);
+			xor.children.push(InductiveMiner.inductiveMiner(InductiveMiner.filterNonEmptyTraces(log), xor, activityKey, false, threshold));
+			xor.children.push(skip);
+			return xor;
+		}
 		let freqDfg = FrequencyDfgDiscovery.apply(log, activityKey);
 		let seqCut = InductiveMinerSequenceCutDetector.detect(log, freqDfg, activityKey, removeNoise, threshold);
 		if (seqCut != null) {
@@ -37,7 +45,7 @@ class InductiveMiner {
 	
 	static baseCase(freqDfg, treeParent) {
 		if (Object.keys(freqDfg.activities).length == 0) {
-			return new ProcesTree(treeParent, null, null);
+			return new ProcessTree(treeParent, null, null);
 		}
 		else if (Object.keys(freqDfg.activities).length == 1) {
 			let activities = Object.keys(freqDfg.activities);
@@ -51,6 +59,26 @@ class InductiveMiner {
 			}
 			return xor;
 		}
+	}
+	
+	static countEmptyTraces(eventLog) {
+		let ret = 0;
+		for (let trace of eventLog.traces) {
+			if (trace.events.length == 0) {
+				ret++;
+			}
+		}
+		return ret;
+	}
+	
+	static filterNonEmptyTraces(eventLog) {
+		let filteredLog = new EventLog();
+		for (let trace of eventLog.traces) {
+			if (trace.events.length > 0) {
+				filteredLog.traces.push(trace);
+			}
+		}
+		return filteredLog;
 	}
 }
 
