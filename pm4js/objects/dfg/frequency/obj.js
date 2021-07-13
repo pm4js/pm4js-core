@@ -1,9 +1,9 @@
 class FrequencyDfg {
-	constructor(activities, start_activities, end_activities, paths_frequency) {
+	constructor(activities, startActivities, endActivities, pathsFrequency) {
 		this.activities = activities;
-		this.start_activities = start_activities;
-		this.end_activities = end_activities;
-		this.paths_frequency = paths_frequency;
+		this.startActivities = startActivities;
+		this.endActivities = endActivities;
+		this.pathsFrequency = pathsFrequency;
 	}
 }
 

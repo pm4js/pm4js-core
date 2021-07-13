@@ -16,7 +16,7 @@ class InductiveMiner {
 			}
 			return seqNode;
 		}
-		if (Object.keys(freqDfg.paths_frequency).length == 0) {
+		if (Object.keys(freqDfg.pathsFrequency).length == 0) {
 			return InductiveMiner.baseCase(freqDfg, treeParent);
 		}
 		return InductiveMiner.mineFlower(freqDfg, treeParent);
@@ -75,7 +75,7 @@ class InductiveMinerSequenceCutDetector {
 		for (let act in freqDfg.activities) {
 			ret[act] = {};
 		}
-		for (let rel in freqDfg.paths_frequency) {
+		for (let rel in freqDfg.pathsFrequency) {
 			let act1 = rel.split(",")[0];
 			let act2 = rel.split(",")[1];
 			ret[act1][act2] = 0;
