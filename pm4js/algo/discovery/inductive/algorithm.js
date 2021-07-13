@@ -14,16 +14,6 @@ class InductiveMiner {
 			return xor;
 		}
 		let freqDfg = FrequencyDfgDiscovery.apply(log, activityKey);
-		let andCut = InductiveMinerParallelCutDetector.detect(log, freqDfg, activityKey, removeNoise, threshold);
-		if (andCut != null) {
-			let logs = InductiveMinerParallelCutDetector.project(log, andCut, activityKey);
-			let parNode = new ProcessTree(treeParent, ProcessTreeOperator.PARALLEL, null);
-			for (let sublog of logs) {
-				let child = InductiveMiner.inductiveMiner(sublog, parNode, activityKey, false, threshold);
-				parNode.children.push(child);
-			}
-			return parNode;
-		}
 		let seqCut = InductiveMinerSequenceCutDetector.detect(log, freqDfg, activityKey, removeNoise, threshold);
 		if (seqCut != null) {
 			let logs = InductiveMinerSequenceCutDetector.project(log, seqCut, activityKey);
@@ -33,6 +23,26 @@ class InductiveMiner {
 				seqNode.children.push(child);
 			}
 			return seqNode;
+		}
+		let xorCut = InductiveMinerExclusiveCutDetector.detect(log, freqDfg, activityKey, removeNoise, threshold);
+		if (xorCut != null) {
+			let logs = InductiveMinerExclusiveCutDetector.project(log, xorCut, activityKey);
+			let xorNode = new ProcessTree(treeParent, ProcessTreeOperator.EXCLUSIVE, null);
+			for (let sublog of logs) {
+				let child = InductiveMiner.inductiveMiner(sublog, xorNode, activityKey, false, threshold);
+				xorNode.children.push(child);
+			}
+			return xorNode;
+		}
+		let andCut = InductiveMinerParallelCutDetector.detect(log, freqDfg, activityKey, removeNoise, threshold);
+		if (andCut != null) {
+			let logs = InductiveMinerParallelCutDetector.project(log, andCut, activityKey);
+			let parNode = new ProcessTree(treeParent, ProcessTreeOperator.PARALLEL, null);
+			for (let sublog of logs) {
+				let child = InductiveMiner.inductiveMiner(sublog, parNode, activityKey, false, threshold);
+				parNode.children.push(child);
+			}
+			return parNode;
 		}
 		let loopCut = InductiveMinerLoopCutDetector.detect(log, freqDfg, activityKey, removeNoise, threshold);
 		if (loopCut != null) {
@@ -396,6 +406,40 @@ class InductiveMinerParallelCutDetector {
 		let ret = [];
 		for (let g of groups) {
 			ret.push(LogGeneralFiltering.filterEventsHavingEventAttributeValues(log, g, true, true, activityKey));
+		}
+		return ret;
+	}
+}
+
+class InductiveMinerExclusiveCutDetector {
+	static detect(log, freqDfg, activityKey, removeNoise, threshold) {
+		let connComp = InductiveMinerGeneralUtilities.getConnectedComponents(freqDfg);
+		if (connComp.length > 1) {
+			return connComp;
+		}
+		return null;
+	}
+	
+	static project(log, groups, activityKey) {
+		let ret = [];
+		for (let g of groups) {
+			ret.push(new EventLog());
+		}
+		for (let trace of log.traces) {
+			let activ = [];
+			for (let eve of trace.events) {
+				activ.push(eve.attributes[activityKey].value);
+			}
+			let i = 0;
+			while (i < groups.length) {
+				for (let act of groups[i]) {
+					if (activ.includes(act)) {
+						ret[i].traces.push(trace);
+						break;
+					}
+				}
+				i++;
+			}
 		}
 		return ret;
 	}
