@@ -83,6 +83,11 @@ class InductiveMiner {
 }
 
 class InductiveMinerSequenceCutDetector {
+    // Basic Steps:
+    // 1. create a group per activity
+    // 2. merge pairwise reachable nodes (based on transitive relations)
+    // 3. merge pairwise unreachable nodes (based on transitive relations)
+    // 4. sort the groups based on their reachability
 	static detect(log, freqDfg, activityKey, removeNoise, threshold) {
 		let actReach = InductiveMinerSequenceCutDetector.activityReachability(freqDfg);
 		let groups = [];
