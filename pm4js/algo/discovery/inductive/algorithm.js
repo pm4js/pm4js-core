@@ -17,7 +17,22 @@ class InductiveMiner {
 		if (Object.keys(freqDfg.pathsFrequency).length == 0) {
 			return InductiveMiner.baseCase(freqDfg, treeParent);
 		}
-		let seqCut = InductiveMinerSequenceCutDetector.detect(log, freqDfg, activityKey, removeNoise, threshold);
+		let detectedCut = InductiveMiner.detectCut(log, freqDfg, treeParent, activityKey, threshold);
+		if (detectedCut != null) {
+			return detectedCut;
+		}
+		let detectedFallthrough = InductiveMiner.detectFallthroughs(log, freqDfg, treeParent, activityKey, threshold);
+		if (detectedFallthrough != null) {
+			return detectedFallthrough;
+		}
+		return InductiveMiner.mineFlower(freqDfg, treeParent);
+	}
+	
+	static detectCut(log, freqDfg, treeParent, activityKey, threshold) {
+		if (freqDfg == null) {
+			freqDfg = FrequencyDfgDiscovery.apply(log, activityKey);
+		}
+		let seqCut = InductiveMinerSequenceCutDetector.detect(log, freqDfg, activityKey);
 		if (seqCut != null) {
 			let logs = InductiveMinerSequenceCutDetector.project(log, seqCut, activityKey);
 			let seqNode = new ProcessTree(treeParent, ProcessTreeOperator.SEQUENCE, null);
@@ -27,7 +42,7 @@ class InductiveMiner {
 			}
 			return seqNode;
 		}
-		let xorCut = InductiveMinerExclusiveCutDetector.detect(log, freqDfg, activityKey, removeNoise, threshold);
+		let xorCut = InductiveMinerExclusiveCutDetector.detect(log, freqDfg, activityKey);
 		if (xorCut != null) {
 			let logs = InductiveMinerExclusiveCutDetector.project(log, xorCut, activityKey);
 			let xorNode = new ProcessTree(treeParent, ProcessTreeOperator.EXCLUSIVE, null);
@@ -37,7 +52,7 @@ class InductiveMiner {
 			}
 			return xorNode;
 		}
-		let andCut = InductiveMinerParallelCutDetector.detect(log, freqDfg, activityKey, removeNoise, threshold);
+		let andCut = InductiveMinerParallelCutDetector.detect(log, freqDfg, activityKey);
 		if (andCut != null) {
 			let logs = InductiveMinerParallelCutDetector.project(log, andCut, activityKey);
 			let parNode = new ProcessTree(treeParent, ProcessTreeOperator.PARALLEL, null);
@@ -47,7 +62,7 @@ class InductiveMiner {
 			}
 			return parNode;
 		}
-		let loopCut = InductiveMinerLoopCutDetector.detect(log, freqDfg, activityKey, removeNoise, threshold);
+		let loopCut = InductiveMinerLoopCutDetector.detect(log, freqDfg, activityKey);
 		if (loopCut != null) {
 			let logs = InductiveMinerLoopCutDetector.project(log, loopCut, activityKey);
 			let loopNode = new ProcessTree(treeParent, ProcessTreeOperator.LOOP, null);
@@ -55,8 +70,13 @@ class InductiveMiner {
 			loopNode.children.push(InductiveMiner.inductiveMiner(logs[1], loopNode, activityKey, false, threshold));
 			return loopNode;
 		}
-		let activityOncePerTraceCandidate = InductiveMinerActivityOncePerTraceFallthrough.detect(log, freqDfg, activityKey, removeNoise, threshold);
+		return null;
+	}
+	
+	static detectFallthroughs(log, freqDfg, treeParent, activityKey, threshold) {
+		let activityOncePerTraceCandidate = InductiveMinerActivityOncePerTraceFallthrough.detect(log, freqDfg, activityKey);
 		if (activityOncePerTraceCandidate != null) {
+			console.log("InductiveMinerActivityOncePerTraceFallthrough");
 			let sublog = InductiveMinerActivityOncePerTraceFallthrough.project(log, activityOncePerTraceCandidate, activityKey);
 			let parNode = new ProcessTree(treeParent, ProcessTreeOperator.PARALLEL, null);
 			let actNode = new ProcessTree(parNode, null, activityOncePerTraceCandidate);
@@ -64,7 +84,17 @@ class InductiveMiner {
 			parNode.children.push(InductiveMiner.inductiveMiner(sublog, parNode, activityKey, false, threshold));
 			return parNode;
 		}
-		return InductiveMiner.mineFlower(freqDfg, treeParent);
+		let activityConcurrentCut = InductiveMinerActivityConcurrentFallthrough.detect(log, freqDfg, activityKey);
+		if (activityConcurrentCut != null) {
+			console.log("InductiveMinerActivityConcurrentFallthrough");
+			let parNode = new ProcessTree(treeParent, ProcessTreeOperator.PARALLEL, null);
+			let actNode = new ProcessTree(parNode, null, activityConcurrentCut[0]);
+			parNode.children.push(actNode);
+			activityConcurrentCut[1].parentNode = parNode;
+			parNode.children.push(activityConcurrentCut[1]);
+			return parNode;
+		}
+		return null;
 	}
 	
 	static mineFlower(freqDfg, treeParent) {
@@ -125,7 +155,7 @@ class InductiveMinerSequenceCutDetector {
     // 2. merge pairwise reachable nodes (based on transitive relations)
     // 3. merge pairwise unreachable nodes (based on transitive relations)
     // 4. sort the groups based on their reachability
-	static detect(log, freqDfg, activityKey, removeNoise, threshold) {
+	static detect(log, freqDfg, activityKey) {
 		let actReach = InductiveMinerGeneralUtilities.activityReachability(freqDfg);
 		let groups = [];
 		for (let act in actReach) {
@@ -238,7 +268,7 @@ class InductiveMinerLoopCutDetector {
     // 3. detect connected components in (undirected representative) of the reduced graph
     // 4. check if each component meets the start/end criteria of the loop cut definition (merge with the 'do' group if not)
     // 5. return the cut if at least two groups remain
-	static detect(log, freqDfg0, activityKey, removeNoise, threshold) {
+	static detect(log, freqDfg0, activityKey) {
 		let freqDfg = Object();
 		freqDfg.pathsFrequency = {};
 		for (let path in freqDfg0.pathsFrequency) {
@@ -333,7 +363,7 @@ class InductiveMinerLoopCutDetector {
 }
 
 class InductiveMinerParallelCutDetector {
-	static detect(log, freqDfg, activityKey, removeNoise, threshold) {
+	static detect(log, freqDfg, activityKey) {
 		let ret = [];
 		for (let act in freqDfg.activities) {
 			ret.push([act]);
@@ -421,7 +451,7 @@ class InductiveMinerParallelCutDetector {
 }
 
 class InductiveMinerExclusiveCutDetector {
-	static detect(log, freqDfg, activityKey, removeNoise, threshold) {
+	static detect(log, freqDfg, activityKey) {
 		let connComp = InductiveMinerGeneralUtilities.getConnectedComponents(freqDfg);
 		if (connComp.length > 1) {
 			return connComp;
@@ -455,8 +485,8 @@ class InductiveMinerExclusiveCutDetector {
 }
 
 class InductiveMinerActivityOncePerTraceFallthrough {
-	static detect(log, freqDfg, activityKey, removeNoise, threshold) {
-		if (freqDfg.activities.length > 1) {
+	static detect(log, freqDfg, activityKey) {
+		if (Object.keys(freqDfg.activities).length > 1) {
 			let inte = null;
 			for (let trace of log.traces) {
 				let activities = {};
@@ -482,6 +512,25 @@ class InductiveMinerActivityOncePerTraceFallthrough {
 				inte = Object.keys(inte);
 				if (inte.length > 0) {
 					return inte[0];
+				}
+			}
+		}
+		return null;
+	}
+	
+	static project(log, act, activityKey) {
+		return LogGeneralFiltering.filterEventsHavingEventAttributeValues(log, [act], true, false, activityKey);
+	}
+}
+
+class InductiveMinerActivityConcurrentFallthrough {
+	static detect(log, freqDfg, activityKey, threshold) {
+		if (Object.keys(freqDfg.activities).length > 1) {
+			for (let act in freqDfg.activities) {
+				let sublog = LogGeneralFiltering.filterEventsHavingEventAttributeValues(log, [act], true, false, activityKey);
+				let detectedCut = InductiveMiner.detectCut(sublog, null, null, activityKey, threshold);
+				if (detectedCut != null) {
+					return [act, detectedCut];
 				}
 			}
 		}
