@@ -81,7 +81,7 @@ class LogGeneralFiltering {
 		return filteredLog;
 	}
 	
-	static filterEventsHavingEventAttributeValues(log, valuesArray, positive=true, attributeKey="concept:name") {
+	static filterEventsHavingEventAttributeValues(log, valuesArray, addEvenIfEmpty=false, positive=true, attributeKey="concept:name") {
 		let filteredLog = new EventLog();
 		for (let trace of log.traces) {
 			let newTrace = new Trace();
@@ -92,7 +92,7 @@ class LogGeneralFiltering {
 					newTrace.events.push(eve);
 				}
 			}
-			if (newTrace.events.length > 0) {
+			if (addEvenIfEmpty || newTrace.events.length > 0) {
 				filteredLog.traces.push(newTrace);
 			}
 		}
