@@ -84,7 +84,7 @@ class InductiveMiner {
 			parNode.children.push(InductiveMiner.inductiveMiner(sublog, parNode, activityKey, false, threshold));
 			return parNode;
 		}
-		let activityConcurrentCut = InductiveMinerActivityConcurrentFallthrough.detect(log, freqDfg, activityKey);
+		let activityConcurrentCut = InductiveMinerActivityConcurrentFallthrough.detect(log, freqDfg, activityKey, threshold);
 		if (activityConcurrentCut != null) {
 			console.log("InductiveMinerActivityConcurrentFallthrough");
 			let parNode = new ProcessTree(treeParent, ProcessTreeOperator.PARALLEL, null);
@@ -93,6 +93,15 @@ class InductiveMiner {
 			activityConcurrentCut[1].parentNode = parNode;
 			parNode.children.push(activityConcurrentCut[1]);
 			return parNode;
+		}
+		let strictTauLoop = InductiveMinerStrictTauLoopFallthrough.detect(log, freqDfg, activityKey);
+		if (strictTauLoop != null) {
+			console.log("InductiveMinerStrictTauLoopFallthrough");
+			let loop = new ProcessTree(treeParent, ProcessTreeOperator.LOOP, null);
+			let redo = new ProcessTree(loop, null, null);
+			loop.children.push(InductiveMiner.inductiveMiner(strictTauLoop, loop, activityKey, false, threshold));
+			loop.children.push(redo);
+			return loop;
 		}
 		return null;
 	}
@@ -539,6 +548,46 @@ class InductiveMinerActivityConcurrentFallthrough {
 	
 	static project(log, act, activityKey) {
 		return LogGeneralFiltering.filterEventsHavingEventAttributeValues(log, [act], true, false, activityKey);
+	}
+}
+
+class InductiveMinerStrictTauLoopFallthrough {
+	static detect(log, freqDfg, activityKey) {
+		let proj = new EventLog();
+		for (let trace of log.traces) {
+			let x = 0;
+			let i = 1;
+			while (i < trace.events.length) {
+				let act_curr = trace.events[i].attributes[activityKey].value;
+				let act_prev = trace.events[i-1].attributes[activityKey].value;
+				if (act_curr in freqDfg.startActivities && act_prev in freqDfg.endActivities) {
+					let subtrace = new Trace();
+					let j = x;
+					while (j < i) {
+						subtrace.events.push(trace.events[j]);
+						j++;
+					}
+					proj.traces.push(subtrace);
+					x = i;
+				}
+				i++;
+			}
+			let j = x;
+			let subtrace = new Trace();
+			while (j < trace.events.length) {
+				subtrace.events.push(trace.events[j]);
+				j++;
+			}
+		}
+		if (proj.traces.length > log.traces.length) {
+			return proj;
+		}
+		return null;
+	}
+}
+
+class InductiveMinerTauLoopFallthrough {
+	static detect(log, freqDfg, activityKey) {
 	}
 }
 
