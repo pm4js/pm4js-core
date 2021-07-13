@@ -17,4 +17,5 @@ require('./pm4js/visualization/petri_net/vanilla_graphviz.js');
 require('./pm4js/algo/filtering/log/general.js');
 require('./pm4js/algo/discovery/flower/algorithm.js');
 require('./pm4js/algo/conformance/tokenreplay/algorithm.js');
-
+require('./pm4js/objects/dfg/frequency/obj.js');
+require('./pm4js/algo/discovery/dfg/algorithm.js');
