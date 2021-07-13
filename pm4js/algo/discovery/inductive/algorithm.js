@@ -24,6 +24,14 @@ class InductiveMiner {
 			}
 			return seqNode;
 		}
+		let loopCut = InductiveMinerLoopCutDetector.detect(log, freqDfg, activityKey, removeNoise, threshold);
+		if (loopCut != null) {
+			let logs = InductiveMinerLoopCutDetector.project(log, loopCut, activityKey);
+			let loopNode = new ProcessTree(treeParent, ProcessTreeOperator.LOOP, null);
+			loopNode.children.push(InductiveMiner.inductiveMiner(logs[0], loopNode, activityKey, false, threshold));
+			loopNode.children.push(InductiveMiner.inductiveMiner(logs[1], loopNode, activityKey, false, threshold));
+			return loopNode;
+		}
 		if (Object.keys(freqDfg.pathsFrequency).length == 0) {
 			return InductiveMiner.baseCase(freqDfg, treeParent);
 		}
@@ -89,7 +97,7 @@ class InductiveMinerSequenceCutDetector {
     // 3. merge pairwise unreachable nodes (based on transitive relations)
     // 4. sort the groups based on their reachability
 	static detect(log, freqDfg, activityKey, removeNoise, threshold) {
-		let actReach = InductiveMinerSequenceCutDetector.activityReachability(freqDfg);
+		let actReach = InductiveMinerGeneralUtilities.activityReachability(freqDfg);
 		let groups = [];
 		for (let act in actReach) {
 			groups.push([act]);
@@ -101,33 +109,6 @@ class InductiveMinerSequenceCutDetector {
 			return groups;
 		}
 		return null;
-	}
-	
-	static activityReachability(freqDfg) {
-		let ret = {};
-		for (let act in freqDfg.activities) {
-			ret[act] = {};
-		}
-		for (let rel in freqDfg.pathsFrequency) {
-			let act1 = rel.split(",")[0];
-			let act2 = rel.split(",")[1];
-			ret[act1][act2] = 0;
-		}
-		let cont = true;
-		while (cont) {
-			cont = false;
-			for (let act in ret) {
-				for (let act2 in ret[act]) {
-					for (let act3 in ret[act2]) {
-						if (!(act3 in ret[act])) {
-							ret[act][act3] = 0;
-							cont = true;
-						}
-					}
-				}
-			}
-		}
-		return ret;
 	}
 	
 	static mergePairwiseReachableGroups(groups, actReach) {
@@ -217,6 +198,167 @@ class InductiveMinerSequenceCutDetector {
 		let ret = [];
 		for (let g of groups) {
 			ret.push(LogGeneralFiltering.filterEventsHavingEventAttributeValues(log, g, true, true, activityKey));
+		}
+		return ret;
+	}
+}
+
+class InductiveMinerLoopCutDetector {
+	// 1. merge all start and end activities in one group ('do' group)
+    // 2. remove start/end activities from the dfg
+    // 3. detect connected components in (undirected representative) of the reduced graph
+    // 4. check if each component meets the start/end criteria of the loop cut definition (merge with the 'do' group if not)
+    // 5. return the cut if at least two groups remain
+	static detect(log, freqDfg0, activityKey, removeNoise, threshold) {
+		let freqDfg = Object();
+		freqDfg.pathsFrequency = {};
+		for (let path in freqDfg0.pathsFrequency) {
+			let act1 = path.split(",")[0];
+			let act2 = path.split(",")[1];
+			if (!(act1 in freqDfg0.startActivities || act2 in freqDfg0.startActivities || act1 in freqDfg0.endActivities || act2 in freqDfg0.endActivities)) {
+				freqDfg.pathsFrequency[path] = freqDfg0.pathsFrequency[path];
+			}
+		}
+		let doPart = [];
+		let redoPart = [];
+		let remainingActivities = {};
+		for (let act in freqDfg0.activities) {
+			if (act in freqDfg0.startActivities || act in freqDfg0.endActivities) {
+				doPart.push(act);
+			}
+			else {
+				remainingActivities[act] = freqDfg0.activities[act];
+			}
+		}
+		freqDfg.activities = remainingActivities;
+		let connComp = InductiveMinerGeneralUtilities.getConnectedComponents(freqDfg);
+		for (let conn of connComp) {
+			let isRedo = true;
+			for (let act of conn) {
+				for (let sa in freqDfg0.startActivities) {
+					if (!([act, sa] in freqDfg0.pathsFrequency)) {
+						isRedo = false;
+						break;
+					}
+				}
+				/*for (let ea in freqDfg0.endActivities) {
+					if (!([ea, act] in freqDfg0.pathsFrequency)) {
+						isRedo = false;
+						break;
+					}
+				}*/
+			}
+			for (let act of conn) {
+				if (isRedo) {
+					redoPart.push(act);
+				}
+				else {
+					doPart.push(act);
+				}
+			}
+		}
+		if (redoPart.length > 0) {
+			return [doPart, redoPart];
+		}
+		return null;
+	}
+	
+	static project(log, groups, activityKey) {
+		let sublogs = [new EventLog(), new EventLog()];
+		for (let trace of log.traces) {
+			let i = 0;
+			let j = 0;
+			let subtraceDo = new Trace();
+			let subtraceRedo = new Trace();
+			while (i < trace.events.length) {
+				let thisAct = trace.events[i].attributes[activityKey].value;
+				if (groups[0].includes(thisAct)) {
+					if (j == 1) {
+						sublogs[1].traces.push(subtraceRedo);
+						subtraceRedo = new Trace();
+					}
+					j = 0;
+					
+				}
+				else {
+					if (j == 0) {
+						sublogs[0].traces.push(subtraceDo);
+						subtraceDo = new Trace();
+					}
+					j = 1;
+				}
+				if (j == 0) {
+					subtraceDo.events.push(trace.events[i]);
+				}
+				else {
+					subtraceRedo.events.push(trace.events[i]);
+				}
+				i++;
+			}
+			if (j == 0) {
+				sublogs[0].traces.push(subtraceDo);
+			}
+		}
+		return sublogs;
+	}
+}
+
+class InductiveMinerGeneralUtilities {
+	static activityReachability(freqDfg) {
+		let ret = {};
+		for (let act in freqDfg.activities) {
+			ret[act] = {};
+		}
+		for (let rel in freqDfg.pathsFrequency) {
+			let act1 = rel.split(",")[0];
+			let act2 = rel.split(",")[1];
+			ret[act1][act2] = 0;
+		}
+		let cont = true;
+		while (cont) {
+			cont = false;
+			for (let act in ret) {
+				for (let act2 in ret[act]) {
+					for (let act3 in ret[act2]) {
+						if (!(act3 in ret[act])) {
+							ret[act][act3] = 0;
+							cont = true;
+						}
+					}
+				}
+			}
+		}
+		return ret;
+	}
+	
+	static getConnectedComponents(freqDfg) {
+		let ret = [];
+		for (let act in freqDfg.activities) {
+			ret.push([act]);
+		}
+		let cont = true;
+		while (cont) {
+			cont = false;
+			let i = 0;
+			while (i < ret.length) {
+				let j = i + 1;
+				while (j < ret.length) {
+					for (let act1 of ret[i]) {
+						if (ret[j] != null) {
+							for (let act2 of ret[j]) {
+								if ([act1, act2] in freqDfg.pathsFrequency || [act2, act1] in freqDfg.pathsFrequency) {
+									ret[i] = [...ret[i], ...ret[j]];
+									ret.splice(j, 1);
+									cont = true;
+									break;
+								}
+							}
+						}
+					}
+					j++;
+				}
+				i++;
+			}
 		}
 		return ret;
 	}
