@@ -14,6 +14,9 @@ class InductiveMiner {
 			return xor;
 		}
 		let freqDfg = FrequencyDfgDiscovery.apply(log, activityKey);
+		if (Object.keys(freqDfg.pathsFrequency).length == 0) {
+			return InductiveMiner.baseCase(freqDfg, treeParent);
+		}
 		let seqCut = InductiveMinerSequenceCutDetector.detect(log, freqDfg, activityKey, removeNoise, threshold);
 		if (seqCut != null) {
 			let logs = InductiveMinerSequenceCutDetector.project(log, seqCut, activityKey);
@@ -52,8 +55,14 @@ class InductiveMiner {
 			loopNode.children.push(InductiveMiner.inductiveMiner(logs[1], loopNode, activityKey, false, threshold));
 			return loopNode;
 		}
-		if (Object.keys(freqDfg.pathsFrequency).length == 0) {
-			return InductiveMiner.baseCase(freqDfg, treeParent);
+		let activityOncePerTraceCandidate = InductiveMinerActivityOncePerTraceFallthrough.detect(log, freqDfg, activityKey, removeNoise, threshold);
+		if (activityOncePerTraceCandidate != null) {
+			let sublog = InductiveMinerActivityOncePerTraceFallthrough.project(log, activityOncePerTraceCandidate, activityKey);
+			let parNode = new ProcessTree(treeParent, ProcessTreeOperator.PARALLEL, null);
+			let actNode = new ProcessTree(parNode, null, activityOncePerTraceCandidate);
+			parNode.children.push(actNode);
+			parNode.children.push(InductiveMiner.inductiveMiner(sublog, parNode, activityKey, false, threshold));
+			return parNode;
 		}
 		return InductiveMiner.mineFlower(freqDfg, treeParent);
 	}
@@ -442,6 +451,45 @@ class InductiveMinerExclusiveCutDetector {
 			}
 		}
 		return ret;
+	}
+}
+
+class InductiveMinerActivityOncePerTraceFallthrough {
+	static detect(log, freqDfg, activityKey, removeNoise, threshold) {
+		if (freqDfg.activities.length > 1) {
+			let inte = null;
+			for (let trace of log.traces) {
+				let activities = {};
+				for (let eve of trace.events) {
+					let act = eve.attributes["concept:name"].value;
+					if (!(act in activities)) {
+						activities[act] = 1;
+					}
+					else {
+						activities[act] += 1;
+					}
+				}
+				if (inte != null) {
+					for (let act in activities) {
+						if (!(act in inte) || activities[act] > 1) {
+							delete activities[act];
+						}
+					}
+				}
+				inte = activities;
+			}
+			if (inte != null) {
+				inte = Object.keys(inte);
+				if (inte.length > 0) {
+					return inte[0];
+				}
+			}
+		}
+		return null;
+	}
+	
+	static project(log, act, activityKey) {
+		return LogGeneralFiltering.filterEventsHavingEventAttributeValues(log, [act], true, false, activityKey);
 	}
 }
 
