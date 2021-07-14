@@ -1,11 +1,13 @@
 class Pm4JS {
 	static registerObject(obj, description) {
-		if (description == null) {
-			description = obj.className;
-		}
-		Pm4JS.objects.push({"object": obj, "creationDate": new Date().getTime(), "description": description});
-		for (let callback of Pm4JS.objectsCallbacks) {
-			callback();
+		if (Pm4JS.registrationEnabled) {
+			if (description == null) {
+				description = obj.className;
+			}
+			Pm4JS.objects.push({"object": obj, "creationDate": new Date().getTime(), "description": description});
+			for (let callback of Pm4JS.objectsCallbacks) {
+				callback();
+			}
 		}
 	}
 	
@@ -57,7 +59,7 @@ class Pm4JS {
 	}
 }
 
-Pm4JS.registrationEnabled = true;
+Pm4JS.registrationEnabled = false;
 Pm4JS.objects = [];
 Pm4JS.algorithms = [];
 Pm4JS.importers = [];

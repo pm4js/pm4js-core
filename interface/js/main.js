@@ -1,3 +1,4 @@
+Pm4JS.registrationEnabled = true;
 var inputContent = null;
 var extension = null;
 var operation = null;
