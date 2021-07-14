@@ -84,7 +84,7 @@ class InductiveMiner {
 			parNode.children.push(InductiveMiner.inductiveMiner(sublog, parNode, activityKey, false, threshold));
 			return parNode;
 		}
-		/*let activityConcurrentCut = InductiveMinerActivityConcurrentFallthrough.detect(log, freqDfg, activityKey, threshold);
+		let activityConcurrentCut = InductiveMinerActivityConcurrentFallthrough.detect(log, freqDfg, activityKey, threshold);
 		if (activityConcurrentCut != null) {
 			console.log("InductiveMinerActivityConcurrentFallthrough");
 			let parNode = new ProcessTree(treeParent, ProcessTreeOperator.PARALLEL, null);
@@ -93,7 +93,7 @@ class InductiveMiner {
 			activityConcurrentCut[1].parentNode = parNode;
 			parNode.children.push(activityConcurrentCut[1]);
 			return parNode;
-		}*/
+		}
 		let strictTauLoop = InductiveMinerStrictTauLoopFallthrough.detect(log, freqDfg, activityKey);
 		if (strictTauLoop != null) {
 			console.log("InductiveMinerStrictTauLoopFallthrough");
