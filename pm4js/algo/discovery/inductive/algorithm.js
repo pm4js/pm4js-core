@@ -313,11 +313,54 @@ class InductiveMinerSequenceCutDetector {
 	}
 	
 	static project(log, groups, activityKey) {
-		let ret = [];
+		let logs = [];
 		for (let g of groups) {
-			ret.push(LogGeneralFiltering.filterEventsHavingEventAttributeValues(log, g, true, true, activityKey));
+			logs.push(new EventLog());
 		}
-		return ret;
+		for (let trace of log.traces) {
+			let i = 0;
+			let splitPoint = 0;
+			let actUnion = [];
+			while (i < groups.length) {
+				let newSplitPoint = InductiveMinerSequenceCutDetector.findSplitPoint(trace, groups[i], splitPoint, actUnion, activityKey);
+				let tracei = new Trace();
+				let j = splitPoint;
+				while (j < newSplitPoint) {
+					if (groups[i].includes(trace.events[j].attributes[activityKey].value)) {
+						tracei.events.push(trace.events[j]);
+					}
+					j++;
+				}
+				logs[i].traces.push(tracei);
+				splitPoint = newSplitPoint;
+				for (let act of groups[i]) {
+					actUnion.push(act);
+				}
+				i++;
+			}
+		}
+		return logs;
+	}
+	
+	static findSplitPoint(trace, group, start, ignore, activityKey) {
+		let leastCost = 0
+		let positionWithLeastCost = start;
+		let cost = 0;
+		let i = start;
+		while (i < trace.events.length) {
+			if (group.includes(trace.events[i].attributes[activityKey].value)) {
+				cost = cost - 1
+			}
+			else if (!(ignore.includes(trace.events[i].attributes[activityKey].value))) {
+				cost = cost + 1
+			}
+			if (cost < leastCost) {
+				leastCost = cost;
+				positionWithLeastCost = i + 1;
+			}
+			i++;
+		}
+		return positionWithLeastCost;
 	}
 }
 
