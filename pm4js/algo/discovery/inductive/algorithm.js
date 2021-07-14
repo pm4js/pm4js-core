@@ -141,7 +141,7 @@ class InductiveMiner {
 	static detectFallthroughs(log, freqDfg, treeParent, activityKey, threshold) {
 		let activityOncePerTraceCandidate = InductiveMinerActivityOncePerTraceFallthrough.detect(log, freqDfg, activityKey);
 		if (activityOncePerTraceCandidate != null) {
-			console.log("InductiveMinerActivityOncePerTraceFallthrough");
+			//console.log("InductiveMinerActivityOncePerTraceFallthrough");
 			let sublog = InductiveMinerActivityOncePerTraceFallthrough.project(log, activityOncePerTraceCandidate, activityKey);
 			let parNode = new ProcessTree(treeParent, ProcessTreeOperator.PARALLEL, null);
 			let actNode = new ProcessTree(parNode, null, activityOncePerTraceCandidate);
@@ -151,7 +151,7 @@ class InductiveMiner {
 		}
 		let activityConcurrentCut = InductiveMinerActivityConcurrentFallthrough.detect(log, freqDfg, activityKey, threshold);
 		if (activityConcurrentCut != null) {
-			console.log("InductiveMinerActivityConcurrentFallthrough");
+			//console.log("InductiveMinerActivityConcurrentFallthrough");
 			let parNode = new ProcessTree(treeParent, ProcessTreeOperator.PARALLEL, null);
 			let filteredLog = LogGeneralFiltering.filterEventsHavingEventAttributeValues(log, [activityConcurrentCut[0]], true, true, activityKey);
 			parNode.children.push(InductiveMiner.inductiveMiner(filteredLog, parNode, activityKey, false, threshold));
@@ -161,7 +161,7 @@ class InductiveMiner {
 		}
 		let strictTauLoop = InductiveMinerStrictTauLoopFallthrough.detect(log, freqDfg, activityKey);
 		if (strictTauLoop != null) {
-			console.log("InductiveMinerStrictTauLoopFallthrough");
+			//console.log("InductiveMinerStrictTauLoopFallthrough");
 			let loop = new ProcessTree(treeParent, ProcessTreeOperator.LOOP, null);
 			let redo = new ProcessTree(loop, null, null);
 			loop.children.push(InductiveMiner.inductiveMiner(strictTauLoop, loop, activityKey, false, threshold));
@@ -170,7 +170,7 @@ class InductiveMiner {
 		}
 		let tauLoop = InductiveMinerTauLoopFallthrough.detect(log, freqDfg, activityKey);
 		if (tauLoop != null) {
-			console.log("InductiveMinerTauLoopFallthrough");
+			//console.log("InductiveMinerTauLoopFallthrough");
 			let loop = new ProcessTree(treeParent, ProcessTreeOperator.LOOP, null);
 			let redo = new ProcessTree(loop, null, null);
 			loop.children.push(InductiveMiner.inductiveMiner(tauLoop, loop, activityKey, false, threshold));
