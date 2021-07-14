@@ -8,11 +8,21 @@ class TokenBasedReplayResult {
 		this.totalRemaining = 0;
 		this.transExecutions = {};
 		this.arcExecutions = {};
+		this.totalConsumedPerPlace = {};
+		this.totalProducedPerPlace = {};
+		this.totalMissingPerPlace = {};
+		this.totalRemainingPerPlace = {};
 		for (let t in acceptingPetriNet.net.transitions) {
 			this.transExecutions[t] = 0;
 		}
 		for (let a in acceptingPetriNet.net.arcs) {
 			this.arcExecutions[a] = 0;
+		}
+		for (let p in acceptingPetriNet.net.places) {
+			this.totalConsumedPerPlace[p] = 0;
+			this.totalProducedPerPlace[p] = 0;
+			this.totalMissingPerPlace[p] = 0;
+			this.totalRemainingPerPlace[p] = 0;
 		}
 		this.totalTraces = this.result.length;
 		this.fitTraces = 0;
@@ -46,6 +56,12 @@ class TokenBasedReplayResult {
 				for (let a in t.outArcs) {
 					this.arcExecutions[a]++;
 				}
+			}
+			for (let p in this.acceptingPetriNet.net.places) {
+				this.totalConsumedPerPlace[p] += res["consumedPerPlace"][p];
+				this.totalProducedPerPlace[p] += res["producedPerPlace"][p];
+				this.totalMissingPerPlace[p] += res["missingPerPlace"][p];
+				this.totalRemainingPerPlace[p] += res["remainingPerPlace"][p];
 			}
 		}
 	}
