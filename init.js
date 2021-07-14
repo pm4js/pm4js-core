@@ -20,3 +20,4 @@ require('./pm4js/algo/conformance/tokenreplay/algorithm.js');
 require('./pm4js/objects/dfg/frequency/obj.js');
 require('./pm4js/algo/discovery/dfg/algorithm.js');
 require('./pm4js/algo/discovery/inductive/algorithm.js');
+require('./pm4js/visualization/petri_net/frequency_graphviz.js');
