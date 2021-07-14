@@ -84,7 +84,7 @@ class InductiveMiner {
 			parNode.children.push(InductiveMiner.inductiveMiner(sublog, parNode, activityKey, false, threshold));
 			return parNode;
 		}
-		let activityConcurrentCut = InductiveMinerActivityConcurrentFallthrough.detect(log, freqDfg, activityKey, threshold);
+		/*let activityConcurrentCut = InductiveMinerActivityConcurrentFallthrough.detect(log, freqDfg, activityKey, threshold);
 		if (activityConcurrentCut != null) {
 			console.log("InductiveMinerActivityConcurrentFallthrough");
 			let parNode = new ProcessTree(treeParent, ProcessTreeOperator.PARALLEL, null);
@@ -93,8 +93,8 @@ class InductiveMiner {
 			activityConcurrentCut[1].parentNode = parNode;
 			parNode.children.push(activityConcurrentCut[1]);
 			return parNode;
-		}
-		let strictTauLoop = InductiveMinerStrictTauLoopFallthrough.detect(log, freqDfg, activityKey);
+		}*/
+		/*let strictTauLoop = InductiveMinerStrictTauLoopFallthrough.detect(log, freqDfg, activityKey);
 		if (strictTauLoop != null) {
 			console.log("InductiveMinerStrictTauLoopFallthrough");
 			let loop = new ProcessTree(treeParent, ProcessTreeOperator.LOOP, null);
@@ -102,7 +102,16 @@ class InductiveMiner {
 			loop.children.push(InductiveMiner.inductiveMiner(strictTauLoop, loop, activityKey, false, threshold));
 			loop.children.push(redo);
 			return loop;
-		}
+		}*/
+		/*let tauLoop = InductiveMinerTauLoopFallthrough.detect(log, freqDfg, activityKey);
+		if (tauLoop != null) {
+			console.log("InductiveMinerTauLoopFallthrough");
+			let loop = new ProcessTree(treeParent, ProcessTreeOperator.LOOP, null);
+			let redo = new ProcessTree(loop, null, null);
+			loop.children.push(InductiveMiner.inductiveMiner(tauLoop, loop, activityKey, false, threshold));
+			loop.children.push(redo);
+			return loop;
+		}*/
 		return null;
 	}
 	
@@ -170,8 +179,13 @@ class InductiveMinerSequenceCutDetector {
 		for (let act in actReach) {
 			groups.push([act]);
 		}
-		groups = InductiveMinerSequenceCutDetector.mergePairwiseReachableGroups(groups, actReach);
-		groups = InductiveMinerSequenceCutDetector.mergePairwiseUnreachableGroups(groups, actReach);
+		let groupsSize = null;
+		while (groupsSize != groups.length) {
+			groupsSize = groups.length;
+			groups = InductiveMinerSequenceCutDetector.mergePairwiseReachableGroups(groups, actReach);
+			groups = InductiveMinerSequenceCutDetector.mergePairwiseUnreachableGroups(groups, actReach);
+			groups = InductiveMinerSequenceCutDetector.mergePairwiseReachableGroups(groups, actReach);
+		}
 		groups = InductiveMinerSequenceCutDetector.sortBasedOnReachability(groups, actReach);
 		if (groups.length > 1) {
 			return groups;
@@ -197,14 +211,23 @@ class InductiveMinerSequenceCutDetector {
 	}
 	
 	static isPairwiseReachable(g1, g2, actReach) {
+		let reach1 = false;
+		let reach2 = false;
 		for (let act of g1) {
 			for (let act2 of g2) {
-				if (act2 in actReach[act] && act in actReach[act2]) {
-					return true;
+				if (act2 in actReach[act]) {
+					reach1 = true;
 				}
 			}
 		}
-		return false;
+		for (let act of g1) {
+			for (let act2 of g2) {
+				if (act in actReach[act2]) {
+					reach2 = true;
+				}
+			}
+		}
+		return reach1 && reach2;
 	}
 	
 	static mergePairwiseUnreachableGroups(groups, actReach) {
@@ -225,14 +248,23 @@ class InductiveMinerSequenceCutDetector {
 	}
 	
 	static isPairwiseUnreachable(g1, g2, actReach) {
+		let reach1 = false;
+		let reach2 = false;
 		for (let act of g1) {
 			for (let act2 of g2) {
-				if (act2 in actReach[act] || act in actReach[act2]) {
-					return false;
+				if (act2 in actReach[act]) {
+					reach1 = true;
 				}
 			}
 		}
-		return true;
+		for (let act of g1) {
+			for (let act2 of g2) {
+				if (act in actReach[act2]) {
+					reach2 = true;
+				}
+			}
+		}
+		return !(reach1 || reach2);
 	}
 	
 	static sortBasedOnReachability(groups, actReach) {
@@ -588,6 +620,35 @@ class InductiveMinerStrictTauLoopFallthrough {
 
 class InductiveMinerTauLoopFallthrough {
 	static detect(log, freqDfg, activityKey) {
+		let proj = new EventLog();
+		for (let trace of log.traces) {
+			let x = 0;
+			let i = 1;
+			while (i < trace.events.length) {
+				let act_curr = trace.events[i].attributes[activityKey].value;
+				if (act_curr in freqDfg.startActivities) {
+					let subtrace = new Trace();
+					let j = x;
+					while (j < i) {
+						subtrace.events.push(trace.events[j]);
+						j++;
+					}
+					proj.traces.push(subtrace);
+					x = i;
+				}
+				i++;
+			}
+			let j = x;
+			let subtrace = new Trace();
+			while (j < trace.events.length) {
+				subtrace.events.push(trace.events[j]);
+				j++;
+			}
+		}
+		if (proj.traces.length > log.traces.length) {
+			return proj;
+		}
+		return null;
 	}
 }
 
