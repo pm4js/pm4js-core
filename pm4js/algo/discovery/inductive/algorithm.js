@@ -30,7 +30,7 @@ class InductiveMiner {
 			freqDfg = InductiveMiner.removeNoiseFromDfg(freqDfg, threshold);
 		}
 		let emptyTraces = InductiveMiner.countEmptyTraces(log);
-		if (emptyTraces > 0) {
+		if (emptyTraces > threshold * log.traces.length) {
 			let xor = new ProcessTree(treeParent, ProcessTreeOperator.EXCLUSIVE, null);
 			let skip = new ProcessTree(xor, null, null);
 			xor.children.push(InductiveMiner.inductiveMiner(InductiveMiner.filterNonEmptyTraces(log), xor, activityKey, false, threshold));
@@ -545,7 +545,7 @@ class InductiveMinerExclusiveCutDetector {
 				activ.push(eve.attributes[activityKey].value);
 			}
 			let maxv = -1;
-			let maxi = -1;
+			let maxi = 0;
 			i = 0;
 			while (i < groups.length) {
 				for (let act of groups[i]) {
