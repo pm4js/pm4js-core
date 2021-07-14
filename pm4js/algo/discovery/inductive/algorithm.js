@@ -1,12 +1,12 @@
 class InductiveMiner {
 	static applyPlugin(eventLog, activityKey="concept:name", threshold=0.0, removeNoise=false) {
-		return apply(eventLog, activityKey, threshold, removeNoise, true);
+		return InductiveMiner.apply(eventLog, activityKey, threshold, removeNoise, true);
 	}
 	
 	static apply(eventLog, activityKey="concept:name", threshold=0.0, removeNoise=false, addObject=false) {
 		let tree = InductiveMiner.inductiveMiner(eventLog, null, activityKey, removeNoise, threshold);
 		if (addObject) {
-			Pm4JS.registerObject(loop, "Process Tree (Inductive Miner)");
+			Pm4JS.registerObject(tree, "Process Tree (Inductive Miner)");
 		}
 		return tree;
 	}
