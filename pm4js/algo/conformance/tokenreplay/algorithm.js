@@ -1,10 +1,19 @@
 class TokenBasedReplayResult {
-	constructor(result) {
+	constructor(result, acceptingPetriNet) {
+		this.acceptingPetriNet = acceptingPetriNet;
 		this.result = result;
 		this.totalConsumed = 0;
 		this.totalProduced = 0;
 		this.totalMissing = 0;
 		this.totalRemaining = 0;
+		this.transExecutions = {};
+		this.arcExecutions = {};
+		for (let t in acceptingPetriNet.net.transitions) {
+			this.transExecutions[t] = 0;
+		}
+		for (let a in acceptingPetriNet.net.arcs) {
+			this.arcExecutions[a] = 0;
+		}
 		this.totalTraces = this.result.length;
 		this.fitTraces = 0;
 		this.logFitness = 0.0;
@@ -29,6 +38,15 @@ class TokenBasedReplayResult {
 				fitRP = 1.0 - this.totalRemaining / this.totalProduced;
 			}
 			this.logFitness = 0.5*fitMC + 0.5*fitRP;
+			for (let t of res["visitedTransitions"]) {
+				this.transExecutions[t]++;
+				for (let a in t.inArcs) {
+					this.arcExecutions[a]++;
+				}
+				for (let a in t.outArcs) {
+					this.arcExecutions[a]++;
+				}
+			}
 		}
 	}
 }
@@ -56,7 +74,7 @@ class TokenBasedReplay {
 				ret.push(thisRes);
 			}
 		}
-		let finalResult = new TokenBasedReplayResult(ret);
+		let finalResult = new TokenBasedReplayResult(ret, acceptingPetriNet);
 		
 		Pm4JS.registerObject(finalResult, "Token-Based Replay Result");
 		
@@ -69,11 +87,23 @@ class TokenBasedReplay {
 		let produced = 0;
 		let missing = 0;
 		let remaining = 0;
+		let consumedPerPlace = {};
+		let producedPerPlace = {};
+		let missingPerPlace = {};
+		let remainingPerPlace = {};
+		for (let placeId in acceptingPetriNet.net.places) {
+			consumedPerPlace[placeId] = 0;
+			producedPerPlace[placeId] = 0;
+			missingPerPlace[placeId] = 0;
+			remainingPerPlace[placeId] = 0;
+		}
 		for (let place in acceptingPetriNet.im.tokens) {
 			produced += acceptingPetriNet.im.tokens[place];
+			producedPerPlace[place] += acceptingPetriNet.im.tokens[place];
 		}
 		for (let place in acceptingPetriNet.fm.tokens) {
 			consumed += acceptingPetriNet.fm.tokens[place];
+			consumedPerPlace[place] += acceptingPetriNet.fm.tokens[place];
 		}
 		let visitedTransitions = [];
 		let visitedMarkings = [];
@@ -84,6 +114,10 @@ class TokenBasedReplay {
 				let transPreMarking = trans.getPreMarking();
 				let transPostMarking = trans.getPostMarking();
 				let enabled = marking.getEnabledTransitions();
+				let newVisitedTransitions = [];
+				for (let trans of visitedTransitions) {
+					newVisitedTransitions.push(trans);
+				}
 				if (!(enabled.includes(trans))) {
 					let internalMarking = marking.copy();
 					let internalConsumed = consumed;
@@ -99,13 +133,16 @@ class TokenBasedReplay {
 								let internalTransPostMarking = internalTrans.getPostMarking();
 								let internalEnabledTrans = internalMarking.getEnabledTransitions();
 								if (internalEnabledTrans.includes(internalTrans)) {
+									newVisitedTransitions.push(internalTrans);
 									internalMarking = internalMarking.execute(internalTrans);
 									// counts consumed and produced tokens
 									for (let place in internalTransPreMarking) {
 										internalConsumed += internalTransPreMarking[place];
+										consumedPerPlace[place] += internalTransPreMarking[place];
 									}
 									for (let place in internalTransPostMarking) {
 										internalProduced += internalTransPostMarking[place];
+										producedPerPlace[place] += internalTransPostMarking[place];
 									}
 								}
 								else {
@@ -123,6 +160,7 @@ class TokenBasedReplay {
 						marking = internalMarking;
 						consumed = internalConsumed;
 						produced = internalProduced;
+						visitedTransitions = newVisitedTransitions;
 					}
 				}
 				if (!(enabled.includes(trans))) {
@@ -134,14 +172,17 @@ class TokenBasedReplay {
 						}
 						marking.tokens[place] = diff;
 						missing += diff;
+						missingPerPlace[place] += diff;
 					}
 				}
 				// counts consumed and produced tokens
 				for (let place in transPreMarking) {
 					consumed += transPreMarking[place];
+					consumedPerPlace[place] += transPreMarking[place];
 				}
 				for (let place in transPostMarking) {
 					produced += transPostMarking[place];
+					producedPerPlace[place] += transPostMarking[place];
 				}
 				marking = marking.execute(trans);
 				visitedMarkings.push(marking);
@@ -156,6 +197,10 @@ class TokenBasedReplay {
 				let internalMarking = marking.copy();
 				let internalConsumed = consumed;
 				let internalProduced = produced;
+				let newVisitedTransitions = [];
+				for (let trans of visitedTransitions) {
+					newVisitedTransitions.push(trans);
+				}
 				while (!(acceptingPetriNet.fm.equals(internalMarking))) {
 					let transList = TokenBasedReplay.reachFmThroughInvisibles(internalMarking, acceptingPetriNet.fm, invisibleChain);
 					if (transList == null) {
@@ -167,13 +212,16 @@ class TokenBasedReplay {
 							let internalTransPostMarking = internalTrans.getPostMarking();
 							let internalEnabledTrans = internalMarking.getEnabledTransitions();
 							if (internalEnabledTrans.includes(internalTrans)) {
+								newVisitedTransitions.push(internalTrans);
 								internalMarking = internalMarking.execute(internalTrans);
 								// counts consumed and produced tokens
 								for (let place in internalTransPreMarking) {
 									internalConsumed += internalTransPreMarking[place];
+									consumedPerPlace[place] += internalTransPreMarking[place];
 								}
 								for (let place in internalTransPostMarking) {
 									internalProduced += internalTransPostMarking[place];
+									producedPerPlace[place] += internalTransPostMarking[place];
 								}
 							}
 							else {
@@ -190,22 +238,27 @@ class TokenBasedReplay {
 					marking = internalMarking;
 					consumed = internalConsumed;
 					produced = internalProduced;
+					visitedTransitions = newVisitedTransitions;
 				}
 			}
 			for (let place in acceptingPetriNet.fm.tokens) {
 				if (!(place in marking.tokens)) {
 					missing += acceptingPetriNet.fm.tokens[place];
+					missingPerPlace[place] += acceptingPetriNet.fm.tokens[place];
 				}
 				else if (marking.tokens[place] < acceptingPetriNet.fm.tokens[place]) {
 					missing += acceptingPetriNet.fm.tokens[place] - marking.tokens[place];
+					missingPerPlace[place] += acceptingPetriNet.fm.tokens[place] - marking.tokens[place];
 				}
 			}
 			for (let place in marking.tokens) {
 				if (!(place in acceptingPetriNet.fm.tokens)) {
 					remaining += marking.tokens[place];
+					remainingPerPlace[place] += marking.tokens[place];
 				}
 				else if (marking.tokens[place] > acceptingPetriNet.fm.tokens[place]) {
 					remaining += marking.tokens[place] - acceptingPetriNet.fm.tokens[place];
+					remainingPerPlace[place] += marking.tokens[place] - acceptingPetriNet.fm.tokens[place];
 				}
 			}
 		}
@@ -219,7 +272,7 @@ class TokenBasedReplay {
 		}
 		let fitness = 0.5*fitMC + 0.5*fitRP;
 		let isFit = (Object.keys(missingActivitiesInModel).length == 0) && (missing == 0);
-		return {"consumed": consumed, "produced": produced, "missing": missing, "remaining": remaining, "visitedTransitions": visitedTransitions, "visitedMarkings": visitedMarkings, "missingActivitiesInModel": missingActivitiesInModel, "fitness": fitness, "isFit": isFit, "reachedMarking": marking};
+		return {"consumed": consumed, "produced": produced, "missing": missing, "remaining": remaining, "visitedTransitions": visitedTransitions, "visitedMarkings": visitedMarkings, "missingActivitiesInModel": missingActivitiesInModel, "fitness": fitness, "isFit": isFit, "reachedMarking": marking, "consumedPerPlace": consumedPerPlace, "producedPerPlace": producedPerPlace, "missingPerPlace": missingPerPlace, "remainingPerPlace": remainingPerPlace};
 	}
 	
 	static enableTransThroughInvisibles(marking, transPreMarking, invisibleChain) {
