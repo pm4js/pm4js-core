@@ -3,8 +3,28 @@ class InductiveMiner {
 		return InductiveMiner.inductiveMiner(eventLog, null, activityKey, removeNoise, threshold); 
 	}
 	
+	static keepOneTracePerVariant(log, activityKey) {
+		let newEventLog = new EventLog();
+		let variants = GeneralLogStatistics.getVariants(log, activityKey);
+		for (let vari in variants) {
+			let activ = vari.split(",");
+			let newTrace = new Trace();
+			for (let act of activ) {
+				if (act.length > 0) {
+					let newEvent = new Event();
+					newEvent.attributes[activityKey] = new Attribute(act);
+					newTrace.events.push(newEvent);
+				}
+			}
+			newEventLog.traces.push(newTrace);
+		}
+		return newEventLog;
+	}
 		
 	static inductiveMiner(log, treeParent, activityKey, removeNoise, threshold) {
+		if (threshold == 0) {
+			log = InductiveMiner.keepOneTracePerVariant(log, activityKey);
+		}
 		let freqDfg = FrequencyDfgDiscovery.apply(log, activityKey);
 		if (threshold > 0 && removeNoise) {
 			freqDfg = InductiveMiner.removeNoiseFromDfg(freqDfg, threshold);
