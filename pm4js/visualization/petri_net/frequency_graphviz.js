@@ -1,4 +1,24 @@
 class PetriNetFrequencyVisualizer {
+	static rgbColor(percent) {
+		return [255 * percent, 255 * (1 - percent), 255 * (1 - percent)];
+	}
+
+	static hexFromRGB(r, g, b) {
+		var hex = [
+			Math.floor(r).toString( 16 ),
+			Math.floor(g).toString( 16 ),
+			Math.floor(b).toString( 16 )
+		];
+		let i = 0;
+		while (i < hex.length) {
+			if (hex[i].length == 1) {
+				hex[i] = "0" + hex[i];
+			}
+			i++;
+		}
+		return "#" + hex.join( "" ).toLowerCase();
+	}
+
 	static uuidv4() {
 	  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
 		var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
@@ -17,6 +37,14 @@ class PetriNetFrequencyVisualizer {
 		let fm = acceptingPetriNet.fm;
 		let ret = [];
 		let uidMap = {};
+		let transMaxFrequency = -1;
+		let arcMaxFrequency = -1;
+		for (let trans in tbrResult.transExecutions) {
+			transMaxFrequency = Math.max(tbrResult.transExecutions[trans], transMaxFrequency);
+		}
+		for (let arc in tbrResult.arcExecutions) {
+			arcMaxFrequency = Math.max(tbrResult.arcExecutions[arc], arcMaxFrequency);
+		}
 		ret.push("digraph G {");
 		ret.push("rankdir=\"LR\"");
 		for (let placeKey in petriNet.places) {
@@ -35,9 +63,12 @@ class PetriNetFrequencyVisualizer {
 		}
 		for (let transKey in petriNet.transitions) {
 			let trans = petriNet.transitions[transKey];
+			let perc = (1.0 - tbrResult.transExecutions[trans] / transMaxFrequency);
+			let rgb = PetriNetFrequencyVisualizer.rgbColor(perc);
+			let rgbHex = PetriNetFrequencyVisualizer.hexFromRGB(rgb[0], rgb[1], rgb[2]);
 			let nUid = PetriNetFrequencyVisualizer.nodeUuid();
 			if (trans.label != null) {
-				ret.push(nUid+" [shape=box, label=\""+trans.label+"\n("+tbrResult.transExecutions[trans]+")\"]");
+				ret.push(nUid+" [shape=box, label=\""+trans.label+"\n("+tbrResult.transExecutions[trans]+")\"; style=filled, fillcolor=\""+rgbHex+"\"]");
 			}
 			else {
 				ret.push(nUid+" [shape=box, label=\" \", style=filled, fillcolor=black]");
@@ -48,7 +79,8 @@ class PetriNetFrequencyVisualizer {
 			let arc = petriNet.arcs[arcKey];
 			let uid1 = uidMap[arc.source];
 			let uid2 = uidMap[arc.target];
-			ret.push(uid1+" -> "+uid2+" [label=\""+tbrResult.arcExecutions[arcKey]+"\"]");
+			let penwidth = 0.5 + Math.log10(1 + tbrResult.arcExecutions[arcKey]);
+			ret.push(uid1+" -> "+uid2+" [label=\""+tbrResult.arcExecutions[arcKey]+"\", penwidth=\""+penwidth+"\"]");
 		}
 		ret.push("}");
 		return ret.join('\n');
