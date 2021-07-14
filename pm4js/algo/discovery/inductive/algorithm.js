@@ -88,13 +88,13 @@ class InductiveMiner {
 		if (activityConcurrentCut != null) {
 			console.log("InductiveMinerActivityConcurrentFallthrough");
 			let parNode = new ProcessTree(treeParent, ProcessTreeOperator.PARALLEL, null);
-			let actNode = new ProcessTree(parNode, null, activityConcurrentCut[0]);
-			parNode.children.push(actNode);
+			let filteredLog = LogGeneralFiltering.filterEventsHavingEventAttributeValues(log, [activityConcurrentCut[0]], true, true, activityKey);
+			parNode.children.push(InductiveMiner.inductiveMiner(filteredLog, parNode, activityKey, false, threshold));
 			activityConcurrentCut[1].parentNode = parNode;
 			parNode.children.push(activityConcurrentCut[1]);
 			return parNode;
 		}*/
-		/*let strictTauLoop = InductiveMinerStrictTauLoopFallthrough.detect(log, freqDfg, activityKey);
+		let strictTauLoop = InductiveMinerStrictTauLoopFallthrough.detect(log, freqDfg, activityKey);
 		if (strictTauLoop != null) {
 			console.log("InductiveMinerStrictTauLoopFallthrough");
 			let loop = new ProcessTree(treeParent, ProcessTreeOperator.LOOP, null);
@@ -102,8 +102,8 @@ class InductiveMiner {
 			loop.children.push(InductiveMiner.inductiveMiner(strictTauLoop, loop, activityKey, false, threshold));
 			loop.children.push(redo);
 			return loop;
-		}*/
-		/*let tauLoop = InductiveMinerTauLoopFallthrough.detect(log, freqDfg, activityKey);
+		}
+		let tauLoop = InductiveMinerTauLoopFallthrough.detect(log, freqDfg, activityKey);
 		if (tauLoop != null) {
 			console.log("InductiveMinerTauLoopFallthrough");
 			let loop = new ProcessTree(treeParent, ProcessTreeOperator.LOOP, null);
@@ -111,7 +111,7 @@ class InductiveMiner {
 			loop.children.push(InductiveMiner.inductiveMiner(tauLoop, loop, activityKey, false, threshold));
 			loop.children.push(redo);
 			return loop;
-		}*/
+		}
 		return null;
 	}
 	
@@ -184,7 +184,7 @@ class InductiveMinerSequenceCutDetector {
 			groupsSize = groups.length;
 			groups = InductiveMinerSequenceCutDetector.mergePairwiseReachableGroups(groups, actReach);
 			groups = InductiveMinerSequenceCutDetector.mergePairwiseUnreachableGroups(groups, actReach);
-			groups = InductiveMinerSequenceCutDetector.mergePairwiseReachableGroups(groups, actReach);
+			//groups = InductiveMinerSequenceCutDetector.mergePairwiseReachableGroups(groups, actReach);
 		}
 		groups = InductiveMinerSequenceCutDetector.sortBasedOnReachability(groups, actReach);
 		if (groups.length > 1) {
@@ -285,8 +285,17 @@ class InductiveMinerSequenceCutDetector {
 								break;
 							}
 						}
+						if (cont) {
+							break;
+						}
+					}
+					if (cont) {
+						break;
 					}
 					j++;
+				}
+				if (cont) {
+					break;
 				}
 				i++;
 			}
@@ -431,7 +440,13 @@ class InductiveMinerParallelCutDetector {
 							}
 						}
 					}
+					if (cont) {
+						break;
+					}
 					j++;
+				}
+				if (cont) {
+					break;
 				}
 				i++;
 			}
@@ -610,6 +625,7 @@ class InductiveMinerStrictTauLoopFallthrough {
 				subtrace.events.push(trace.events[j]);
 				j++;
 			}
+			proj.traces.push(subtrace);
 		}
 		if (proj.traces.length > log.traces.length) {
 			return proj;
@@ -644,6 +660,7 @@ class InductiveMinerTauLoopFallthrough {
 				subtrace.events.push(trace.events[j]);
 				j++;
 			}
+			proj.traces.push(subtrace);
 		}
 		if (proj.traces.length > log.traces.length) {
 			return proj;
@@ -707,7 +724,13 @@ class InductiveMinerGeneralUtilities {
 							}
 						}
 					}
+					if (cont) {
+						break;
+					}
 					j++;
+				}
+				if (cont) {
+					break;
 				}
 				i++;
 			}
