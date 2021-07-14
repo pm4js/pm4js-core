@@ -182,9 +182,7 @@ class InductiveMinerSequenceCutDetector {
 		let groupsSize = null;
 		while (groupsSize != groups.length) {
 			groupsSize = groups.length;
-			groups = InductiveMinerSequenceCutDetector.mergePairwiseReachableGroups(groups, actReach);
-			groups = InductiveMinerSequenceCutDetector.mergePairwiseUnreachableGroups(groups, actReach);
-			//groups = InductiveMinerSequenceCutDetector.mergePairwiseReachableGroups(groups, actReach);
+			groups = InductiveMinerSequenceCutDetector.mergeGroups(groups, actReach);
 		}
 		groups = InductiveMinerSequenceCutDetector.sortBasedOnReachability(groups, actReach);
 		if (groups.length > 1) {
@@ -193,12 +191,12 @@ class InductiveMinerSequenceCutDetector {
 		return null;
 	}
 	
-	static mergePairwiseReachableGroups(groups, actReach) {
+	static mergeGroups(groups, actReach) {
 		let i = 0;
 		while (i < groups.length) {
 			let j = i + 1;
 			while (j < groups.length) {
-				if (InductiveMinerSequenceCutDetector.isPairwiseReachable(groups[i], groups[j], actReach)) {
+				if (InductiveMinerSequenceCutDetector.checkMergeCondition(groups[i], groups[j], actReach)) {
 					groups[i] = [...groups[i], ...groups[j]];
 					groups.splice(j, 1);
 					continue;
@@ -210,61 +208,15 @@ class InductiveMinerSequenceCutDetector {
 		return groups;
 	}
 	
-	static isPairwiseReachable(g1, g2, actReach) {
-		let reach1 = false;
-		let reach2 = false;
-		for (let act of g1) {
-			for (let act2 of g2) {
-				if (act2 in actReach[act]) {
-					reach1 = true;
+	static checkMergeCondition(g1, g2, actReach) {
+		for (let a1 of g1) {
+			for (let a2 of g2) {
+				if ((a2 in actReach[a1] && a1 in actReach[a2]) || (!(a2 in actReach[a1]) && !(a1 in actReach[a2]))) {
+					return true;
 				}
 			}
 		}
-		for (let act of g1) {
-			for (let act2 of g2) {
-				if (act in actReach[act2]) {
-					reach2 = true;
-				}
-			}
-		}
-		return reach1 && reach2;
-	}
-	
-	static mergePairwiseUnreachableGroups(groups, actReach) {
-		let i = 0;
-		while (i < groups.length) {
-			let j = i + 1;
-			while (j < groups.length) {
-				if (InductiveMinerSequenceCutDetector.isPairwiseUnreachable(groups[i], groups[j], actReach)) {
-					groups[i] = [...groups[i], ...groups[j]];
-					groups.splice(j, 1);
-					continue;
-				}
-				j++;
-			}
-			i++;
-		}
-		return groups;
-	}
-	
-	static isPairwiseUnreachable(g1, g2, actReach) {
-		let reach1 = false;
-		let reach2 = false;
-		for (let act of g1) {
-			for (let act2 of g2) {
-				if (act2 in actReach[act]) {
-					reach1 = true;
-				}
-			}
-		}
-		for (let act of g1) {
-			for (let act2 of g2) {
-				if (act in actReach[act2]) {
-					reach2 = true;
-				}
-			}
-		}
-		return !(reach1 || reach2);
+		return false;
 	}
 	
 	static sortBasedOnReachability(groups, actReach) {
