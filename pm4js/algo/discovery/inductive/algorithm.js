@@ -1,10 +1,14 @@
 class InductiveMiner {
-	static apply(eventLog, activityKey="concept:name", removeNoise=false, threshold=0.0) {
+	static apply(eventLog, activityKey="concept:name", threshold=0.0, removeNoise=false) {
 		return InductiveMiner.inductiveMiner(eventLog, null, activityKey, removeNoise, threshold); 
 	}
 	
 		
 	static inductiveMiner(log, treeParent, activityKey, removeNoise, threshold) {
+		let freqDfg = FrequencyDfgDiscovery.apply(log, activityKey);
+		if (threshold > 0 && removeNoise) {
+			freqDfg = InductiveMiner.removeNoiseFromDfg(freqDfg, threshold);
+		}
 		let emptyTraces = InductiveMiner.countEmptyTraces(log);
 		if (emptyTraces > 0) {
 			let xor = new ProcessTree(treeParent, ProcessTreeOperator.EXCLUSIVE, null);
@@ -13,7 +17,6 @@ class InductiveMiner {
 			xor.children.push(skip);
 			return xor;
 		}
-		let freqDfg = FrequencyDfgDiscovery.apply(log, activityKey);
 		if (Object.keys(freqDfg.pathsFrequency).length == 0) {
 			return InductiveMiner.baseCase(freqDfg, treeParent);
 		}
@@ -21,11 +24,41 @@ class InductiveMiner {
 		if (detectedCut != null) {
 			return detectedCut;
 		}
-		let detectedFallthrough = InductiveMiner.detectFallthroughs(log, freqDfg, treeParent, activityKey, threshold);
-		if (detectedFallthrough != null) {
-			return detectedFallthrough;
+		if (!(removeNoise)) {
+			let detectedFallthrough = InductiveMiner.detectFallthroughs(log, freqDfg, treeParent, activityKey, threshold);
+			if (detectedFallthrough != null) {
+				return detectedFallthrough;
+			}
+		}
+		if (!(removeNoise) && threshold > 0) {
+			return InductiveMiner.inductiveMiner(log, treeParent, activityKey, true, threshold);
 		}
 		return InductiveMiner.mineFlower(freqDfg, treeParent);
+	}
+	
+	static removeNoiseFromDfg(freqDfg, threshold) {
+		let maxPerActivity = {};
+		for (let ea in freqDfg.endActivities) {
+			maxPerActivity[ea] = freqDfg.endActivities[ea];
+		}
+		for (let path in freqDfg.pathsFrequency) {
+			let pf = freqDfg.pathsFrequency[path];
+			let act1 = path.split(",")[0];
+			if (!(act1 in maxPerActivity)) {
+				maxPerActivity[act1] = pf;
+			}
+			else {
+				maxPerActivity[act1] = Math.max(pf, maxPerActivity[act1]);
+			}
+		}
+		for (let path in freqDfg.pathsFrequency) {
+			let pf = freqDfg.pathsFrequency[path];
+			let act1 = path.split(",")[0];
+			if (pf < (1 - threshold)*maxPerActivity[act1]) {
+				delete freqDfg.pathsFrequency[path];
+			}
+		}
+		return freqDfg;
 	}
 	
 	static detectCut(log, freqDfg, treeParent, activityKey, threshold) {
@@ -34,6 +67,7 @@ class InductiveMiner {
 		}
 		let seqCut = InductiveMinerSequenceCutDetector.detect(log, freqDfg, activityKey);
 		if (seqCut != null) {
+			//console.log("InductiveMinerSequenceCutDetector");
 			let logs = InductiveMinerSequenceCutDetector.project(log, seqCut, activityKey);
 			let seqNode = new ProcessTree(treeParent, ProcessTreeOperator.SEQUENCE, null);
 			for (let sublog of logs) {
@@ -44,6 +78,7 @@ class InductiveMiner {
 		}
 		let xorCut = InductiveMinerExclusiveCutDetector.detect(log, freqDfg, activityKey);
 		if (xorCut != null) {
+			//console.log("InductiveMinerExclusiveCutDetector");
 			let logs = InductiveMinerExclusiveCutDetector.project(log, xorCut, activityKey);
 			let xorNode = new ProcessTree(treeParent, ProcessTreeOperator.EXCLUSIVE, null);
 			for (let sublog of logs) {
@@ -54,6 +89,7 @@ class InductiveMiner {
 		}
 		let andCut = InductiveMinerParallelCutDetector.detect(log, freqDfg, activityKey);
 		if (andCut != null) {
+			//console.log("InductiveMinerParallelCutDetector");
 			let logs = InductiveMinerParallelCutDetector.project(log, andCut, activityKey);
 			let parNode = new ProcessTree(treeParent, ProcessTreeOperator.PARALLEL, null);
 			for (let sublog of logs) {
@@ -64,6 +100,7 @@ class InductiveMiner {
 		}
 		let loopCut = InductiveMinerLoopCutDetector.detect(log, freqDfg, activityKey);
 		if (loopCut != null) {
+			//console.log("InductiveMinerLoopCutDetector");
 			let logs = InductiveMinerLoopCutDetector.project(log, loopCut, activityKey);
 			let loopNode = new ProcessTree(treeParent, ProcessTreeOperator.LOOP, null);
 			loopNode.children.push(InductiveMiner.inductiveMiner(logs[0], loopNode, activityKey, false, threshold));
@@ -341,12 +378,16 @@ class InductiveMinerLoopCutDetector {
 					j = 0;
 					
 				}
-				else {
+				else if (groups[1].includes(thisAct)) {
 					if (j == 0) {
 						sublogs[0].traces.push(subtraceDo);
 						subtraceDo = new Trace();
 					}
 					j = 1;
+				}
+				else {
+					i++;
+					continue;
 				}
 				if (j == 0) {
 					subtraceDo.events.push(trace.events[i]);
@@ -473,20 +514,39 @@ class InductiveMinerExclusiveCutDetector {
 			ret.push(new EventLog());
 		}
 		for (let trace of log.traces) {
+			let gc = {};
+			let i = 0;
+			while (i < groups.length) {
+				gc[i] = 0;
+				i++;
+			}
 			let activ = [];
 			for (let eve of trace.events) {
 				activ.push(eve.attributes[activityKey].value);
 			}
-			let i = 0;
+			let maxv = -1;
+			let maxi = -1;
+			i = 0;
 			while (i < groups.length) {
 				for (let act of groups[i]) {
 					if (activ.includes(act)) {
-						ret[i].traces.push(trace);
-						break;
+						gc[i]++;
+						if (gc[i] > maxv) {
+							maxv = gc[i];
+							maxi = i;
+						}
 					}
 				}
 				i++;
 			}
+			let projectedTrace = new Trace();
+			for (let eve of trace.events) {
+				let act = eve.attributes[activityKey].value;
+				if (groups[maxi].includes(act)) {
+					projectedTrace.events.push(eve);
+				}
+			}
+			ret[maxi].traces.push(projectedTrace);
 		}
 		return ret;
 	}
@@ -499,7 +559,7 @@ class InductiveMinerActivityOncePerTraceFallthrough {
 			for (let trace of log.traces) {
 				let activities = {};
 				for (let eve of trace.events) {
-					let act = eve.attributes["concept:name"].value;
+					let act = eve.attributes[activityKey].value;
 					if (!(act in activities)) {
 						activities[act] = 1;
 					}
