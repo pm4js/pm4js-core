@@ -139,7 +139,7 @@ class TokenBasedReplay {
 					let internalConsumed = consumed;
 					let internalProduced = produced;
 					while (!(enabled.includes(trans))) {
-						let transList = TokenBasedReplay.enableTransThroughInvisibles(marking, transPreMarking, invisibleChain);
+						let transList = TokenBasedReplay.enableTransThroughInvisibles(internalMarking, transPreMarking, invisibleChain);
 						if (transList == null) {
 							break;
 						}
