@@ -1,10 +1,11 @@
 class PerformanceDfg {
-	constructor(activities, startActivities, endActivities, pathsFrequency, pathsPerformance) {
+	constructor(activities, startActivities, endActivities, pathsFrequency, pathsPerformance, sojournTimes) {
 		this.activities = activities;
 		this.startActivities = startActivities;
 		this.endActivities = endActivities;
 		this.pathsFrequency = pathsFrequency;
 		this.pathsPerformance = pathsPerformance;
+		this.sojournTimes = sojournTimes;
 	}
 }
 

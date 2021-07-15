@@ -11,29 +11,30 @@ class PerformanceDfgGraphvizVisualizer {
 		return "n"+uuid.replace(/-/g, "");
 	}
 	
-	static apply(frequencyDfg) {
+	static apply(performanceDfg) {
 		let ret = [];
 		let uidMap = {};
 		ret.push("digraph G {");
-		for (let act in frequencyDfg.activities) {
+		for (let act in performanceDfg.activities) {
 			let nUid = PerformanceDfgGraphvizVisualizer.nodeUuid();
 			uidMap[act] = nUid;
-			ret.push(nUid+" [shape=box, label=\""+act+"\"]");
+			let st = performanceDfg.sojournTimes[act];
+			ret.push(nUid+" [shape=box, label=\""+act+"\n("+humanizeDuration(st*1000)+")\"]");
 		}
 		let startNodeUid = PerformanceDfgGraphvizVisualizer.nodeUuid();
 		let endNodeUid = PerformanceDfgGraphvizVisualizer.nodeUuid();
 		ret.push(startNodeUid+" [shape=circle, label=\" \", style=filled, fillcolor=green]");
 		ret.push(endNodeUid+" [shape=circle, label=\" \", style=filled, fillcolor=orange]");
-		for (let sa in frequencyDfg.startActivities) {
+		for (let sa in performanceDfg.startActivities) {
 			ret.push(startNodeUid+" -> "+uidMap[sa]);
 		}
-		for (let ea in frequencyDfg.endActivities) {
+		for (let ea in performanceDfg.endActivities) {
 			ret.push(uidMap[ea]+" -> "+endNodeUid);
 		}
-		for (let arc in frequencyDfg.pathsPerformance) {
+		for (let arc in performanceDfg.pathsPerformance) {
 			let act1 = arc.split(",")[0];
 			let act2 = arc.split(",")[1];
-			let perf = frequencyDfg.pathsPerformance[arc];
+			let perf = performanceDfg.pathsPerformance[arc];
 			let penwidth = 0.5 + 0.3 * Math.log10(1 + perf);
 			ret.push(uidMap[act1]+" -> "+uidMap[act2]+" [label=\""+humanizeDuration(Math.round(perf*1000))+"\", penwidth=\""+penwidth+"\"]");
 		}

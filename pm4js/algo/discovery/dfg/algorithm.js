@@ -68,7 +68,8 @@ class PerformanceDfgDiscovery {
 				paths[path] = PerformanceDfgDiscovery.calculateMean(paths[path]);
 			}
 		}
-		return new PerformanceDfg(activities, sa, ea, pathsFrequency, paths);
+		let sojournTimes = GeneralLogStatistics.getAverageSojournTime(eventLog, activityKey, timestampKey, startTimestampKey);
+		return new PerformanceDfg(activities, sa, ea, pathsFrequency, paths, sojournTimes);
 	}
 	
 	static calculateMean(array) {

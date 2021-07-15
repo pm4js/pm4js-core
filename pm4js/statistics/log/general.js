@@ -99,6 +99,30 @@ class GeneralLogStatistics {
 		}
 		return ret;
 	}
+	
+	static getAverageSojournTime(log, activityKey="concept:name", completeTimestamp="time:timestamp", startTimestamp="time:timestamp") {
+		let sojTime = {}
+		for (let trace of log.traces) {
+			for (let eve of trace.events) {
+				let acti = eve.attributes[activityKey].value;
+				if (!(acti in sojTime)) {
+					sojTime[acti] = [];
+				}
+				let st = eve.attributes[startTimestamp].value.getTime();
+				let et = eve.attributes[completeTimestamp].value.getTime();
+				let diff = (et - st)*1000;
+				sojTime[acti].push(diff);
+			}
+		}
+		for (let acti in sojTime) {
+			let sum = 0.0;
+			for (let val of sojTime[acti]) {
+				sum += val;
+			}
+			sojTime[acti] = sum / sojTime[acti].length;
+		}
+		return sojTime;
+	}
 }
 
 try {
