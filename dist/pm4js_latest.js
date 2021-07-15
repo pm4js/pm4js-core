@@ -1952,8 +1952,12 @@ class TokenBasedReplay {
 					let internalMarking = marking.copy();
 					let internalConsumed = consumed;
 					let internalProduced = produced;
+					let internalConsumedPerPlace = {};
+					let internalProducedPerPlace = {};
+					Object.assign(internalConsumedPerPlace, consumedPerPlace);
+					Object.assign(internalProducedPerPlace, producedPerPlace);
 					while (!(enabled.includes(trans))) {
-						let transList = TokenBasedReplay.enableTransThroughInvisibles(marking, transPreMarking, invisibleChain);
+						let transList = TokenBasedReplay.enableTransThroughInvisibles(internalMarking, transPreMarking, invisibleChain);
 						if (transList == null) {
 							break;
 						}
@@ -1968,11 +1972,11 @@ class TokenBasedReplay {
 									// counts consumed and produced tokens
 									for (let place in internalTransPreMarking) {
 										internalConsumed += internalTransPreMarking[place];
-										consumedPerPlace[place] += internalTransPreMarking[place];
+										internalConsumedPerPlace[place] += internalTransPreMarking[place];
 									}
 									for (let place in internalTransPostMarking) {
 										internalProduced += internalTransPostMarking[place];
-										producedPerPlace[place] += internalTransPostMarking[place];
+										internalProducedPerPlace[place] += internalTransPostMarking[place];
 									}
 								}
 								else {
@@ -1991,6 +1995,8 @@ class TokenBasedReplay {
 						consumed = internalConsumed;
 						produced = internalProduced;
 						visitedTransitions = newVisitedTransitions;
+						consumedPerPlace = internalConsumedPerPlace;
+						producedPerPlace = internalProducedPerPlace;
 					}
 				}
 				if (!(enabled.includes(trans))) {
@@ -2027,6 +2033,10 @@ class TokenBasedReplay {
 				let internalMarking = marking.copy();
 				let internalConsumed = consumed;
 				let internalProduced = produced;
+				let internalConsumedPerPlace = {};
+				let internalProducedPerPlace = {};
+				Object.assign(internalConsumedPerPlace, consumedPerPlace);
+				Object.assign(internalProducedPerPlace, producedPerPlace);
 				let newVisitedTransitions = [];
 				for (let trans of visitedTransitions) {
 					newVisitedTransitions.push(trans);
@@ -2047,11 +2057,11 @@ class TokenBasedReplay {
 								// counts consumed and produced tokens
 								for (let place in internalTransPreMarking) {
 									internalConsumed += internalTransPreMarking[place];
-									consumedPerPlace[place] += internalTransPreMarking[place];
+									internalConsumedPerPlace[place] += internalTransPreMarking[place];
 								}
 								for (let place in internalTransPostMarking) {
 									internalProduced += internalTransPostMarking[place];
-									producedPerPlace[place] += internalTransPostMarking[place];
+									internalProducedPerPlace[place] += internalTransPostMarking[place];
 								}
 							}
 							else {
@@ -2069,6 +2079,8 @@ class TokenBasedReplay {
 					consumed = internalConsumed;
 					produced = internalProduced;
 					visitedTransitions = newVisitedTransitions;
+					consumedPerPlace = internalConsumedPerPlace;
+					producedPerPlace = internalProducedPerPlace;
 				}
 			}
 			for (let place in acceptingPetriNet.fm.tokens) {
