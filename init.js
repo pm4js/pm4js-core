@@ -1,4 +1,5 @@
 require('./pm4js/pm4js.js');
+require('./pm4js/utils/generic/humanize-duration.js');
 require('./pm4js/objects/log/log.js');
 require('./pm4js/statistics/log/general.js');
 require('./pm4js/objects/log/importer/xes/importer.js');
@@ -22,4 +23,5 @@ require('./pm4js/objects/dfg/performance/obj.js');
 require('./pm4js/algo/discovery/dfg/algorithm.js');
 require('./pm4js/algo/discovery/inductive/algorithm.js');
 require('./pm4js/visualization/dfg/frequency.js');
+require('./pm4js/visualization/dfg/performance.js');
 require('./pm4js/visualization/petri_net/frequency_graphviz.js');

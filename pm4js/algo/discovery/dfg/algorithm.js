@@ -122,6 +122,7 @@ try {
 	require("../../../pm4js.js");
 	require("../../../statistics/log/general.js");
 	require("../../../objects/dfg/frequency/obj.js");
+	require("../../../objects/dfg/performance/obj.js");
 	module.exports = {FrequencyDfgDiscovery: FrequencyDfgDiscovery, PerformanceDfgDiscovery: PerformanceDfgDiscovery};
 	global.FrequencyDfgDiscovery = FrequencyDfgDiscovery;
 	global.PerformanceDfgDiscovery = PerformanceDfgDiscovery;
