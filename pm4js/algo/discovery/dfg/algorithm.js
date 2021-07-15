@@ -26,7 +26,7 @@ class FrequencyDfgDiscovery {
 		}
 		let ret = new FrequencyDfg(activities, sa, ea, paths);
 		if (addObject) {
-			Pm4JS.registerObject(tree, "Frequency Directly-Follows Graph");
+			Pm4JS.registerObject(ret, "Frequency Directly-Follows Graph");
 		}
 		return ret;
 	}
@@ -83,7 +83,7 @@ class PerformanceDfgDiscovery {
 		let sojournTimes = GeneralLogStatistics.getAverageSojournTime(eventLog, activityKey, timestampKey, startTimestampKey);
 		let ret = new PerformanceDfg(activities, sa, ea, pathsFrequency, paths, sojournTimes);
 		if (addObject) {
-			Pm4JS.registerObject(tree, "Performance Directly-Follows Graph");
+			Pm4JS.registerObject(ret, "Performance Directly-Follows Graph");
 		}
 		return ret;
 	}
