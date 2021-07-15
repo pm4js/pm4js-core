@@ -1,5 +1,9 @@
 class FrequencyDfgDiscovery {
-	static apply(eventLog, activityKey="concept:name") {
+	static applyPlugin(eventLog, activityKey="concept:name") {
+		return FrequencyDfgDiscovery.apply(eventLog, activityKey, true);
+	}
+	
+	static apply(eventLog, activityKey="concept:name", addObject=false) {
 		let sa = GeneralLogStatistics.getStartActivities(eventLog, activityKey);
 		let ea = GeneralLogStatistics.getEndActivities(eventLog, activityKey);
 		let activities = GeneralLogStatistics.getAttributeValues(eventLog, activityKey);
@@ -20,12 +24,20 @@ class FrequencyDfgDiscovery {
 				i++;
 			}
 		}
-		return new FrequencyDfg(activities, sa, ea, paths);
+		let ret = new FrequencyDfg(activities, sa, ea, paths);
+		if (addObject) {
+			Pm4JS.registerObject(tree, "Frequency Directly-Follows Graph");
+		}
+		return ret;
 	}
 }
 
 class PerformanceDfgDiscovery {
-	static apply(eventLog, activityKey="concept:name", timestampKey="time:timestamp", aggregationMeasure="mean", startTimestampKey="time:timestamp") {
+	static applyPlugin(eventLog, activityKey="concept:name", timestampKey="time:timestamp", aggregationMeasure="mean", startTimestampKey="time:timestamp") {
+		return PerformanceDfgDiscovery.apply(eventLog, activityKey, timestampKey, aggregationMeasure, startTimestampKey, true);
+	}
+	
+	static apply(eventLog, activityKey="concept:name", timestampKey="time:timestamp", aggregationMeasure="mean", startTimestampKey="time:timestamp", addObject=false) {
 		let freqDfg = FrequencyDfgDiscovery.apply(eventLog, activityKey);
 		let sa = freqDfg.startActivities;
 		let ea = freqDfg.endActivities;
@@ -69,7 +81,11 @@ class PerformanceDfgDiscovery {
 			}
 		}
 		let sojournTimes = GeneralLogStatistics.getAverageSojournTime(eventLog, activityKey, timestampKey, startTimestampKey);
-		return new PerformanceDfg(activities, sa, ea, pathsFrequency, paths, sojournTimes);
+		let ret = new PerformanceDfg(activities, sa, ea, pathsFrequency, paths, sojournTimes);
+		if (addObject) {
+			Pm4JS.registerObject(tree, "Performance Directly-Follows Graph");
+		}
+		return ret;
 	}
 	
 	static calculateMean(array) {
@@ -131,3 +147,6 @@ try {
 catch (err) {
 	// not in Node.JS
 }
+
+Pm4JS.registerAlgorithm("FrequencyDfgDiscovery", "applyPlugin", ["EventLog"], "FrequencyDfg", "Get Frequency DFG abstraction", "Alessandro Berti");
+Pm4JS.registerAlgorithm("PerformanceDfgDiscovery", "applyPlugin", ["EventLog"], "PerformanceDfg", "Get Performance DFG abstraction", "Alessandro Berti");
