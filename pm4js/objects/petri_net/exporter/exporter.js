@@ -16,7 +16,7 @@ class PnmlExporter {
 		page.setAttribute("id", PnmlExporter.uuidv4());
 		domNet.appendChild(page);
 		PnmlExporter.exportXmlObjToDom(acceptingPetriNet, page);
-		let fm0Dom = document.createElement("finalmarkings");
+		let fm0Dom = document.createElementNS("", "finalMarkings");
 		domNet.appendChild(fm0Dom);
 		let fmDom = document.createElement("marking");
 		fm0Dom.appendChild(fmDom);
@@ -52,7 +52,7 @@ class PnmlExporter {
 			placeName.appendChild(placeNameText);
 			placeNameText.textContent = place.name;
 			if (place in obj.im.tokens) {
-				let initialMarking = document.createElement("initialMarking");
+				let initialMarking = document.createElementNS("", "initialMarking");
 				domPlace.appendChild(initialMarking);
 				let initialMarkingText = document.createElement("text");
 				initialMarking.appendChild(initialMarkingText);
