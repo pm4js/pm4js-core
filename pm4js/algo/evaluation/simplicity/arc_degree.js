@@ -26,6 +26,7 @@ class SimplicityArcDegree {
 		}
 		let simplicity = 1.0 / (1.0 + Math.max(meanDegree - k, 0));
 		let ret = new SimplicityArcDegreeResults(simplicity);
+		Pm4JS.registerObject(ret, "Simplicity Results");
 		return ret;
 	}
 }
