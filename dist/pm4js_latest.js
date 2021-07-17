@@ -75,6 +75,1714 @@ catch (err) {
 	// not in node
 }
 
+// HumanizeDuration.js - https://git.io/j0HgmQ
+
+/* global define, module */
+
+(function () {
+  // This has to be defined separately because of a bug: we want to alias
+  // `gr` and `el` for backwards-compatiblity. In a breaking change, we can
+  // remove `gr` entirely.
+  // See https://github.com/EvanHahn/HumanizeDuration.js/issues/143 for more.
+  var greek = {
+    y: function (c) {
+      return c === 1 ? "χ�όνος" : "χ�όνια";
+    },
+    mo: function (c) {
+      return c === 1 ? "μήνας" : "μήνες";
+    },
+    w: function (c) {
+      return c === 1 ? "εβδομάδα" : "εβδομάδες";
+    },
+    d: function (c) {
+      return c === 1 ? "μέ�α" : "μέ�ες";
+    },
+    h: function (c) {
+      return c === 1 ? "ώ�α" : "ώ�ες";
+    },
+    m: function (c) {
+      return c === 1 ? "λεπτό" : "λεπτά";
+    },
+    s: function (c) {
+      return c === 1 ? "δευτε�όλεπτο" : "δευτε�όλεπτα";
+    },
+    ms: function (c) {
+      return c === 1
+        ? "χιλιοστό του δευτε�ολέπτου"
+        : "χιλιοστά του δευτε�ολέπτου";
+    },
+    decimal: ","
+  };
+
+  var ARABIC_DIGITS = ["۰", "١", "٢", "٣", "٤", "٥", "٦", "٧", "٨", "٩"];
+
+  var LANGUAGES = {
+    af: {
+      y: "jaar",
+      mo: function (c) {
+        return "maand" + (c === 1 ? "" : "e");
+      },
+      w: function (c) {
+        return c === 1 ? "week" : "weke";
+      },
+      d: function (c) {
+        return c === 1 ? "dag" : "dae";
+      },
+      h: function (c) {
+        return c === 1 ? "uur" : "ure";
+      },
+      m: function (c) {
+        return c === 1 ? "minuut" : "minute";
+      },
+      s: function (c) {
+        return "sekonde" + (c === 1 ? "" : "s");
+      },
+      ms: function (c) {
+        return "millisekonde" + (c === 1 ? "" : "s");
+      },
+      decimal: ","
+    },
+    ar: {
+      y: function (c) {
+        return ["سنة", "سنتان", "سنوات"][getArabicForm(c)];
+      },
+      mo: function (c) {
+        return ["شهر", "شهران", "أشهر"][getArabicForm(c)];
+      },
+      w: function (c) {
+        return ["أسبوع", "أسبوعين", "أسابيع"][getArabicForm(c)];
+      },
+      d: function (c) {
+        return ["يوم", "يومين", "أيام"][getArabicForm(c)];
+      },
+      h: function (c) {
+        return ["ساعة", "ساعتين", "ساعات"][getArabicForm(c)];
+      },
+      m: function (c) {
+        return ["دقيقة", "دقيقتان", "دقائق"][getArabicForm(c)];
+      },
+      s: function (c) {
+        return ["ثانية", "ثانيتان", "ثواني"][getArabicForm(c)];
+      },
+      ms: function (c) {
+        return ["جزء من الثانية", "جزآن من الثانية", "أجزاء من الثانية"][
+          getArabicForm(c)
+        ];
+      },
+      decimal: ",",
+      delimiter: " و ",
+      _formatCount: function (count, decimal) {
+        var replacements = assign(ARABIC_DIGITS, { ".": decimal });
+        var characters = count.toString().split("");
+        for (var i = 0; i < characters.length; i++) {
+          var character = characters[i];
+          if (has(replacements, character)) {
+            characters[i] = replacements[character];
+          }
+        }
+        return characters.join("");
+      }
+    },
+    bg: {
+      y: function (c) {
+        return ["години", "година", "години"][getSlavicForm(c)];
+      },
+      mo: function (c) {
+        return ["ме�еца", "ме�ец", "ме�еца"][getSlavicForm(c)];
+      },
+      w: function (c) {
+        return ["�едмици", "�едмица", "�едмици"][getSlavicForm(c)];
+      },
+      d: function (c) {
+        return ["дни", "ден", "дни"][getSlavicForm(c)];
+      },
+      h: function (c) {
+        return ["ча�а", "ча�", "ча�а"][getSlavicForm(c)];
+      },
+      m: function (c) {
+        return ["минути", "минута", "минути"][getSlavicForm(c)];
+      },
+      s: function (c) {
+        return ["�екунди", "�екунда", "�екунди"][getSlavicForm(c)];
+      },
+      ms: function (c) {
+        return ["мили�екунди", "мили�екунда", "мили�екунди"][getSlavicForm(c)];
+      },
+      decimal: ","
+    },
+    bn: {
+      y: "বছর",
+      mo: "মাস",
+      w: "সপ�তাহ",
+      d: "দিন",
+      h: "ঘন�টা",
+      m: "মিনিট",
+      s: "সেকেন�ড",
+      ms: "মিলিসেকেন�ড"
+    },
+    ca: {
+      y: function (c) {
+        return "any" + (c === 1 ? "" : "s");
+      },
+      mo: function (c) {
+        return "mes" + (c === 1 ? "" : "os");
+      },
+      w: function (c) {
+        return "setman" + (c === 1 ? "a" : "es");
+      },
+      d: function (c) {
+        return "di" + (c === 1 ? "a" : "es");
+      },
+      h: function (c) {
+        return "hor" + (c === 1 ? "a" : "es");
+      },
+      m: function (c) {
+        return "minut" + (c === 1 ? "" : "s");
+      },
+      s: function (c) {
+        return "segon" + (c === 1 ? "" : "s");
+      },
+      ms: function (c) {
+        return "milisegon" + (c === 1 ? "" : "s");
+      },
+      decimal: ","
+    },
+    cs: {
+      y: function (c) {
+        return ["rok", "roku", "roky", "let"][getCzechOrSlovakForm(c)];
+      },
+      mo: function (c) {
+        return ["měsíc", "měsíce", "měsíce", "měsíců"][getCzechOrSlovakForm(c)];
+      },
+      w: function (c) {
+        return ["týden", "týdne", "týdny", "týdnů"][getCzechOrSlovakForm(c)];
+      },
+      d: function (c) {
+        return ["den", "dne", "dny", "dní"][getCzechOrSlovakForm(c)];
+      },
+      h: function (c) {
+        return ["hodina", "hodiny", "hodiny", "hodin"][getCzechOrSlovakForm(c)];
+      },
+      m: function (c) {
+        return ["minuta", "minuty", "minuty", "minut"][getCzechOrSlovakForm(c)];
+      },
+      s: function (c) {
+        return ["sekunda", "sekundy", "sekundy", "sekund"][
+          getCzechOrSlovakForm(c)
+        ];
+      },
+      ms: function (c) {
+        return ["milisekunda", "milisekundy", "milisekundy", "milisekund"][
+          getCzechOrSlovakForm(c)
+        ];
+      },
+      decimal: ","
+    },
+    cy: {
+      y: "flwyddyn",
+      mo: "mis",
+      w: "wythnos",
+      d: "diwrnod",
+      h: "awr",
+      m: "munud",
+      s: "eiliad",
+      ms: "milieiliad"
+    },
+    da: {
+      y: "år",
+      mo: function (c) {
+        return "måned" + (c === 1 ? "" : "er");
+      },
+      w: function (c) {
+        return "uge" + (c === 1 ? "" : "r");
+      },
+      d: function (c) {
+        return "dag" + (c === 1 ? "" : "e");
+      },
+      h: function (c) {
+        return "time" + (c === 1 ? "" : "r");
+      },
+      m: function (c) {
+        return "minut" + (c === 1 ? "" : "ter");
+      },
+      s: function (c) {
+        return "sekund" + (c === 1 ? "" : "er");
+      },
+      ms: function (c) {
+        return "millisekund" + (c === 1 ? "" : "er");
+      },
+      decimal: ","
+    },
+    de: {
+      y: function (c) {
+        return "Jahr" + (c === 1 ? "" : "e");
+      },
+      mo: function (c) {
+        return "Monat" + (c === 1 ? "" : "e");
+      },
+      w: function (c) {
+        return "Woche" + (c === 1 ? "" : "n");
+      },
+      d: function (c) {
+        return "Tag" + (c === 1 ? "" : "e");
+      },
+      h: function (c) {
+        return "Stunde" + (c === 1 ? "" : "n");
+      },
+      m: function (c) {
+        return "Minute" + (c === 1 ? "" : "n");
+      },
+      s: function (c) {
+        return "Sekunde" + (c === 1 ? "" : "n");
+      },
+      ms: function (c) {
+        return "Millisekunde" + (c === 1 ? "" : "n");
+      },
+      decimal: ","
+    },
+    el: greek,
+    en: {
+      y: function (c) {
+        return "year" + (c === 1 ? "" : "s");
+      },
+      mo: function (c) {
+        return "month" + (c === 1 ? "" : "s");
+      },
+      w: function (c) {
+        return "week" + (c === 1 ? "" : "s");
+      },
+      d: function (c) {
+        return "day" + (c === 1 ? "" : "s");
+      },
+      h: function (c) {
+        return "hour" + (c === 1 ? "" : "s");
+      },
+      m: function (c) {
+        return "minute" + (c === 1 ? "" : "s");
+      },
+      s: function (c) {
+        return "second" + (c === 1 ? "" : "s");
+      },
+      ms: function (c) {
+        return "millisecond" + (c === 1 ? "" : "s");
+      },
+      decimal: "."
+    },
+    eo: {
+      y: function (c) {
+        return "jaro" + (c === 1 ? "" : "j");
+      },
+      mo: function (c) {
+        return "monato" + (c === 1 ? "" : "j");
+      },
+      w: function (c) {
+        return "semajno" + (c === 1 ? "" : "j");
+      },
+      d: function (c) {
+        return "tago" + (c === 1 ? "" : "j");
+      },
+      h: function (c) {
+        return "horo" + (c === 1 ? "" : "j");
+      },
+      m: function (c) {
+        return "minuto" + (c === 1 ? "" : "j");
+      },
+      s: function (c) {
+        return "sekundo" + (c === 1 ? "" : "j");
+      },
+      ms: function (c) {
+        return "milisekundo" + (c === 1 ? "" : "j");
+      },
+      decimal: ","
+    },
+    es: {
+      y: function (c) {
+        return "año" + (c === 1 ? "" : "s");
+      },
+      mo: function (c) {
+        return "mes" + (c === 1 ? "" : "es");
+      },
+      w: function (c) {
+        return "semana" + (c === 1 ? "" : "s");
+      },
+      d: function (c) {
+        return "día" + (c === 1 ? "" : "s");
+      },
+      h: function (c) {
+        return "hora" + (c === 1 ? "" : "s");
+      },
+      m: function (c) {
+        return "minuto" + (c === 1 ? "" : "s");
+      },
+      s: function (c) {
+        return "segundo" + (c === 1 ? "" : "s");
+      },
+      ms: function (c) {
+        return "milisegundo" + (c === 1 ? "" : "s");
+      },
+      decimal: ","
+    },
+    et: {
+      y: function (c) {
+        return "aasta" + (c === 1 ? "" : "t");
+      },
+      mo: function (c) {
+        return "kuu" + (c === 1 ? "" : "d");
+      },
+      w: function (c) {
+        return "nädal" + (c === 1 ? "" : "at");
+      },
+      d: function (c) {
+        return "päev" + (c === 1 ? "" : "a");
+      },
+      h: function (c) {
+        return "tund" + (c === 1 ? "" : "i");
+      },
+      m: function (c) {
+        return "minut" + (c === 1 ? "" : "it");
+      },
+      s: function (c) {
+        return "sekund" + (c === 1 ? "" : "it");
+      },
+      ms: function (c) {
+        return "millisekund" + (c === 1 ? "" : "it");
+      },
+      decimal: ","
+    },
+    eu: {
+      y: "urte",
+      mo: "hilabete",
+      w: "aste",
+      d: "egun",
+      h: "ordu",
+      m: "minutu",
+      s: "segundo",
+      ms: "milisegundo",
+      decimal: ","
+    },
+    fa: {
+      y: "سال",
+      mo: "ماه",
+      w: "ه�ته",
+      d: "روز",
+      h: "ساعت",
+      m: "دقیقه",
+      s: "ثانیه",
+      ms: "میلی ثانیه",
+      decimal: "."
+    },
+    fi: {
+      y: function (c) {
+        return c === 1 ? "vuosi" : "vuotta";
+      },
+      mo: function (c) {
+        return c === 1 ? "kuukausi" : "kuukautta";
+      },
+      w: function (c) {
+        return "viikko" + (c === 1 ? "" : "a");
+      },
+      d: function (c) {
+        return "päivä" + (c === 1 ? "" : "ä");
+      },
+      h: function (c) {
+        return "tunti" + (c === 1 ? "" : "a");
+      },
+      m: function (c) {
+        return "minuutti" + (c === 1 ? "" : "a");
+      },
+      s: function (c) {
+        return "sekunti" + (c === 1 ? "" : "a");
+      },
+      ms: function (c) {
+        return "millisekunti" + (c === 1 ? "" : "a");
+      },
+      decimal: ","
+    },
+    fo: {
+      y: "ár",
+      mo: function (c) {
+        return c === 1 ? "mánaður" : "mánaðir";
+      },
+      w: function (c) {
+        return c === 1 ? "vika" : "vikur";
+      },
+      d: function (c) {
+        return c === 1 ? "dagur" : "dagar";
+      },
+      h: function (c) {
+        return c === 1 ? "tími" : "tímar";
+      },
+      m: function (c) {
+        return c === 1 ? "minuttur" : "minuttir";
+      },
+      s: "sekund",
+      ms: "millisekund",
+      decimal: ","
+    },
+    fr: {
+      y: function (c) {
+        return "an" + (c >= 2 ? "s" : "");
+      },
+      mo: "mois",
+      w: function (c) {
+        return "semaine" + (c >= 2 ? "s" : "");
+      },
+      d: function (c) {
+        return "jour" + (c >= 2 ? "s" : "");
+      },
+      h: function (c) {
+        return "heure" + (c >= 2 ? "s" : "");
+      },
+      m: function (c) {
+        return "minute" + (c >= 2 ? "s" : "");
+      },
+      s: function (c) {
+        return "seconde" + (c >= 2 ? "s" : "");
+      },
+      ms: function (c) {
+        return "milliseconde" + (c >= 2 ? "s" : "");
+      },
+      decimal: ","
+    },
+    gr: greek,
+    he: {
+      y: function (c) {
+        return c === 1 ? "שנה" : "שני�";
+      },
+      mo: function (c) {
+        return c === 1 ? "חודש" : "חודשי�";
+      },
+      w: function (c) {
+        return c === 1 ? "שבוע" : "שבועות";
+      },
+      d: function (c) {
+        return c === 1 ? "יו�" : "ימי�";
+      },
+      h: function (c) {
+        return c === 1 ? "שעה" : "שעות";
+      },
+      m: function (c) {
+        return c === 1 ? "דקה" : "דקות";
+      },
+      s: function (c) {
+        return c === 1 ? "שניה" : "שניות";
+      },
+      ms: function (c) {
+        return c === 1 ? "מילישנייה" : "מילישניות";
+      },
+      decimal: "."
+    },
+    hr: {
+      y: function (c) {
+        if (c % 10 === 2 || c % 10 === 3 || c % 10 === 4) {
+          return "godine";
+        }
+        return "godina";
+      },
+      mo: function (c) {
+        if (c === 1) {
+          return "mjesec";
+        } else if (c === 2 || c === 3 || c === 4) {
+          return "mjeseca";
+        }
+        return "mjeseci";
+      },
+      w: function (c) {
+        if (c % 10 === 1 && c !== 11) {
+          return "tjedan";
+        }
+        return "tjedna";
+      },
+      d: function (c) {
+        return c === 1 ? "dan" : "dana";
+      },
+      h: function (c) {
+        if (c === 1) {
+          return "sat";
+        } else if (c === 2 || c === 3 || c === 4) {
+          return "sata";
+        }
+        return "sati";
+      },
+      m: function (c) {
+        var mod10 = c % 10;
+        if ((mod10 === 2 || mod10 === 3 || mod10 === 4) && (c < 10 || c > 14)) {
+          return "minute";
+        }
+        return "minuta";
+      },
+      s: function (c) {
+        var mod10 = c % 10;
+        if (mod10 === 5 || (Math.floor(c) === c && c >= 10 && c <= 19)) {
+          return "sekundi";
+        } else if (mod10 === 1) {
+          return "sekunda";
+        } else if (mod10 === 2 || mod10 === 3 || mod10 === 4) {
+          return "sekunde";
+        }
+        return "sekundi";
+      },
+      ms: function (c) {
+        if (c === 1) {
+          return "milisekunda";
+        } else if (c % 10 === 2 || c % 10 === 3 || c % 10 === 4) {
+          return "milisekunde";
+        }
+        return "milisekundi";
+      },
+      decimal: ","
+    },
+    hi: {
+      y: "साल",
+      mo: function (c) {
+        return c === 1 ? "महीना" : "महीने";
+      },
+      w: function (c) {
+        return c === 1 ? "हफ़�ता" : "हफ�ते";
+      },
+      d: "दिन",
+      h: function (c) {
+        return c === 1 ? "घंटा" : "घंटे";
+      },
+      m: "मिनट",
+      s: "सेकंड",
+      ms: "मिलीसेकंड",
+      decimal: "."
+    },
+    hu: {
+      y: "év",
+      mo: "hónap",
+      w: "hét",
+      d: "nap",
+      h: "óra",
+      m: "perc",
+      s: "másodperc",
+      ms: "ezredmásodperc",
+      decimal: ","
+    },
+    id: {
+      y: "tahun",
+      mo: "bulan",
+      w: "minggu",
+      d: "hari",
+      h: "jam",
+      m: "menit",
+      s: "detik",
+      ms: "milidetik",
+      decimal: "."
+    },
+    is: {
+      y: "ár",
+      mo: function (c) {
+        return "mánuð" + (c === 1 ? "ur" : "ir");
+      },
+      w: function (c) {
+        return "vik" + (c === 1 ? "a" : "ur");
+      },
+      d: function (c) {
+        return "dag" + (c === 1 ? "ur" : "ar");
+      },
+      h: function (c) {
+        return "klukkutím" + (c === 1 ? "i" : "ar");
+      },
+      m: function (c) {
+        return "mínút" + (c === 1 ? "a" : "ur");
+      },
+      s: function (c) {
+        return "sekúnd" + (c === 1 ? "a" : "ur");
+      },
+      ms: function (c) {
+        return "millisekúnd" + (c === 1 ? "a" : "ur");
+      },
+      decimal: "."
+    },
+    it: {
+      y: function (c) {
+        return "ann" + (c === 1 ? "o" : "i");
+      },
+      mo: function (c) {
+        return "mes" + (c === 1 ? "e" : "i");
+      },
+      w: function (c) {
+        return "settiman" + (c === 1 ? "a" : "e");
+      },
+      d: function (c) {
+        return "giorn" + (c === 1 ? "o" : "i");
+      },
+      h: function (c) {
+        return "or" + (c === 1 ? "a" : "e");
+      },
+      m: function (c) {
+        return "minut" + (c === 1 ? "o" : "i");
+      },
+      s: function (c) {
+        return "second" + (c === 1 ? "o" : "i");
+      },
+      ms: function (c) {
+        return "millisecond" + (c === 1 ? "o" : "i");
+      },
+      decimal: ","
+    },
+    ja: {
+      y: "年",
+      mo: "月",
+      w: "週",
+      d: "日",
+      h: "時間",
+      m: "分",
+      s: "秒",
+      ms: "ミリ秒",
+      decimal: "."
+    },
+    km: {
+      y: "ឆ្នាំ",
+      mo: "�ែ",
+      w: "សប្�ាហ�",
+      d: "�្ងៃ",
+      h: "ម៉ោង",
+      m: "នាទី",
+      s: "វិនាទី",
+      ms: "មិល្លីវិនាទី"
+    },
+    kn: {
+      y: function (c) {
+        return c === 1 ? "ವರ�ಷ" : "ವರ�ಷಗಳ�";
+      },
+      mo: function (c) {
+        return c === 1 ? "ತಿಂಗಳ�" : "ತಿಂಗಳ�ಗಳ�";
+      },
+      w: function (c) {
+        return c === 1 ? "ವಾರ" : "ವಾರಗಳ�";
+      },
+      d: function (c) {
+        return c === 1 ? "ದಿನ" : "ದಿನಗಳ�";
+      },
+      h: function (c) {
+        return c === 1 ? "ಗಂಟೆ" : "ಗಂಟೆಗಳ�";
+      },
+      m: function (c) {
+        return c === 1 ? "ನಿಮಿಷ" : "ನಿಮಿಷಗಳ�";
+      },
+      s: function (c) {
+        return c === 1 ? "ಸೆಕೆಂಡ�" : "ಸೆಕೆಂಡ�ಗಳ�";
+      },
+      ms: function (c) {
+        return c === 1 ? "ಮಿಲಿಸೆಕೆಂಡ�" : "ಮಿಲಿಸೆಕೆಂಡ�ಗಳ�";
+      }
+    },
+    ko: {
+      y: "년",
+      mo: "개월",
+      w: "주�",
+      d: "�",
+      h: "시간",
+      m: "분",
+      s: "초",
+      ms: "밀리 초",
+      decimal: "."
+    },
+    ku: {
+      y: "sal",
+      mo: "meh",
+      w: "hefte",
+      d: "roj",
+      h: "seet",
+      m: "deqe",
+      s: "saniye",
+      ms: "mîlîçirk",
+      decimal: ","
+    },
+    lo: {
+      y: "ປີ",
+      mo: "ເດືອນ",
+      w: "ອາທິດ",
+      d: "ມື້",
+      h: "ຊົ່ວໂມງ",
+      m: "ນາທີ",
+      s: "ວິນາທີ",
+      ms: "ມິນລິວິນາທີ",
+      decimal: ","
+    },
+    lt: {
+      y: function (c) {
+        return c % 10 === 0 || (c % 100 >= 10 && c % 100 <= 20)
+          ? "metų"
+          : "metai";
+      },
+      mo: function (c) {
+        return ["mėnuo", "mėnesiai", "mėnesių"][getLithuanianForm(c)];
+      },
+      w: function (c) {
+        return ["savaitė", "savaitės", "savai�ių"][getLithuanianForm(c)];
+      },
+      d: function (c) {
+        return ["diena", "dienos", "dienų"][getLithuanianForm(c)];
+      },
+      h: function (c) {
+        return ["valanda", "valandos", "valandų"][getLithuanianForm(c)];
+      },
+      m: function (c) {
+        return ["minutė", "minutės", "minu�ių"][getLithuanianForm(c)];
+      },
+      s: function (c) {
+        return ["sekundė", "sekundės", "sekundžių"][getLithuanianForm(c)];
+      },
+      ms: function (c) {
+        return ["milisekundė", "milisekundės", "milisekundžių"][
+          getLithuanianForm(c)
+        ];
+      },
+      decimal: ","
+    },
+    lv: {
+      y: function (c) {
+        return getLatvianForm(c) ? "gads" : "gadi";
+      },
+      mo: function (c) {
+        return getLatvianForm(c) ? "mēnesis" : "mēneši";
+      },
+      w: function (c) {
+        return getLatvianForm(c) ? "nedēļa" : "nedēļas";
+      },
+      d: function (c) {
+        return getLatvianForm(c) ? "diena" : "dienas";
+      },
+      h: function (c) {
+        return getLatvianForm(c) ? "stunda" : "stundas";
+      },
+      m: function (c) {
+        return getLatvianForm(c) ? "minūte" : "minūtes";
+      },
+      s: function (c) {
+        return getLatvianForm(c) ? "sekunde" : "sekundes";
+      },
+      ms: function (c) {
+        return getLatvianForm(c) ? "milisekunde" : "milisekundes";
+      },
+      decimal: ","
+    },
+    mk: {
+      y: function (c) {
+        return c === 1 ? "година" : "години";
+      },
+      mo: function (c) {
+        return c === 1 ? "ме�ец" : "ме�еци";
+      },
+      w: function (c) {
+        return c === 1 ? "недела" : "недели";
+      },
+      d: function (c) {
+        return c === 1 ? "ден" : "дена";
+      },
+      h: function (c) {
+        return c === 1 ? "ча�" : "ча�а";
+      },
+      m: function (c) {
+        return c === 1 ? "минута" : "минути";
+      },
+      s: function (c) {
+        return c === 1 ? "�екунда" : "�екунди";
+      },
+      ms: function (c) {
+        return c === 1 ? "мили�екунда" : "мили�екунди";
+      },
+      decimal: ","
+    },
+    mr: {
+      y: function (c) {
+        return c === 1 ? "वर�ष" : "वर�षे";
+      },
+      mo: function (c) {
+        return c === 1 ? "महिना" : "महिने";
+      },
+      w: function (c) {
+        return c === 1 ? "आठवडा" : "आठवडे";
+      },
+      d: "दिवस",
+      h: "तास",
+      m: function (c) {
+        return c === 1 ? "मिनिट" : "मिनिटे";
+      },
+      s: "सेकंद",
+      ms: "मिलिसेकंद"
+    },
+    ms: {
+      y: "tahun",
+      mo: "bulan",
+      w: "minggu",
+      d: "hari",
+      h: "jam",
+      m: "minit",
+      s: "saat",
+      ms: "milisaat",
+      decimal: "."
+    },
+    nl: {
+      y: "jaar",
+      mo: function (c) {
+        return c === 1 ? "maand" : "maanden";
+      },
+      w: function (c) {
+        return c === 1 ? "week" : "weken";
+      },
+      d: function (c) {
+        return c === 1 ? "dag" : "dagen";
+      },
+      h: "uur",
+      m: function (c) {
+        return c === 1 ? "minuut" : "minuten";
+      },
+      s: function (c) {
+        return c === 1 ? "seconde" : "seconden";
+      },
+      ms: function (c) {
+        return c === 1 ? "milliseconde" : "milliseconden";
+      },
+      decimal: ","
+    },
+    no: {
+      y: "år",
+      mo: function (c) {
+        return "måned" + (c === 1 ? "" : "er");
+      },
+      w: function (c) {
+        return "uke" + (c === 1 ? "" : "r");
+      },
+      d: function (c) {
+        return "dag" + (c === 1 ? "" : "er");
+      },
+      h: function (c) {
+        return "time" + (c === 1 ? "" : "r");
+      },
+      m: function (c) {
+        return "minutt" + (c === 1 ? "" : "er");
+      },
+      s: function (c) {
+        return "sekund" + (c === 1 ? "" : "er");
+      },
+      ms: function (c) {
+        return "millisekund" + (c === 1 ? "" : "er");
+      },
+      decimal: ","
+    },
+    pl: {
+      y: function (c) {
+        return ["rok", "roku", "lata", "lat"][getPolishForm(c)];
+      },
+      mo: function (c) {
+        return ["miesiąc", "miesiąca", "miesiące", "miesięcy"][
+          getPolishForm(c)
+        ];
+      },
+      w: function (c) {
+        return ["tydzień", "tygodnia", "tygodnie", "tygodni"][getPolishForm(c)];
+      },
+      d: function (c) {
+        return ["dzień", "dnia", "dni", "dni"][getPolishForm(c)];
+      },
+      h: function (c) {
+        return ["godzina", "godziny", "godziny", "godzin"][getPolishForm(c)];
+      },
+      m: function (c) {
+        return ["minuta", "minuty", "minuty", "minut"][getPolishForm(c)];
+      },
+      s: function (c) {
+        return ["sekunda", "sekundy", "sekundy", "sekund"][getPolishForm(c)];
+      },
+      ms: function (c) {
+        return ["milisekunda", "milisekundy", "milisekundy", "milisekund"][
+          getPolishForm(c)
+        ];
+      },
+      decimal: ","
+    },
+    pt: {
+      y: function (c) {
+        return "ano" + (c === 1 ? "" : "s");
+      },
+      mo: function (c) {
+        return c === 1 ? "mês" : "meses";
+      },
+      w: function (c) {
+        return "semana" + (c === 1 ? "" : "s");
+      },
+      d: function (c) {
+        return "dia" + (c === 1 ? "" : "s");
+      },
+      h: function (c) {
+        return "hora" + (c === 1 ? "" : "s");
+      },
+      m: function (c) {
+        return "minuto" + (c === 1 ? "" : "s");
+      },
+      s: function (c) {
+        return "segundo" + (c === 1 ? "" : "s");
+      },
+      ms: function (c) {
+        return "milissegundo" + (c === 1 ? "" : "s");
+      },
+      decimal: ","
+    },
+    ro: {
+      y: function (c) {
+        return c === 1 ? "an" : "ani";
+      },
+      mo: function (c) {
+        return c === 1 ? "lună" : "luni";
+      },
+      w: function (c) {
+        return c === 1 ? "săptămână" : "săptămâni";
+      },
+      d: function (c) {
+        return c === 1 ? "zi" : "zile";
+      },
+      h: function (c) {
+        return c === 1 ? "oră" : "ore";
+      },
+      m: function (c) {
+        return c === 1 ? "minut" : "minute";
+      },
+      s: function (c) {
+        return c === 1 ? "secundă" : "secunde";
+      },
+      ms: function (c) {
+        return c === 1 ? "milisecundă" : "milisecunde";
+      },
+      decimal: ","
+    },
+    ru: {
+      y: function (c) {
+        return ["лет", "год", "года"][getSlavicForm(c)];
+      },
+      mo: function (c) {
+        return ["ме��цев", "ме��ц", "ме��ца"][getSlavicForm(c)];
+      },
+      w: function (c) {
+        return ["недель", "недел�", "недели"][getSlavicForm(c)];
+      },
+      d: function (c) {
+        return ["дней", "день", "дн�"][getSlavicForm(c)];
+      },
+      h: function (c) {
+        return ["ча�ов", "ча�", "ча�а"][getSlavicForm(c)];
+      },
+      m: function (c) {
+        return ["минут", "минута", "минуты"][getSlavicForm(c)];
+      },
+      s: function (c) {
+        return ["�екунд", "�екунда", "�екунды"][getSlavicForm(c)];
+      },
+      ms: function (c) {
+        return ["милли�екунд", "милли�екунда", "милли�екунды"][
+          getSlavicForm(c)
+        ];
+      },
+      decimal: ","
+    },
+    sq: {
+      y: function (c) {
+        return c === 1 ? "vit" : "vjet";
+      },
+      mo: "muaj",
+      w: "javë",
+      d: "ditë",
+      h: "orë",
+      m: function (c) {
+        return "minut" + (c === 1 ? "ë" : "a");
+      },
+      s: function (c) {
+        return "sekond" + (c === 1 ? "ë" : "a");
+      },
+      ms: function (c) {
+        return "milisekond" + (c === 1 ? "ë" : "a");
+      },
+      decimal: ","
+    },
+    sr: {
+      y: function (c) {
+        return ["години", "година", "године"][getSlavicForm(c)];
+      },
+      mo: function (c) {
+        return ["ме�еци", "ме�ец", "ме�еца"][getSlavicForm(c)];
+      },
+      w: function (c) {
+        return ["недељи", "недеља", "недеље"][getSlavicForm(c)];
+      },
+      d: function (c) {
+        return ["дани", "дан", "дана"][getSlavicForm(c)];
+      },
+      h: function (c) {
+        return ["�ати", "�ат", "�ата"][getSlavicForm(c)];
+      },
+      m: function (c) {
+        return ["минута", "минут", "минута"][getSlavicForm(c)];
+      },
+      s: function (c) {
+        return ["�екунди", "�екунда", "�екунде"][getSlavicForm(c)];
+      },
+      ms: function (c) {
+        return ["мили�екунди", "мили�екунда", "мили�екунде"][getSlavicForm(c)];
+      },
+      decimal: ","
+    },
+    ta: {
+      y: function (c) {
+        return c === 1 ? "வர�டம�" : "ஆண�ட�கள�";
+      },
+      mo: function (c) {
+        return c === 1 ? "மாதம�" : "மாதங�கள�";
+      },
+      w: function (c) {
+        return c === 1 ? "வாரம�" : "வாரங�கள�";
+      },
+      d: function (c) {
+        return c === 1 ? "நாள�" : "நாட�கள�";
+      },
+      h: function (c) {
+        return c === 1 ? "மணி" : "மணிநேரம�";
+      },
+      m: function (c) {
+        return "நிமிட" + (c === 1 ? "ம�" : "ங�கள�");
+      },
+      s: function (c) {
+        return "வினாடி" + (c === 1 ? "" : "கள�");
+      },
+      ms: function (c) {
+        return "மில�லி விநாடி" + (c === 1 ? "" : "கள�");
+      }
+    },
+    te: {
+      y: function (c) {
+        return "సంవత�స" + (c === 1 ? "రం" : "రాల");
+      },
+      mo: function (c) {
+        return "నెల" + (c === 1 ? "" : "ల");
+      },
+      w: function (c) {
+        return c === 1 ? "వారం" : "వారాల�";
+      },
+      d: function (c) {
+        return "రోజ�" + (c === 1 ? "" : "ల�");
+      },
+      h: function (c) {
+        return "గంట" + (c === 1 ? "" : "ల�");
+      },
+      m: function (c) {
+        return c === 1 ? "నిమిషం" : "నిమిషాల�";
+      },
+      s: function (c) {
+        return c === 1 ? "సెకన�" : "సెకన�ల�";
+      },
+      ms: function (c) {
+        return c === 1 ? "మిల�లీసెకన�" : "మిల�లీసెకన�ల�";
+      }
+    },
+    uk: {
+      y: function (c) {
+        return ["років", "рік", "роки"][getSlavicForm(c)];
+      },
+      mo: function (c) {
+        return ["мі��ців", "мі��ць", "мі��ці"][getSlavicForm(c)];
+      },
+      w: function (c) {
+        return ["тижнів", "тиждень", "тижні"][getSlavicForm(c)];
+      },
+      d: function (c) {
+        return ["днів", "день", "дні"][getSlavicForm(c)];
+      },
+      h: function (c) {
+        return ["годин", "година", "години"][getSlavicForm(c)];
+      },
+      m: function (c) {
+        return ["хвилин", "хвилина", "хвилини"][getSlavicForm(c)];
+      },
+      s: function (c) {
+        return ["�екунд", "�екунда", "�екунди"][getSlavicForm(c)];
+      },
+      ms: function (c) {
+        return ["мілі�екунд", "мілі�екунда", "мілі�екунди"][getSlavicForm(c)];
+      },
+      decimal: ","
+    },
+    ur: {
+      y: "سال",
+      mo: function (c) {
+        return c === 1 ? "م�ین�" : "م�ینے";
+      },
+      w: function (c) {
+        return c === 1 ? "��ت�" : "��تے";
+      },
+      d: "دن",
+      h: function (c) {
+        return c === 1 ? "گھنٹ�" : "گھنٹے";
+      },
+      m: "منٹ",
+      s: "سیکنڈ",
+      ms: "ملی سیکنڈ",
+      decimal: "."
+    },
+    sk: {
+      y: function (c) {
+        return ["rok", "roky", "roky", "rokov"][getCzechOrSlovakForm(c)];
+      },
+      mo: function (c) {
+        return ["mesiac", "mesiace", "mesiace", "mesiacov"][
+          getCzechOrSlovakForm(c)
+        ];
+      },
+      w: function (c) {
+        return ["týždeň", "týždne", "týždne", "týždňov"][
+          getCzechOrSlovakForm(c)
+        ];
+      },
+      d: function (c) {
+        return ["deň", "dni", "dni", "dní"][getCzechOrSlovakForm(c)];
+      },
+      h: function (c) {
+        return ["hodina", "hodiny", "hodiny", "hodín"][getCzechOrSlovakForm(c)];
+      },
+      m: function (c) {
+        return ["minúta", "minúty", "minúty", "minút"][getCzechOrSlovakForm(c)];
+      },
+      s: function (c) {
+        return ["sekunda", "sekundy", "sekundy", "sekúnd"][
+          getCzechOrSlovakForm(c)
+        ];
+      },
+      ms: function (c) {
+        return ["milisekunda", "milisekundy", "milisekundy", "milisekúnd"][
+          getCzechOrSlovakForm(c)
+        ];
+      },
+      decimal: ","
+    },
+    sl: {
+      y: function (c) {
+        if (c % 10 === 1) {
+          return "leto";
+        } else if (c % 100 === 2) {
+          return "leti";
+        } else if (
+          c % 100 === 3 ||
+          c % 100 === 4 ||
+          (Math.floor(c) !== c && c % 100 <= 5)
+        ) {
+          return "leta";
+        } else {
+          return "let";
+        }
+      },
+      mo: function (c) {
+        if (c % 10 === 1) {
+          return "mesec";
+        } else if (c % 100 === 2 || (Math.floor(c) !== c && c % 100 <= 5)) {
+          return "meseca";
+        } else if (c % 10 === 3 || c % 10 === 4) {
+          return "mesece";
+        } else {
+          return "mesecev";
+        }
+      },
+      w: function (c) {
+        if (c % 10 === 1) {
+          return "teden";
+        } else if (c % 10 === 2 || (Math.floor(c) !== c && c % 100 <= 4)) {
+          return "tedna";
+        } else if (c % 10 === 3 || c % 10 === 4) {
+          return "tedne";
+        } else {
+          return "tednov";
+        }
+      },
+      d: function (c) {
+        return c % 100 === 1 ? "dan" : "dni";
+      },
+      h: function (c) {
+        if (c % 10 === 1) {
+          return "ura";
+        } else if (c % 100 === 2) {
+          return "uri";
+        } else if (c % 10 === 3 || c % 10 === 4 || Math.floor(c) !== c) {
+          return "ure";
+        } else {
+          return "ur";
+        }
+      },
+      m: function (c) {
+        if (c % 10 === 1) {
+          return "minuta";
+        } else if (c % 10 === 2) {
+          return "minuti";
+        } else if (
+          c % 10 === 3 ||
+          c % 10 === 4 ||
+          (Math.floor(c) !== c && c % 100 <= 4)
+        ) {
+          return "minute";
+        } else {
+          return "minut";
+        }
+      },
+      s: function (c) {
+        if (c % 10 === 1) {
+          return "sekunda";
+        } else if (c % 100 === 2) {
+          return "sekundi";
+        } else if (c % 100 === 3 || c % 100 === 4 || Math.floor(c) !== c) {
+          return "sekunde";
+        } else {
+          return "sekund";
+        }
+      },
+      ms: function (c) {
+        if (c % 10 === 1) {
+          return "milisekunda";
+        } else if (c % 100 === 2) {
+          return "milisekundi";
+        } else if (c % 100 === 3 || c % 100 === 4 || Math.floor(c) !== c) {
+          return "milisekunde";
+        } else {
+          return "milisekund";
+        }
+      },
+      decimal: ","
+    },
+    sv: {
+      y: "år",
+      mo: function (c) {
+        return "månad" + (c === 1 ? "" : "er");
+      },
+      w: function (c) {
+        return "veck" + (c === 1 ? "a" : "or");
+      },
+      d: function (c) {
+        return "dag" + (c === 1 ? "" : "ar");
+      },
+      h: function (c) {
+        return "timm" + (c === 1 ? "e" : "ar");
+      },
+      m: function (c) {
+        return "minut" + (c === 1 ? "" : "er");
+      },
+      s: function (c) {
+        return "sekund" + (c === 1 ? "" : "er");
+      },
+      ms: function (c) {
+        return "millisekund" + (c === 1 ? "" : "er");
+      },
+      decimal: ","
+    },
+    sw: {
+      y: function (c) {
+        return c === 1 ? "mwaka" : "miaka";
+      },
+      mo: function (c) {
+        return c === 1 ? "mwezi" : "miezi";
+      },
+      w: "wiki",
+      d: function (c) {
+        return c === 1 ? "siku" : "masiku";
+      },
+      h: function (c) {
+        return c === 1 ? "saa" : "masaa";
+      },
+      m: "dakika",
+      s: "sekunde",
+      ms: "milisekunde",
+      decimal: "."
+    },
+    tr: {
+      y: "yıl",
+      mo: "ay",
+      w: "hafta",
+      d: "gün",
+      h: "saat",
+      m: "dakika",
+      s: "saniye",
+      ms: "milisaniye",
+      decimal: ","
+    },
+    th: {
+      y: "ปี",
+      mo: "เดือน",
+      w: "สัปดาห์",
+      d: "วัน",
+      h: "ชั่วโมง",
+      m: "นาที",
+      s: "วินาที",
+      ms: "มิลลิวินาที",
+      decimal: "."
+    },
+    vi: {
+      y: "năm",
+      mo: "tháng",
+      w: "tuần",
+      d: "ngày",
+      h: "gi�",
+      m: "phút",
+      s: "giây",
+      ms: "mili giây",
+      decimal: ","
+    },
+    zh_CN: {
+      y: "年",
+      mo: "个月",
+      w: "周",
+      d: "天",
+      h: "�时",
+      m: "分钟",
+      s: "秒",
+      ms: "毫秒",
+      decimal: "."
+    },
+    zh_TW: {
+      y: "年",
+      mo: "個月",
+      w: "周",
+      d: "天",
+      h: "�時",
+      m: "分�",
+      s: "秒",
+      ms: "毫秒",
+      decimal: "."
+    }
+  };
+
+  // You can create a humanizer, which returns a function with default
+  // parameters.
+  function humanizer(passedOptions) {
+    var result = function humanizer(ms, humanizerOptions) {
+      var options = assign({}, result, humanizerOptions || {});
+      return doHumanization(ms, options);
+    };
+
+    return assign(
+      result,
+      {
+        language: "en",
+        spacer: " ",
+        conjunction: "",
+        serialComma: true,
+        units: ["y", "mo", "w", "d", "h", "m", "s"],
+        languages: {},
+        round: false,
+        unitMeasures: {
+          y: 31557600000,
+          mo: 2629800000,
+          w: 604800000,
+          d: 86400000,
+          h: 3600000,
+          m: 60000,
+          s: 1000,
+          ms: 1
+        }
+      },
+      passedOptions
+    );
+  }
+
+  // The main function is just a wrapper around a default humanizer.
+  var humanizeDuration = humanizer({});
+
+  // Build dictionary from options
+  function getDictionary(options) {
+    var languagesFromOptions = [options.language];
+
+    if (has(options, "fallbacks")) {
+      if (isArray(options.fallbacks) && options.fallbacks.length) {
+        languagesFromOptions = languagesFromOptions.concat(options.fallbacks);
+      } else {
+        throw new Error("fallbacks must be an array with at least one element");
+      }
+    }
+
+    for (var i = 0; i < languagesFromOptions.length; i++) {
+      var languageToTry = languagesFromOptions[i];
+      if (has(options.languages, languageToTry)) {
+        return options.languages[languageToTry];
+      } else if (has(LANGUAGES, languageToTry)) {
+        return LANGUAGES[languageToTry];
+      }
+    }
+
+    throw new Error("No language found.");
+  }
+
+  // doHumanization does the bulk of the work.
+  function doHumanization(ms, options) {
+    var i, len, piece;
+
+    // Make sure we have a positive number.
+    // Has the nice sideffect of turning Number objects into primitives.
+    ms = Math.abs(ms);
+
+    var dictionary = getDictionary(options);
+    var pieces = [];
+
+    // Start at the top and keep removing units, bit by bit.
+    var unitName, unitMS, unitCount;
+    for (i = 0, len = options.units.length; i < len; i++) {
+      unitName = options.units[i];
+      unitMS = options.unitMeasures[unitName];
+
+      // What's the number of full units we can fit?
+      if (i + 1 === len) {
+        if (has(options, "maxDecimalPoints")) {
+          // We need to use this expValue to avoid rounding functionality of toFixed call
+          var expValue = Math.pow(10, options.maxDecimalPoints);
+          var unitCountFloat = ms / unitMS;
+          unitCount = parseFloat(
+            (Math.floor(expValue * unitCountFloat) / expValue).toFixed(
+              options.maxDecimalPoints
+            )
+          );
+        } else {
+          unitCount = ms / unitMS;
+        }
+      } else {
+        unitCount = Math.floor(ms / unitMS);
+      }
+
+      // Add the string.
+      pieces.push({
+        unitCount: unitCount,
+        unitName: unitName
+      });
+
+      // Remove what we just figured out.
+      ms -= unitCount * unitMS;
+    }
+
+    var firstOccupiedUnitIndex = 0;
+    for (i = 0; i < pieces.length; i++) {
+      if (pieces[i].unitCount) {
+        firstOccupiedUnitIndex = i;
+        break;
+      }
+    }
+
+    if (options.round) {
+      var ratioToLargerUnit, previousPiece;
+      for (i = pieces.length - 1; i >= 0; i--) {
+        piece = pieces[i];
+        piece.unitCount = Math.round(piece.unitCount);
+
+        if (i === 0) {
+          break;
+        }
+
+        previousPiece = pieces[i - 1];
+
+        ratioToLargerUnit =
+          options.unitMeasures[previousPiece.unitName] /
+          options.unitMeasures[piece.unitName];
+        if (
+          piece.unitCount % ratioToLargerUnit === 0 ||
+          (options.largest && options.largest - 1 < i - firstOccupiedUnitIndex)
+        ) {
+          previousPiece.unitCount += piece.unitCount / ratioToLargerUnit;
+          piece.unitCount = 0;
+        }
+      }
+    }
+
+    var result = [];
+    for (i = 0, pieces.length; i < len; i++) {
+      piece = pieces[i];
+      if (piece.unitCount) {
+        result.push(
+          render(piece.unitCount, piece.unitName, dictionary, options)
+        );
+      }
+
+      if (result.length === options.largest) {
+        break;
+      }
+    }
+
+    if (result.length) {
+      var delimiter;
+      if (has(options, "delimiter")) {
+        delimiter = options.delimiter;
+      } else if (has(dictionary, "delimiter")) {
+        delimiter = dictionary.delimiter;
+      } else {
+        delimiter = ", ";
+      }
+
+      if (!options.conjunction || result.length === 1) {
+        return result.join(delimiter);
+      } else if (result.length === 2) {
+        return result.join(options.conjunction);
+      } else if (result.length > 2) {
+        return (
+          result.slice(0, -1).join(delimiter) +
+          (options.serialComma ? "," : "") +
+          options.conjunction +
+          result.slice(-1)
+        );
+      }
+    } else {
+      return render(
+        0,
+        options.units[options.units.length - 1],
+        dictionary,
+        options
+      );
+    }
+  }
+
+  function render(count, type, dictionary, options) {
+    var decimal;
+    if (has(options, "decimal")) {
+      decimal = options.decimal;
+    } else if (has(dictionary, "decimal")) {
+      decimal = dictionary.decimal;
+    } else {
+      decimal = ".";
+    }
+
+    var countStr;
+    if (typeof dictionary._formatCount === "function") {
+      countStr = dictionary._formatCount(count, decimal);
+    } else {
+      countStr = count.toString().replace(".", decimal);
+    }
+
+    var dictionaryValue = dictionary[type];
+    var word;
+    if (typeof dictionaryValue === "function") {
+      word = dictionaryValue(count);
+    } else {
+      word = dictionaryValue;
+    }
+
+    return countStr + options.spacer + word;
+  }
+
+  function assign(destination) {
+    var source;
+    for (var i = 1; i < arguments.length; i++) {
+      source = arguments[i];
+      for (var prop in source) {
+        if (has(source, prop)) {
+          destination[prop] = source[prop];
+        }
+      }
+    }
+    return destination;
+  }
+
+  function getArabicForm(c) {
+    if (c === 1) {
+      return 0;
+    }
+    if (c === 2) {
+      return 1;
+    }
+    if (c > 2 && c < 11) {
+      return 2;
+    }
+    return 0;
+  }
+
+  function getPolishForm(c) {
+    if (c === 1) {
+      return 0;
+    } else if (Math.floor(c) !== c) {
+      return 1;
+    } else if (c % 10 >= 2 && c % 10 <= 4 && !(c % 100 > 10 && c % 100 < 20)) {
+      return 2;
+    } else {
+      return 3;
+    }
+  }
+
+  function getSlavicForm(c) {
+    if (Math.floor(c) !== c) {
+      return 2;
+    } else if (
+      (c % 100 >= 5 && c % 100 <= 20) ||
+      (c % 10 >= 5 && c % 10 <= 9) ||
+      c % 10 === 0
+    ) {
+      return 0;
+    } else if (c % 10 === 1) {
+      return 1;
+    } else if (c > 1) {
+      return 2;
+    } else {
+      return 0;
+    }
+  }
+
+  function getCzechOrSlovakForm(c) {
+    if (c === 1) {
+      return 0;
+    } else if (Math.floor(c) !== c) {
+      return 1;
+    } else if (c % 10 >= 2 && c % 10 <= 4 && c % 100 < 10) {
+      return 2;
+    } else {
+      return 3;
+    }
+  }
+
+  function getLithuanianForm(c) {
+    if (c === 1 || (c % 10 === 1 && c % 100 > 20)) {
+      return 0;
+    } else if (
+      Math.floor(c) !== c ||
+      (c % 10 >= 2 && c % 100 > 20) ||
+      (c % 10 >= 2 && c % 100 < 10)
+    ) {
+      return 1;
+    } else {
+      return 2;
+    }
+  }
+
+  function getLatvianForm(c) {
+    return c % 10 === 1 && c % 100 !== 11;
+  }
+
+  // We need to make sure we support browsers that don't have
+  // `Array.isArray`, so we define a fallback here.
+  var isArray =
+    Array.isArray ||
+    function (arg) {
+      return Object.prototype.toString.call(arg) === "[object Array]";
+    };
+
+  function has(obj, key) {
+    return Object.prototype.hasOwnProperty.call(obj, key);
+  }
+
+  humanizeDuration.getSupportedLanguages = function getSupportedLanguages() {
+    var result = [];
+    for (var language in LANGUAGES) {
+      if (has(LANGUAGES, language) && language !== "gr") {
+        result.push(language);
+      }
+    }
+    return result;
+  };
+
+  humanizeDuration.humanizer = humanizer;
+
+  if (typeof define === "function" && define.amd) {
+    define(function () {
+      return humanizeDuration;
+    });
+  } else if (typeof module !== "undefined" && module.exports) {
+    module.exports = humanizeDuration;
+	global.humanizeDuration = humanizeDuration;
+  } else {
+    this.humanizeDuration = humanizeDuration;
+  }
+})();
+
+
 class EventLog {
 	constructor() {
 		this.attributes = {};
@@ -225,6 +1933,30 @@ class GeneralLogStatistics {
 			ret += trace.events.length;
 		}
 		return ret;
+	}
+	
+	static getAverageSojournTime(log, activityKey="concept:name", completeTimestamp="time:timestamp", startTimestamp="time:timestamp") {
+		let sojTime = {}
+		for (let trace of log.traces) {
+			for (let eve of trace.events) {
+				let acti = eve.attributes[activityKey].value;
+				if (!(acti in sojTime)) {
+					sojTime[acti] = [];
+				}
+				let st = eve.attributes[startTimestamp].value.getTime();
+				let et = eve.attributes[completeTimestamp].value.getTime();
+				let diff = (et - st)*1000;
+				sojTime[acti].push(diff);
+			}
+		}
+		for (let acti in sojTime) {
+			let sum = 0.0;
+			for (let val of sojTime[acti]) {
+				sum += val;
+			}
+			sojTime[acti] = sum / sojTime[acti].length;
+		}
+		return sojTime;
 	}
 }
 
@@ -1097,7 +2829,7 @@ class PnmlExporter {
 		page.setAttribute("id", PnmlExporter.uuidv4());
 		domNet.appendChild(page);
 		PnmlExporter.exportXmlObjToDom(acceptingPetriNet, page);
-		let fm0Dom = document.createElement("finalmarkings");
+		let fm0Dom = document.createElementNS("", "finalMarkings");
 		domNet.appendChild(fm0Dom);
 		let fmDom = document.createElement("marking");
 		fm0Dom.appendChild(fmDom);
@@ -1133,7 +2865,7 @@ class PnmlExporter {
 			placeName.appendChild(placeNameText);
 			placeNameText.textContent = place.name;
 			if (place in obj.im.tokens) {
-				let initialMarking = document.createElement("initialMarking");
+				let initialMarking = document.createElementNS("", "initialMarking");
 				domPlace.appendChild(initialMarking);
 				let initialMarkingText = document.createElement("text");
 				initialMarking.appendChild(initialMarkingText);
@@ -2236,6 +3968,88 @@ catch (err) {
 Pm4JS.registerAlgorithm("TokenBasedReplay", "apply", ["EventLog", "AcceptingPetriNet"], "TokenBasedReplayResult", "Perform Token Based Replay", "Alessandro Berti");
 
 
+class GeneralizationTbrResults {
+	constructor(value) {
+		this.value = value;
+	}
+}
+
+class GeneralizationTbr {
+	static apply(tbrResults) {
+		let invSqOccSum = 0.0
+		for (let trans in tbrResults.transExecutions) {
+			let thisTerm = 1.0 / Math.sqrt(Math.max(tbrResults.transExecutions[trans], 1));
+			invSqOccSum += thisTerm;
+		}
+		let ret = new GeneralizationTbrResults(1.0 - invSqOccSum/(Object.keys(tbrResults.transExecutions).length));
+		Pm4JS.registerObject(ret, "Generalization Results");
+		return ret;
+	}
+}
+
+try {
+	require("../../../pm4js.js");
+	require("../../conformance/tokenreplay/algorithm.js");
+	module.exports = {GeneralizationTbr: GeneralizationTbr, GeneralizationTbrResults: GeneralizationTbrResults};
+	global.GeneralizationTbr = GeneralizationTbr;
+	global.GeneralizationTbrResults = GeneralizationTbrResults;
+}
+catch (err) {
+	// not in Node
+	console.log(err);
+}
+
+Pm4JS.registerAlgorithm("GeneralizationTbr", "apply", ["TokenBasedReplayResult"], "GeneralizationTbrResults", "Calculate Generalization", "Alessandro Berti");
+
+
+class SimplicityArcDegreeResults {
+	constructor(value) {
+		this.value = value;
+	}
+}
+
+class SimplicityArcDegree {
+	static apply(acceptingPetriNet, k=0) {
+		let summ = 0.0;
+		let count = 0;
+		for (let placeId in acceptingPetriNet.net.places) {
+			let place = acceptingPetriNet.net.places[placeId];
+			summ += Object.keys(place.inArcs).length;
+			summ += Object.keys(place.outArcs).length;
+			count += 2;
+		}
+		for (let transId in acceptingPetriNet.net.transitions) {
+			let trans = acceptingPetriNet.net.transitions[transId];
+			summ += Object.keys(trans.inArcs).length;
+			summ += Object.keys(trans.outArcs).length;
+			count += 2;
+		}
+		let meanDegree = 0;
+		if (count > 0) {
+			meanDegree = summ / count;
+		}
+		let simplicity = 1.0 / (1.0 + Math.max(meanDegree - k, 0));
+		let ret = new SimplicityArcDegreeResults(simplicity);
+		Pm4JS.registerObject(ret, "Simplicity Results");
+		return ret;
+	}
+}
+
+try {
+	require("../../../pm4js.js");
+	require("../../../objects/petri_net/petri_net.js");
+	module.exports = {SimplicityArcDegree: SimplicityArcDegree, SimplicityArcDegreeResults: SimplicityArcDegreeResults};
+	global.SimplicityArcDegree = SimplicityArcDegree;
+	global.SimplicityArcDegreeResults = SimplicityArcDegreeResults;
+}
+catch (err) {
+	// not in Node
+	console.log(err);
+}
+
+Pm4JS.registerAlgorithm("SimplicityArcDegree", "apply", ["AcceptingPetriNet"], "SimplicityArcDegreeResults", "Calculate Simplicity (Arc Degree)", "Alessandro Berti");
+
+
 class FrequencyDfg {
 	constructor(activities, startActivities, endActivities, pathsFrequency) {
 		this.activities = activities;
@@ -2255,8 +4069,33 @@ catch (err) {
 }
 
 
+class PerformanceDfg {
+	constructor(activities, startActivities, endActivities, pathsFrequency, pathsPerformance, sojournTimes) {
+		this.activities = activities;
+		this.startActivities = startActivities;
+		this.endActivities = endActivities;
+		this.pathsFrequency = pathsFrequency;
+		this.pathsPerformance = pathsPerformance;
+		this.sojournTimes = sojournTimes;
+	}
+}
+
+try {
+	require("../../../pm4js.js");
+	module.exports = {PerformanceDfg: PerformanceDfg};
+	global.PerformanceDfg = PerformanceDfg;
+}
+catch (err) {
+	// not in Node
+}
+
+
 class FrequencyDfgDiscovery {
-	static apply(eventLog, activityKey="concept:name") {
+	static applyPlugin(eventLog, activityKey="concept:name") {
+		return FrequencyDfgDiscovery.apply(eventLog, activityKey, true);
+	}
+	
+	static apply(eventLog, activityKey="concept:name", addObject=false) {
 		let sa = GeneralLogStatistics.getStartActivities(eventLog, activityKey);
 		let ea = GeneralLogStatistics.getEndActivities(eventLog, activityKey);
 		let activities = GeneralLogStatistics.getAttributeValues(eventLog, activityKey);
@@ -2277,7 +4116,114 @@ class FrequencyDfgDiscovery {
 				i++;
 			}
 		}
-		return new FrequencyDfg(activities, sa, ea, paths);
+		let ret = new FrequencyDfg(activities, sa, ea, paths);
+		if (addObject) {
+			Pm4JS.registerObject(ret, "Frequency Directly-Follows Graph");
+		}
+		return ret;
+	}
+}
+
+class PerformanceDfgDiscovery {
+	static applyPlugin(eventLog, activityKey="concept:name", timestampKey="time:timestamp", aggregationMeasure="mean", startTimestampKey="time:timestamp") {
+		return PerformanceDfgDiscovery.apply(eventLog, activityKey, timestampKey, aggregationMeasure, startTimestampKey, true);
+	}
+	
+	static apply(eventLog, activityKey="concept:name", timestampKey="time:timestamp", aggregationMeasure="mean", startTimestampKey="time:timestamp", addObject=false) {
+		let freqDfg = FrequencyDfgDiscovery.apply(eventLog, activityKey);
+		let sa = freqDfg.startActivities;
+		let ea = freqDfg.endActivities;
+		let activities = freqDfg.activities;
+		let pathsFrequency = freqDfg.pathsFrequency;
+		let paths = {};
+		for (let trace of eventLog.traces) {
+			let i = 0;
+			while (i < trace.events.length-1) {
+				let act1 = trace.events[i].attributes[activityKey].value;
+				let act2 = trace.events[i+1].attributes[activityKey].value;
+				let path = act1+","+act2;
+				let ts1 = trace.events[i].attributes[timestampKey].value.getTime();
+				let ts2 = trace.events[i+1].attributes[startTimestampKey].value.getTime();
+				let diff = (ts2 - ts1)/1000;
+				if (!(path in paths)) {
+					paths[path] = [];
+				}
+				paths[path].push(diff);
+				i++;
+			}
+		}
+		for (let path in paths) {
+			if (aggregationMeasure == "stdev") {
+				paths[path] = PerformanceDfgDiscovery.calculateStdev(paths[path]);
+			}
+			else if (aggregationMeasure == "min") {
+				paths[path] = PerformanceDfgDiscovery.calculateMin(paths[path]);
+			}
+			else if (aggregationMeasure == "max") {
+				paths[path] = PerformanceDfgDiscovery.calculateMax(paths[path]);
+			}
+			else if (aggregationMeasure == "median") {
+				paths[path] = PerformanceDfgDiscovery.calculateMedian(paths[path]);
+			}
+			else if (aggregationMeasure == "sum") {
+				paths[path] = PerformanceDfgDiscovery.calculateSum(paths[path]);
+			}
+			else {
+				paths[path] = PerformanceDfgDiscovery.calculateMean(paths[path]);
+			}
+		}
+		let sojournTimes = GeneralLogStatistics.getAverageSojournTime(eventLog, activityKey, timestampKey, startTimestampKey);
+		let ret = new PerformanceDfg(activities, sa, ea, pathsFrequency, paths, sojournTimes);
+		if (addObject) {
+			Pm4JS.registerObject(ret, "Performance Directly-Follows Graph");
+		}
+		return ret;
+	}
+	
+	static calculateMean(array) {
+		let sum = 0.0;
+		for (let el of array) {
+			sum += el;
+		}
+		return sum / array.length;
+	}
+	
+	static calculateStdev(array) {
+		let mean = PerformanceDfgDiscovery.calculateMean(array);
+		let sum = 0.0;
+		for (let el of array) {
+			sum += (el - mean)*(el-mean);
+		}
+		return Math.sqrt(sum / array.length);
+	}
+	
+	static calculateMin(array) {
+		let minValue = Number.MAX_SAFE_INTEGER;
+		for (let el of array) {
+			minValue = Math.min(minValue, el);
+		}
+		return minValue;
+	}
+	
+	static calculateMax(array) {
+		let maxValue = Number.MIN_SAFE_INTEGER;
+		for (let el of array) {
+			maxValue = Math.max(maxValue, el);
+		}
+		return maxValue;
+	}
+	
+	static calculateMedian(array) {
+		array.sort();
+		return array[Math.floor(array.length / 2)];
+	}
+	
+	static calculateSum(array) {
+		let ret = 0.0;
+		for (let el of array) {
+			ret += el;
+		}
+		return ret;
 	}
 }
 
@@ -2285,12 +4231,18 @@ try {
 	require("../../../pm4js.js");
 	require("../../../statistics/log/general.js");
 	require("../../../objects/dfg/frequency/obj.js");
-	module.exports = {FrequencyDfgDiscovery: FrequencyDfgDiscovery};
+	require("../../../objects/dfg/performance/obj.js");
+	module.exports = {FrequencyDfgDiscovery: FrequencyDfgDiscovery, PerformanceDfgDiscovery: PerformanceDfgDiscovery};
 	global.FrequencyDfgDiscovery = FrequencyDfgDiscovery;
+	global.PerformanceDfgDiscovery = PerformanceDfgDiscovery;
 }
 catch (err) {
 	// not in Node.JS
 }
+
+Pm4JS.registerAlgorithm("FrequencyDfgDiscovery", "applyPlugin", ["EventLog"], "FrequencyDfg", "Get Frequency DFG abstraction", "Alessandro Berti");
+Pm4JS.registerAlgorithm("PerformanceDfgDiscovery", "applyPlugin", ["EventLog"], "PerformanceDfg", "Get Performance DFG abstraction", "Alessandro Berti");
+
 
 class InductiveMiner {
 	static applyPlugin(eventLog, activityKey="concept:name", threshold=0.0, removeNoise=false) {
@@ -3134,6 +5086,120 @@ catch (err) {
 
 Pm4JS.registerAlgorithm("InductiveMiner", "applyPlugin", ["EventLog"], "ProcessTree", "Mine a Process Tree using the Inductive Miner", "Alessandro Berti");
 
+
+class FrequencyDfgGraphvizVisualizer {
+	static uuidv4() {
+	  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+		var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+		return v.toString(16);
+	  });
+	}
+	
+	static nodeUuid() {
+		let uuid = FrequencyDfgGraphvizVisualizer.uuidv4();
+		return "n"+uuid.replace(/-/g, "");
+	}
+	
+	static apply(frequencyDfg) {
+		let ret = [];
+		let uidMap = {};
+		ret.push("digraph G {");
+		for (let act in frequencyDfg.activities) {
+			let nUid = FrequencyDfgGraphvizVisualizer.nodeUuid();
+			uidMap[act] = nUid;
+			ret.push(nUid+" [shape=box, label=\""+act+"\n"+frequencyDfg.activities[act]+"\"]");
+		}
+		let startNodeUid = FrequencyDfgGraphvizVisualizer.nodeUuid();
+		let endNodeUid = FrequencyDfgGraphvizVisualizer.nodeUuid();
+		ret.push(startNodeUid+" [shape=circle, label=\" \", style=filled, fillcolor=green]");
+		ret.push(endNodeUid+" [shape=circle, label=\" \", style=filled, fillcolor=orange]");
+		for (let sa in frequencyDfg.startActivities) {
+			let occ = frequencyDfg.startActivities[sa];
+			let penwidth = 0.5 + Math.log10(occ);
+			ret.push(startNodeUid+" -> "+uidMap[sa]+" [label=\""+occ+"\", penwidth=\""+penwidth+"\"]");
+		}
+		for (let ea in frequencyDfg.endActivities) {
+			let occ = frequencyDfg.endActivities[ea];
+			let penwidth = 0.5 + Math.log10(occ);
+			ret.push(uidMap[ea]+" -> "+endNodeUid+" [label=\""+occ+"\", penwidth=\""+penwidth+"\"]");
+		}
+		for (let arc in frequencyDfg.pathsFrequency) {
+			let act1 = arc.split(",")[0];
+			let act2 = arc.split(",")[1];
+			let occ = frequencyDfg.pathsFrequency[arc];
+			let penwidth = 0.5 + Math.log10(occ);
+			ret.push(uidMap[act1]+" -> "+uidMap[act2]+" [label=\""+occ+"\", penwidth=\""+penwidth+"\"]");
+		}
+		ret.push("}");
+		return ret.join("\n");
+	}
+}
+
+try {
+	require('../../pm4js.js');
+	require('../../objects/dfg/frequency/obj.js');
+	module.exports = {FrequencyDfgGraphvizVisualizer: FrequencyDfgGraphvizVisualizer};
+	global.FrequencyDfgGraphvizVisualizer = FrequencyDfgGraphvizVisualizer;
+}
+catch (err) {
+	// not in node
+}
+
+class PerformanceDfgGraphvizVisualizer {
+	static uuidv4() {
+	  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+		var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+		return v.toString(16);
+	  });
+	}
+	
+	static nodeUuid() {
+		let uuid = PerformanceDfgGraphvizVisualizer.uuidv4();
+		return "n"+uuid.replace(/-/g, "");
+	}
+	
+	static apply(performanceDfg) {
+		let ret = [];
+		let uidMap = {};
+		ret.push("digraph G {");
+		for (let act in performanceDfg.activities) {
+			let nUid = PerformanceDfgGraphvizVisualizer.nodeUuid();
+			uidMap[act] = nUid;
+			let st = performanceDfg.sojournTimes[act];
+			ret.push(nUid+" [shape=box, label=\""+act+"\n("+humanizeDuration(st*1000)+")\"]");
+		}
+		let startNodeUid = PerformanceDfgGraphvizVisualizer.nodeUuid();
+		let endNodeUid = PerformanceDfgGraphvizVisualizer.nodeUuid();
+		ret.push(startNodeUid+" [shape=circle, label=\" \", style=filled, fillcolor=green]");
+		ret.push(endNodeUid+" [shape=circle, label=\" \", style=filled, fillcolor=orange]");
+		for (let sa in performanceDfg.startActivities) {
+			ret.push(startNodeUid+" -> "+uidMap[sa]);
+		}
+		for (let ea in performanceDfg.endActivities) {
+			ret.push(uidMap[ea]+" -> "+endNodeUid);
+		}
+		for (let arc in performanceDfg.pathsPerformance) {
+			let act1 = arc.split(",")[0];
+			let act2 = arc.split(",")[1];
+			let perf = performanceDfg.pathsPerformance[arc];
+			let penwidth = 0.5 + 0.3 * Math.log10(1 + perf);
+			ret.push(uidMap[act1]+" -> "+uidMap[act2]+" [label=\""+humanizeDuration(Math.round(perf*1000))+"\", penwidth=\""+penwidth+"\"]");
+		}
+		ret.push("}");
+		return ret.join("\n");
+	}
+}
+
+try {
+	require('../../pm4js.js');
+	require('../../objects/dfg/performance/obj.js');
+	module.exports = {PerformanceDfgGraphvizVisualizer: PerformanceDfgGraphvizVisualizer};
+	global.PerformanceDfgGraphvizVisualizer = PerformanceDfgGraphvizVisualizer;
+}
+catch (err) {
+	// not in node
+	console.log(err);
+}
 
 class PetriNetFrequencyVisualizer {
 	static rgbColor(percent) {
