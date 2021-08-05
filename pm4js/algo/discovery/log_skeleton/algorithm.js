@@ -51,31 +51,39 @@ class LogSkeletonDiscovery {
 					}
 				}
 			}
+			let met = {};
 			let i = 0;
+			while (i < trace.events.length) {
+				met[i] = [];
+				i++;
+			}
+			i = 0;
 			while (i < trace.events.length - 1) {
 				let acti = trace.events[i].attributes[activityKey].value;
-				let met = [];
 				let j = i + 1;
 				while (j < trace.events.length) {
 					let actj = trace.events[j].attributes[activityKey].value;
-					if (!(met.includes(actj))) {
-						let cou1 = [acti, actj];
-						let cou2 = [actj, acti];
+					let cou1 = [acti, actj];
+					let cou2 = [actj, acti];
+					if (!(met[i].includes(actj))) {
 						if (!(cou1 in alwaysAfter)) {
 							alwaysAfter[cou1] = 0;
 						}
-						if (!(cou2 in alwaysBefore)) {
-							alwaysBefore[cou2] = 0;
-						}
 						alwaysAfter[cou1] += 1;
-						alwaysBefore[cou2] += 1;
 						if (j == i+1) {
 							if (!(cou1 in directlyFollows)) {
 								directlyFollows[cou1] = 0;
 							}
 							directlyFollows[cou1] += 1;
 						}
-						met.push(actj);
+						met[i].push(actj);
+					}
+					if (!(met[j].includes(acti))) {
+						if (!(cou2 in alwaysBefore)) {
+							alwaysBefore[cou2] = 0;
+						}
+						alwaysBefore[cou2] += 1;
+						met[j].push(acti);
 					}
 					j++;
 				}
