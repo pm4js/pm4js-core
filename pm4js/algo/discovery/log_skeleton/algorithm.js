@@ -51,6 +51,30 @@ class LogSkeletonDiscovery {
 					}
 				}
 			}
+			let i = 0;
+			while (i < trace.events.length - 1) {
+				let acti = trace.events[i].attributes[activityKey].value;
+				let met = [];
+				let j = i + 1;
+				while (j < trace.events.length) {
+					let actj = trace.events[j].attributes[activityKey].value;
+					if (!(met.includes(actj))) {
+						let cou1 = [acti, actj];
+						let cou2 = [actj, acti];
+						if (!(cou1 in alwaysAfter)) {
+							alwaysAfter[cou1] = 0;
+						}
+						if (!(cou2 in alwaysBefore)) {
+							alwaysBefore[cou2] = 0;
+						}
+						alwaysAfter[cou1] += 1;
+						alwaysBefore[cou2] += 1;
+						met.push(actj);
+					}
+					j++;
+				}
+				i++;
+			}
 		}
 		// normalize the output before returning
 		for (let cou in neverTogether) {
@@ -67,9 +91,16 @@ class LogSkeletonDiscovery {
 			}
 		}
 		for (let cou in equivalence) {
-			equivalence[cou] = (0.0 + equivalence[cou]) / equivalenceTotCases[cou];
+			equivalence[cou] = [(0.0 + equivalence[cou]) / equivalenceTotCases[cou], equivalence[cou]];
 		}
-		console.log(equivalence);
+		for (let path0 in alwaysAfter) {
+			let path = path0.split(",");
+			alwaysAfter[path0] = alwaysAfter[path0] / activities[path[0]];
+		}
+		for (let path0 in alwaysBefore) {
+			let path = path0.split(",");
+			alwaysBefore[path0] = alwaysBefore[path0] / activities[path[0]];
+		}
 	}
 }
 
