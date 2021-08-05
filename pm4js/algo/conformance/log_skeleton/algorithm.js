@@ -1,3 +1,27 @@
+class LogSkeletonConformanceCheckingResult {
+	constructor(log, results) {
+		this.results = results;
+		this.totalTraces = log.traces.length;
+		this.fitTraces = 0;
+		this.deviationsRecord = {};
+		let i = 0;
+		while (i < this.results.length) {
+			if (this.results[i].length == 0) {
+				this.fitTraces++;
+			}
+			else {
+				for (let dev of this.results[i]) {
+					if (!(dev in this.deviationsRecord)) {
+						this.deviationsRecord[dev] = [];
+					}
+					this.deviationsRecord[dev].push(i);
+				}
+			}
+			i++;
+		}
+	}
+}
+
 class LogSkeletonConformanceChecking {
 	static apply(log, skeleton0, noiseThreshold=0.0, activityKey="concept:name") {
 		let skeleton = skeleton0.filterOnNoiseThreshold(noiseThreshold);
@@ -5,17 +29,18 @@ class LogSkeletonConformanceChecking {
 		for (let trace of log.traces) {
 			results.push(LogSkeletonConformanceChecking.applyTrace(trace, skeleton, activityKey));
 		}
-		return results;
+		return new LogSkeletonConformanceCheckingResult(log, results);
 	}
 	
 	static applyTrace(trace, skeleton, activityKey) {
 		let res = {};
-		//LogSkeletonConformanceChecking.applyEquivalence(trace, skeleton.equivalence, activityKey, res);
-		//LogSkeletonConformanceChecking.applyAlwaysAfter(trace, skeleton.alwaysAfter, activityKey, res);
-		//LogSkeletonConformanceChecking.applyAlwaysBefore(trace, skeleton.alwaysBefore, activityKey, res);
-		//LogSkeletonConformanceChecking.applyNeverTogether(trace, skeleton.neverTogether, activityKey, res);
+		LogSkeletonConformanceChecking.applyEquivalence(trace, skeleton.equivalence, activityKey, res);
+		LogSkeletonConformanceChecking.applyAlwaysAfter(trace, skeleton.alwaysAfter, activityKey, res);
+		LogSkeletonConformanceChecking.applyAlwaysBefore(trace, skeleton.alwaysBefore, activityKey, res);
+		LogSkeletonConformanceChecking.applyNeverTogether(trace, skeleton.neverTogether, activityKey, res);
 		LogSkeletonConformanceChecking.applyActCounter(trace, skeleton.actCounter, activityKey, res);
-		return res;
+		LogSkeletonConformanceChecking.applyDirectlyFollows(trace, skeleton.directlyFollows, activityKey, res);
+		return Object.keys(res);
 	}
 	
 	static applyEquivalence(trace, skeletonEquivalence, activityKey, res) {
@@ -59,6 +84,32 @@ class LogSkeletonConformanceChecking {
 				if (!(act in followingActivities)) {
 					res[["alwaysAfter", acti, act]] = 0;
 				}
+			}
+			i++;
+		}
+	}
+	
+	static applyDirectlyFollows(trace, skeletonDirectlyFollows, activityKey, res) {
+		let i = 0;
+		while (i < trace.events.length - 1) {
+			let acti = trace.events[i].attributes[activityKey].value;
+			let afterActivities = [];
+			for (let cou0 in skeletonDirectlyFollows) {
+				let cou = cou0.split(",");
+				if (cou[0] == acti) {
+					afterActivities.push(cou[1]);
+				}
+			}
+			let actj = trace.events[i+1].attributes[activityKey].value;
+			let followingActivities = [actj];
+			let isOk = afterActivities.length == 0;
+			for (let act of afterActivities) {
+				if (followingActivities.includes(act)) {
+					isOk = true;
+				}
+			}
+			if (!(isOk)) {
+				res[["directlyFollows", acti]] = 0;
 			}
 			i++;
 		}
@@ -130,18 +181,14 @@ class LogSkeletonConformanceChecking {
 				}
 			}
 		}
-		for (let act in skeletonActCounter) {
-			if (!(act in traceActivities)) {
-				res[["actCounter", act, 0]] = 0;
-			}
-		}
 	}
 }
 
 try {
 	require('../../../pm4js.js');
-	module.exports = {LogSkeletonConformanceChecking: LogSkeletonConformanceChecking};
+	module.exports = {LogSkeletonConformanceChecking: LogSkeletonConformanceChecking, LogSkeletonConformanceCheckingResult: LogSkeletonConformanceCheckingResult};
 	global.LogSkeletonConformanceChecking = LogSkeletonConformanceChecking;
+	global.LogSkeletonConformanceCheckingResult = LogSkeletonConformanceCheckingResult;
 }
 catch (err) {
 	// not in Node
