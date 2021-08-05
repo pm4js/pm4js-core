@@ -69,6 +69,12 @@ class LogSkeletonDiscovery {
 						}
 						alwaysAfter[cou1] += 1;
 						alwaysBefore[cou2] += 1;
+						if (j == i+1) {
+							if (!(cou1 in directlyFollows)) {
+								directlyFollows[cou1] = 0;
+							}
+							directlyFollows[cou1] += 1;
+						}
 						met.push(actj);
 					}
 					j++;
@@ -97,10 +103,15 @@ class LogSkeletonDiscovery {
 			let path = path0.split(",");
 			alwaysAfter[path0] = alwaysAfter[path0] / activities[path[0]];
 		}
+		for (let path0 in directlyFollows) {
+			let path = path0.split(",");
+			directlyFollows[path0] = directlyFollows[path0] / activities[path[0]];
+		}
 		for (let path0 in alwaysBefore) {
 			let path = path0.split(",");
 			alwaysBefore[path0] = alwaysBefore[path0] / activities[path[0]];
 		}
+		return new LogSkeleton(equivalence, neverTogether, alwaysAfter, alwaysBefore, directlyFollows, actCounter);
 	}
 }
 
