@@ -3,6 +3,7 @@ class LogSkeletonDiscovery {
 		let activities = GeneralLogStatistics.getAttributeValues(eventLog, activityKey);
 		let neverTogether = {};
 		let equivalence = {};
+		let equivalenceTotCases = {};
 		let alwaysAfter = {};
 		let alwaysBefore = {};
 		let directlyFollows = {};
@@ -27,13 +28,25 @@ class LogSkeletonDiscovery {
 				}
 				actCounter[act][activitiesCounter[act]] += 1;
 				for (let act2 in activities) {
+					let cou = [act, act2].sort();
 					if (!(act2 in activitiesCounter)) {
-						let cou = [act, act2].sort();
 						if (!(cou in neverTogether)) {
 							neverTogether[cou] = 1;
 						}
 						else {
 							neverTogether[cou] += 1;
+						}
+					}
+					else if (act2 != act) {
+						if (!(cou in equivalenceTotCases)) {
+							equivalenceTotCases[cou] = 0;
+						}
+						equivalenceTotCases[cou] += 1;
+						if (activitiesCounter[act] == activitiesCounter[act2]) {
+							if (!(cou in equivalence)) {
+								equivalence[cou] = 0;
+							}
+							equivalence[cou] += 1;
 						}
 					}
 				}
@@ -53,6 +66,10 @@ class LogSkeletonDiscovery {
 				actCounter[act]["0"] = (0.0 + eventLog.traces.length - intSum) / eventLog.traces.length;
 			}
 		}
+		for (let cou in equivalence) {
+			equivalence[cou] = (0.0 + equivalence[cou]) / equivalenceTotCases[cou];
+		}
+		console.log(equivalence);
 	}
 }
 
