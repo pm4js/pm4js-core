@@ -28,3 +28,5 @@ require('./pm4js/algo/discovery/inductive/algorithm.js');
 require('./pm4js/visualization/dfg/frequency.js');
 require('./pm4js/visualization/dfg/performance.js');
 require('./pm4js/visualization/petri_net/frequency_graphviz.js');
+require('./pm4js/objects/skeleton/log_skeleton.js');
+require('./pm4js/algo/discovery/log_skeleton/algorithm.js');
