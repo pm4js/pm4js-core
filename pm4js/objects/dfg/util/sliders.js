@@ -10,6 +10,9 @@ class DfgSliders {
 		}
 		let visited = {};
 		let toVisit = ["▶"];
+		if (!("▶" in outgoing)) {
+			return false;
+		}
 		while (toVisit.length > 0) {
 			let currAct = toVisit.shift();
 			if (!(currAct in visited)) {
@@ -37,6 +40,9 @@ class DfgSliders {
 				ingoing[acts[1]] = {};
 			}
 			ingoing[acts[1]][acts[0]] = 0;
+		}
+		if (!("■" in ingoing)) {
+			return false;
 		}
 		let visited = {};
 		let toVisit = ["■"];
@@ -96,6 +102,62 @@ class DfgSliders {
 						artDfg = newDfg;
 						delete artAct[thisAct];
 					}
+				}
+			}
+			i++;
+		}
+		return dfg.unrollArtificialDfg([artAct, artDfg]);
+	}
+	
+	static filterDfgOnPercPaths(dfg, perc, keepAllActivities=false) {
+		let art = dfg.getArtificialDfg();
+		let artAct = art[0];
+		let artDfg = art[1];
+		let pathsArray = [];
+		for (let path in artDfg) {
+			pathsArray.push([path, artDfg[path]]);
+		}
+		pathsArray.sort((a, b) => a[1] - b[1]);
+		let idx = Math.floor((pathsArray.length - 1.0) * (1.0 - perc));
+		let pathsToKeep = [];
+		let i = idx;
+		while (i < pathsArray.length) {
+			pathsToKeep.push(pathsArray[i][0]);
+			i++;
+		}
+		let activitiesToKeep = [];
+		if (keepAllActivities) {
+			for (let act in artAct) {
+				activitiesToKeep.push(act);
+			}
+		}
+		else {
+			for (let path0 of pathsToKeep) {
+				let path = path0.split(",");
+				if (!(path[0] in activitiesToKeep)) {
+					activitiesToKeep.push(path[0]);
+				}
+				if (!(path[1] in activitiesToKeep)) {
+					activitiesToKeep.push(path[1]);
+				}
+			}
+		}
+		i = 0;
+		while (i < pathsArray.length) {
+			let newDfg = {};
+			Object.assign(newDfg, artDfg);
+			delete newDfg[pathsArray[i][0]];
+			if (DfgSliders.checkStartReachability(newDfg, activitiesToKeep)) {
+				if (DfgSliders.checkEndReachability(newDfg, activitiesToKeep)) {
+					artDfg = newDfg;
+					
+					let newArtAct = {};
+					for (let path in artDfg) {
+						let acts = path.split(",");
+						newArtAct[acts[0]] = artAct[acts[0]];
+						newArtAct[acts[1]] = artAct[acts[1]];
+					}
+					artAct = newArtAct;
 				}
 			}
 			i++;
