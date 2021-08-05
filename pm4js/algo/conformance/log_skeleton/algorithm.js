@@ -11,7 +11,8 @@ class LogSkeletonConformanceChecking {
 	static applyTrace(trace, skeleton, activityKey) {
 		let res = {};
 		//LogSkeletonConformanceChecking.applyEquivalence(trace, skeleton.equivalence, activityKey, res);
-		LogSkeletonConformanceChecking.applyAlwaysAfter(trace, skeleton.alwaysAfter, activityKey, res);
+		//LogSkeletonConformanceChecking.applyAlwaysAfter(trace, skeleton.alwaysAfter, activityKey, res);
+		//LogSkeletonConformanceChecking.applyAlwaysBefore(trace, skeleton.alwaysBefore, activityKey, res);
 		return res;
 	}
 	
@@ -46,7 +47,7 @@ class LogSkeletonConformanceChecking {
 				}
 			}
 			let followingActivities = {};
-			let j = 0;
+			let j = i + 1;
 			while (j < trace.events.length) {
 				let actj = trace.events[j].attributes[activityKey].value;
 				followingActivities[actj] = 0;
@@ -55,6 +56,36 @@ class LogSkeletonConformanceChecking {
 			for (let act of afterActivities) {
 				if (!(act in followingActivities)) {
 					res[["alwaysAfter", acti, act]] = 0;
+				}
+			}
+			i++;
+		}
+	}
+	
+	static applyAlwaysBefore(trace, skeletonAlwaysBefore, activityKey, res) {
+		let i = 1;
+		while (i < trace.events.length) {
+			let acti = trace.events[i].attributes[activityKey].value;
+			let beforeActivities = [];
+			for (let cou0 in skeletonAlwaysBefore) {
+				let cou = cou0.split(",");
+				if (cou[0] == acti) {
+					beforeActivities.push(cou[1]);
+				}
+			}
+			let precedingActivities = {};
+			let j = i - 1;
+			while (j >= 0) {
+				let actj = trace.events[j].attributes[activityKey].value;
+				precedingActivities[actj] = 0;
+				j--;
+			}
+			console.log(" ");
+			console.log(beforeActivities);
+			console.log(precedingActivities);
+			for (let act of beforeActivities) {
+				if (!(act in precedingActivities)) {
+					res[["alwaysBefore", acti, act]] = 0;
 				}
 			}
 			i++;
