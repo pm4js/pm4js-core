@@ -13,6 +13,7 @@ class LogSkeletonConformanceChecking {
 		//LogSkeletonConformanceChecking.applyEquivalence(trace, skeleton.equivalence, activityKey, res);
 		//LogSkeletonConformanceChecking.applyAlwaysAfter(trace, skeleton.alwaysAfter, activityKey, res);
 		//LogSkeletonConformanceChecking.applyAlwaysBefore(trace, skeleton.alwaysBefore, activityKey, res);
+		LogSkeletonConformanceChecking.applyNeverTogether(trace, skeleton.neverTogether, activityKey, res);
 		return res;
 	}
 	
@@ -86,6 +87,27 @@ class LogSkeletonConformanceChecking {
 				}
 			}
 			i++;
+		}
+	}
+	
+	static applyNeverTogether(trace, skeletonNeverTogether, activityKey, res) {
+		let traceActivities = {};
+		for (let eve of trace.events) {
+			let acti = eve.attributes[activityKey].value;
+			traceActivities[acti] = 0;
+		}
+		traceActivities = Object.keys(traceActivities);
+		let i = 0;
+		while (i < traceActivities.length-1) {
+			let j = i + 1;
+			while (j < traceActivities.length) {
+				let cou = [traceActivities[i], traceActivities[j]].sort();
+				if (cou in skeletonNeverTogether) {
+					res[["neverTogether", cou]] = 0;
+				}
+				j++;
+			}
+			i = i + 1;
 		}
 	}
 }
