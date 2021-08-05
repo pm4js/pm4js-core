@@ -80,9 +80,6 @@ class LogSkeletonConformanceChecking {
 				precedingActivities[actj] = 0;
 				j--;
 			}
-			console.log(" ");
-			console.log(beforeActivities);
-			console.log(precedingActivities);
 			for (let act of beforeActivities) {
 				if (!(act in precedingActivities)) {
 					res[["alwaysBefore", acti, act]] = 0;
