@@ -10,7 +10,8 @@ class LogSkeletonConformanceChecking {
 	
 	static applyTrace(trace, skeleton, activityKey) {
 		let res = {};
-		LogSkeletonConformanceChecking.applyEquivalence(trace, skeleton.equivalence, activityKey, res);
+		//LogSkeletonConformanceChecking.applyEquivalence(trace, skeleton.equivalence, activityKey, res);
+		LogSkeletonConformanceChecking.applyAlwaysAfter(trace, skeleton.alwaysAfter, activityKey, res);
 		return res;
 	}
 	
@@ -30,6 +31,33 @@ class LogSkeletonConformanceChecking {
 			if (cou[0] in actCounter && cou[1] in actCounter && actCounter[cou[0]] != actCounter[cou[1]]) {
 				res[["equivalence", cou]] = 0;
 			}
+		}
+	}
+	
+	static applyAlwaysAfter(trace, skeletonAlwaysAfter, activityKey, res) {
+		let i = 0;
+		while (i < trace.events.length - 1) {
+			let acti = trace.events[i].attributes[activityKey].value;
+			let afterActivities = [];
+			for (let cou0 in skeletonAlwaysAfter) {
+				let cou = cou0.split(",");
+				if (cou[0] == acti) {
+					afterActivities.push(cou[1]);
+				}
+			}
+			let followingActivities = {};
+			let j = 0;
+			while (j < trace.events.length) {
+				let actj = trace.events[j].attributes[activityKey].value;
+				followingActivities[actj] = 0;
+				j++;
+			}
+			for (let act of afterActivities) {
+				if (!(act in followingActivities)) {
+					res[["alwaysAfter", acti, act]] = 0;
+				}
+			}
+			i++;
 		}
 	}
 }
