@@ -22,6 +22,7 @@ require('./pm4js/algo/evaluation/generalization/tbr_result.js');
 require('./pm4js/algo/evaluation/simplicity/arc_degree.js');
 require('./pm4js/objects/dfg/frequency/obj.js');
 require('./pm4js/objects/dfg/performance/obj.js');
+require('./pm4js/objects/dfg/util/sliders.js');
 require('./pm4js/algo/discovery/dfg/algorithm.js');
 require('./pm4js/algo/discovery/inductive/algorithm.js');
 require('./pm4js/visualization/dfg/frequency.js');
