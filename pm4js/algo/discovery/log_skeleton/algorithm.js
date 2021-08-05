@@ -105,7 +105,7 @@ class LogSkeletonDiscovery {
 			}
 		}
 		for (let cou in equivalence) {
-			equivalence[cou] = [(0.0 + equivalence[cou]) / equivalenceTotCases[cou], equivalence[cou]];
+			equivalence[cou] = (0.0 + equivalence[cou]) / equivalenceTotCases[cou];
 		}
 		for (let path0 in alwaysAfter) {
 			let path = path0.split(",");

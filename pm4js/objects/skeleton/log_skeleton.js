@@ -10,7 +10,6 @@ class LogSkeleton {
 	
 	filterOnNoiseThreshold(thresh) {
 		thresh = 1.0 - thresh;
-		console.log(thresh);
 		let newEquivalence = {};
 		let newNeverTogether = {};
 		let newAlwaysAfter = {};
