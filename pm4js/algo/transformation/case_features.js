@@ -1,3 +1,10 @@
+class CaseFeaturesOutput {
+	constructor(data, features) {
+		this.data = data;
+		this.features = features;
+	}
+}
+
 class CaseFeatures {
 	static apply(eventLog, activityKey="concept:name", caseIdKey="concept:name", evStrAttr=null, evNumAttr=null, trStrAttr=null, trNumAttr=null, evSuccStrAttr=null) {
 		let vect = null;
@@ -19,12 +26,95 @@ class CaseFeatures {
 		if (evSuccStrAttr == null) {
 			evSuccStrAttr = vect[4];
 		}
-		let features = CaseFeatures.formFeaturesFromSpecification(eventLog, evStrAttr, evNumAttr, trStrAttr, trNumAttr, evSuccStrAttr);
-		console.log(features);
+		vect = CaseFeatures.formFeaturesFromSpecification(eventLog, evStrAttr, evNumAttr, trStrAttr, trNumAttr, evSuccStrAttr);
+		let features = vect[0];
+		let valuesCorr = vect[1];
+		let data = [];
+		for (let trace of eventLog.traces) {
+			let vect = [];
+			for (let attr of trNumAttr) {
+				vect.push(trace.attributes[attr].value);
+			}
+			for (let attr of evNumAttr) {
+				let i = trace.events.length - 1;
+				while (i >= 0) {
+					if (attr in trace.events[i].attributes) {
+						vect.push(trace.events[i].attributes[attr].value);
+						break;
+					}
+					i--;
+				}
+			}
+			for (let attr of trStrAttr) {
+				let value = null;
+				if (attr in trace.attributes) {
+					value = trace.attributes[attr].value;
+				}
+				for (let val of valuesCorr["trace@@"+attr]) {
+					if (val == value) {
+						vect.push(1);
+					}
+					else {
+						vect.push(0);
+					}
+				}
+			}
+			for (let attr of evStrAttr) {
+				let values = {};
+				for (let eve of trace.events) {
+					if (attr in eve.attributes) {
+						let val = eve.attributes[attr].value;
+						if (!(val in values)) {
+							values[val] = 1;
+						}
+						else {
+							values[val] += 1;
+						}
+					}
+				}
+				for (let val of valuesCorr["event@@"+attr]) {
+					if (val in values) {
+						vect.push(values[val]);
+					}
+					else {
+						vect.push(0);
+					}
+				}
+			}
+			for (let attr of evSuccStrAttr) {
+				let paths = {};
+				let i = 0;
+				while (i < trace.events.length - 1) {
+					if (attr in trace.events[i].attributes && attr in trace.events[i+1].attributes) {
+						let val1 = trace.events[i].attributes[attr].value;
+						let val2 = trace.events[i+1].attributes[attr].value;
+						let path = val1+","+val2;
+						if (!(path in paths)) {
+							paths[path] = 1;
+						}
+						else {
+							paths[path] += 1;
+						}
+					}
+					i++;
+				}
+				for (let path of valuesCorr["succession@@"+attr]) {
+					if (path in paths) {
+						vect.push(paths[path]);
+					}
+					else {
+						vect.push(0);
+					}
+				}
+			}
+			data.push(vect);
+		}
+		return new CaseFeaturesOutput(data, features);
 	}
 	
 	static formFeaturesFromSpecification(eventLog, evStrAttr, evNumAttr, trStrAttr, trNumAttr, evSuccStrAttr) {
 		let features = [];
+		let valuesCorr = {};
 		for (let attr of evNumAttr) {
 			features.push("event@@"+attr);
 		}
@@ -32,24 +122,27 @@ class CaseFeatures {
 			features.push("trace@@"+attr);
 		}
 		for (let attr of evStrAttr) {
-			let values = GeneralLogStatistics.getAttributeValues(eventLog, attr);
+			let values = Object.keys(GeneralLogStatistics.getAttributeValues(eventLog, attr));
+			valuesCorr["event@@"+attr] = values;
 			for (let val in values) {
 				features.push("event@@"+attr+"##"+val);
 			}
 		}
 		for (let attr of trStrAttr) {
-			let values = GeneralLogStatistics.getTraceAttributeValues(eventLog, attr);
+			let values = Object.keys(GeneralLogStatistics.getTraceAttributeValues(eventLog, attr));
+			valuesCorr["trace@@"+attr] = values;
 			for (let val in values) {
 				features.push("trace@@"+attr+"##"+val);
 			}
 		}
 		for (let attr of evSuccStrAttr) {
-			let frequencyDfg = FrequencyDfgDiscovery.apply(eventLog, attr).pathsFrequency;
+			let frequencyDfg = Object.keys(FrequencyDfgDiscovery.apply(eventLog, attr).pathsFrequency);
+			valuesCorr["succession@@"+attr] = frequencyDfg;
 			for (let path in frequencyDfg) {
 				features.push("succession@@"+attr+"##"+path);
 			}
 		}
-		return features;
+		return [features, valuesCorr];
 	}
 	
 	static automaticFeatureSelection(eventLog, activityKey="concept:name", caseIdKey="concept:name") {
