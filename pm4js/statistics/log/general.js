@@ -92,6 +92,30 @@ class GeneralLogStatistics {
 		return Object.keys(ret);
 	}
 	
+	static getEventAttributesWithType(log) {
+		let ret = {};
+		for (let trace of log.traces) {
+			for (let eve of trace.events) {
+				for (let attr in eve.attributes) {
+					if (!(attr in ret)) {
+						ret[attr] = typeof eve.attributes[attr].value;
+					}
+				}
+			}
+		}
+		return ret;
+	}
+	
+	static getTraceAttributesWithType(log) {
+		let ret = {};
+		for (let trace of log.traces) {
+			for (let attr in trace.attributes) {
+				ret[attr] = typeof trace.attributes[attr].value;
+			}
+		}
+		return ret;
+	}
+	
 	static numEvents(log) {
 		let ret = 0;
 		for (let trace of log.traces) {
