@@ -3,13 +3,15 @@ class GeneralLogStatistics {
 		let ret = {};
 		for (let trace of log.traces) {
 			if (trace.events.length > 0) {
-				let act = trace.events[0].attributes[activityKey].value;
-				let count = ret[act]
-				if (count == null) {
-					ret[act] = 1;
-				}
-				else {
-					ret[act] = count + 1;
+				if (activityKey in trace.events[0].attributes) {
+					let act = trace.events[0].attributes[activityKey].value;
+					let count = ret[act]
+					if (count == null) {
+						ret[act] = 1;
+					}
+					else {
+						ret[act] = count + 1;
+					}
 				}
 			}
 		}
@@ -20,13 +22,15 @@ class GeneralLogStatistics {
 		let ret = {};
 		for (let trace of log.traces) {
 			if (trace.events.length > 0) {
-				let act = trace.events[trace.events.length-1].attributes[activityKey].value;
-				let count = ret[act]
-				if (count == null) {
-					ret[act] = 1;
-				}
-				else {
-					ret[act] = count + 1;
+				if (activityKey in trace.events[trace.events.length-1].attributes) {
+					let act = trace.events[trace.events.length-1].attributes[activityKey].value;
+					let count = ret[act]
+					if (count == null) {
+						ret[act] = 1;
+					}
+					else {
+						ret[act] = count + 1;
+					}
 				}
 			}
 		}
@@ -37,7 +41,26 @@ class GeneralLogStatistics {
 		let ret = {};
 		for (let trace of log.traces) {
 			for (let eve of trace.events) {
-				let val = eve.attributes[attributeKey].value;
+				if (attributeKey in eve.attributes) {
+					let val = eve.attributes[attributeKey].value;
+					let count = ret[val];
+					if (count == null) {
+						ret[val] = 1;
+					}
+					else {
+						ret[val] = count + 1;
+					}
+				}
+			}
+		}
+		return ret;
+	}
+	
+	static getTraceAttributeValues(log, attributeKey) {
+		let ret = {};
+		for (let trace of log.traces) {
+			if (attributeKey in trace.attributes) {
+				let val = trace.attributes[attributeKey].value;
 				let count = ret[val];
 				if (count == null) {
 					ret[val] = 1;
@@ -55,8 +78,10 @@ class GeneralLogStatistics {
 		for (let trace of log.traces) {
 			let activities = [];
 			for (let eve of trace.events) {
-				let act = eve.attributes[activityKey].value;
-				activities.push(act);
+				if (activityKey in eve.attributes) {
+					let act = eve.attributes[activityKey].value;
+					activities.push(act);
+				}
 			}
 			activities = activities.toString();
 			let count = ret[activities];
@@ -128,14 +153,16 @@ class GeneralLogStatistics {
 		let sojTime = {}
 		for (let trace of log.traces) {
 			for (let eve of trace.events) {
-				let acti = eve.attributes[activityKey].value;
-				if (!(acti in sojTime)) {
-					sojTime[acti] = [];
+				if (activityKey in eve.attributes && startTimestamp in eve.attributes && completeTimestamp in eve.attributes) {
+					let acti = eve.attributes[activityKey].value;
+					if (!(acti in sojTime)) {
+						sojTime[acti] = [];
+					}
+					let st = eve.attributes[startTimestamp].value.getTime();
+					let et = eve.attributes[completeTimestamp].value.getTime();
+					let diff = (et - st)*1000;
+					sojTime[acti].push(diff);
 				}
-				let st = eve.attributes[startTimestamp].value.getTime();
-				let et = eve.attributes[completeTimestamp].value.getTime();
-				let diff = (et - st)*1000;
-				sojTime[acti].push(diff);
 			}
 		}
 		for (let acti in sojTime) {

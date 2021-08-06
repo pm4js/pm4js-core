@@ -11,15 +11,17 @@ class FrequencyDfgDiscovery {
 		for (let trace of eventLog.traces) {
 			let i = 0;
 			while (i < trace.events.length-1) {
-				let act1 = trace.events[i].attributes[activityKey].value;
-				let act2 = trace.events[i+1].attributes[activityKey].value;
-				let path = act1+","+act2;
-				let pathOcc = paths[path];
-				if (pathOcc == null) {
-					paths[path] = 1;
-				}
-				else {
-					paths[path] = paths[path] + 1;
+				if (activityKey in trace.events[i].attributes && activityKey in trace.events[i+1].attributes) {
+					let act1 = trace.events[i].attributes[activityKey].value;
+					let act2 = trace.events[i+1].attributes[activityKey].value;
+					let path = act1+","+act2;
+					let pathOcc = paths[path];
+					if (pathOcc == null) {
+						paths[path] = 1;
+					}
+					else {
+						paths[path] = paths[path] + 1;
+					}
 				}
 				i++;
 			}
@@ -47,16 +49,18 @@ class PerformanceDfgDiscovery {
 		for (let trace of eventLog.traces) {
 			let i = 0;
 			while (i < trace.events.length-1) {
-				let act1 = trace.events[i].attributes[activityKey].value;
-				let act2 = trace.events[i+1].attributes[activityKey].value;
-				let path = act1+","+act2;
-				let ts1 = trace.events[i].attributes[timestampKey].value.getTime();
-				let ts2 = trace.events[i+1].attributes[startTimestampKey].value.getTime();
-				let diff = (ts2 - ts1)/1000;
-				if (!(path in paths)) {
-					paths[path] = [];
+				if (activityKey in trace.events[i].attributes && activityKey in trace.events[i+1].attributes) {
+					let act1 = trace.events[i].attributes[activityKey].value;
+					let act2 = trace.events[i+1].attributes[activityKey].value;
+					let path = act1+","+act2;
+					let ts1 = trace.events[i].attributes[timestampKey].value.getTime();
+					let ts2 = trace.events[i+1].attributes[startTimestampKey].value.getTime();
+					let diff = (ts2 - ts1)/1000;
+					if (!(path in paths)) {
+						paths[path] = [];
+					}
+					paths[path].push(diff);
 				}
-				paths[path].push(diff);
 				i++;
 			}
 		}
