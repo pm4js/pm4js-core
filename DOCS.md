@@ -20,6 +20,10 @@
 	    * [Visualization (vanilla Graphviz)](#process-trees---visualization-vanilla-graphviz)
 	    * [Conversion to an accepting Petri net](#process-trees---conversion-to-an-accepting-petri-net)
 * Algorithms 
+	* Process Discovery
+		* [Inductive Miner](#inductive-miner)
+		* [Log Skeleton](#log-skeleton)
+		* [Directly Follows Graphs](#directly-follows-graphs)
 	* Conformance Checking
 		* [Token-Based Replay](#token-based-replay)
 * Statistics
@@ -256,6 +260,56 @@ The following code provides the conversion starting from a process tree object
 **let acceptingPetriNet = ProcessTreeToPetriNetConverter.apply(processTree);**
 
 # Algorithms
+
+## Process Discovery
+
+### Inductive Miner
+
+The Inductive Miner is an important process discovery algorithm, that returns process trees with fitness [guarantees](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.396.197&rep=rep1&type=pdf).
+The process tree can then be converted to a Petri net model, using the conversion method.
+
+To discover a process tree from an event log using the inductive miner, the following command can be used:
+**let processTree = InductiveMiner.apply(eventLog);**
+
+The command can be provided with some parameters, including the activity key and the threshold for IMf (removing some noise from the log):
+**let processTree = InductiveMiner.apply(eventLog, "concept:name", 0.2);**
+
+### Log Skeleton
+
+A log skeleton is an important process model / classification approach that is learnt on an event log and can classify whether a trace belongs to the language of an event log.
+The log skeleton approach is described [here](https://arxiv.org/pdf/1806.08247). The set of constraints discovered from the log skeleton are:
+* **Equivalence**: assigns a probability that a couple of activities happen the same number of times inside a trace.
+* **Never Together**: assigns a probability that a couple of activities do not happen together inside a trace.
+* **Always After**: assigns a probability to a couple of activities, telling how much likely is that the second activity happens somewhen after the first activity of the couple.
+* **Always Before**: assigns a probability to a couple of activities, telling how much likely is that the second activity happens somewhen before the first activity of the couple.
+* **Directly-Follows**: assigns a probability to a couple of activities, telling how much likely is that the second activity directly-follows the first activity of the couple.
+* **Activity Counter**: assigns a probability to the number of occurrences of an activity in a trace.
+
+To discover a log skeleton from an event log, the following command can be used:
+**let logSkeleton = LogSkeletonDiscovery.apply(eventLog);**
+
+To provide the activity key to the discovery of the log skeleton, the following command can be used:
+**let logSkeleton = LogSkeletonDiscovery.apply(eventLog, "concept:name");**
+
+### Directly Follows Graphs
+
+A directly-follows graph is a simple abstraction of the event log, that can show the activities of the graph and the relationships between them. We distinguish between
+frequency directly-follows graph (showing the frequency of activities and paths), and performance directly-follows graphs (showing the performance of the paths, and the
+sojourn times of the activities).
+
+To discover a frequency directly-follows graph, the following commands can be used (the second is a detailed version of the first):
+**let frequencyDfg = FrequencyDfgDiscovery.apply(eventLog);**
+**let frequencyDfg = FrequencyDfgDiscovery.apply(eventLog, "concept:name");**
+
+The Graphviz code of the frequency DFG visualization could be obtained doing:
+**let gv = FrequencyDfgGraphvizVisualizer.apply(frequencyDfg);**
+
+To discover a performance directly-follows graph, the following command can be used:
+**let performanceDfg = PerformanceDfgDiscovery.apply(eventLog);**
+**let performanceDfg = PerformanceDfgDiscovery.apply(eventLog, "concept:name");**
+
+The Graphviz code of the performance DFG visualization could be obtained doing:
+**let gv = PerformanceDfgGraphvizVisualizer.apply(performanceDfg);**
 
 ## Conformance Checking
 
