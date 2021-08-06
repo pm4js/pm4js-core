@@ -19,6 +19,11 @@ class CaseFeatures {
 		if (evSuccStrAttr == null) {
 			evSuccStrAttr = vect[4];
 		}
+		let features = CaseFeatures.formFeaturesFromSpecification(eventLog, evStrAttr, evNumAttr, trStrAttr, trNumAttr, evSuccStrAttr);
+		console.log(features);
+	}
+	
+	static formFeaturesFromSpecification(eventLog, evStrAttr, evNumAttr, trStrAttr, trNumAttr, evSuccStrAttr) {
 		let features = [];
 		for (let attr of evNumAttr) {
 			features.push("event@@"+attr);
@@ -44,7 +49,7 @@ class CaseFeatures {
 				features.push("succession@@"+attr+"##"+path);
 			}
 		}
-		console.log(features);
+		return features;
 	}
 	
 	static automaticFeatureSelection(eventLog, activityKey="concept:name", caseIdKey="concept:name") {
