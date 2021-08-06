@@ -26,6 +26,7 @@
 		* [Directly Follows Graphs](#directly-follows-graphs)
 	* Conformance Checking
 		* [Token-Based Replay](#token-based-replay)
+		* [Conformance Checking using the Log Skeleton](#conformance-checking-using-the-log-skeleton)
 * Statistics
 	* Log
 		* [General Statistics](#log---general-statistics)
@@ -343,6 +344,19 @@ The dictionary contains for each case the following properties:
 * **isFit**: boolean value that is True if the number of missing tokens is 0 and **missingActivitiesInModel** is empty; False otherwise
 * **reachedMarking**: the marking reached at the end of the replay.
 
+### Conformance Checking using the Log Skeleton
+
+It is possible to perform conformance checking between an event log and a log skeleton model. The command to perform conformance checking follows (the second is a more detailed version,
+in which the activity key is provided as argument):
+**let conformanceResult = LogSkeletonConformanceChecking.apply(log, skeleton)**
+**let conformanceResult = LogSkeletonConformanceChecking.apply(log, skeleton, "concept:name")**
+
+The returned object is of type *LogSkeletonConformanceCheckingResult*, and includes:
+* **results**: the case-specific results of log skeleton conformance checking, that is an array of arrays, each subarray contains the deviations for a case.
+* **deviationsRecord**: dictionary that associates to each type of deviation the list of indexes of the cases for which the deviation happen.
+* **totalTraces**: total number of traces of the event log.
+* **fitTraces**: number of traces of the event log which are fit according to the log skeleton model.
+
 # Statistics
 
 ## Log
@@ -356,3 +370,4 @@ PM4JS offers some general log [statistics](./pm4js/statistics/log/general.js). T
 * Retrieval of the variants of an event log. A dictionary associating to each variant the number of occurrences for the given variant is returned: **GeneralLogStatistics.getVariants(eventLog)**. As optional parameter, an activity key can be provided.
 * Retrieval of the set of attributes at the event level starting from an event log: **GeneralLogStatistics.getEventAttributesList(eventLog)**
 * Retrieval of the set of attributes at the trace level starting from an event log: **GeneralLogStatistics.getCaseAttributesList(eventLog)**
+* Retrieval of the average sojourn time for each activity of the event log: **GeneralLogStatistics.getAverageSojournTime(eventLog, "concept:name", "time:timestamp", "time:timestamp")** (the arguments are the event log, the activity key, the timestamp key, the start timestamp key.
