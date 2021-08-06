@@ -1838,13 +1838,15 @@ class GeneralLogStatistics {
 		let ret = {};
 		for (let trace of log.traces) {
 			if (trace.events.length > 0) {
-				let act = trace.events[0].attributes[activityKey].value;
-				let count = ret[act]
-				if (count == null) {
-					ret[act] = 1;
-				}
-				else {
-					ret[act] = count + 1;
+				if (activityKey in trace.events[0].attributes) {
+					let act = trace.events[0].attributes[activityKey].value;
+					let count = ret[act]
+					if (count == null) {
+						ret[act] = 1;
+					}
+					else {
+						ret[act] = count + 1;
+					}
 				}
 			}
 		}
@@ -1855,13 +1857,15 @@ class GeneralLogStatistics {
 		let ret = {};
 		for (let trace of log.traces) {
 			if (trace.events.length > 0) {
-				let act = trace.events[trace.events.length-1].attributes[activityKey].value;
-				let count = ret[act]
-				if (count == null) {
-					ret[act] = 1;
-				}
-				else {
-					ret[act] = count + 1;
+				if (activityKey in trace.events[trace.events.length-1].attributes) {
+					let act = trace.events[trace.events.length-1].attributes[activityKey].value;
+					let count = ret[act]
+					if (count == null) {
+						ret[act] = 1;
+					}
+					else {
+						ret[act] = count + 1;
+					}
 				}
 			}
 		}
@@ -1872,7 +1876,26 @@ class GeneralLogStatistics {
 		let ret = {};
 		for (let trace of log.traces) {
 			for (let eve of trace.events) {
-				let val = eve.attributes[attributeKey].value;
+				if (attributeKey in eve.attributes) {
+					let val = eve.attributes[attributeKey].value;
+					let count = ret[val];
+					if (count == null) {
+						ret[val] = 1;
+					}
+					else {
+						ret[val] = count + 1;
+					}
+				}
+			}
+		}
+		return ret;
+	}
+	
+	static getTraceAttributeValues(log, attributeKey) {
+		let ret = {};
+		for (let trace of log.traces) {
+			if (attributeKey in trace.attributes) {
+				let val = trace.attributes[attributeKey].value;
 				let count = ret[val];
 				if (count == null) {
 					ret[val] = 1;
@@ -1890,8 +1913,10 @@ class GeneralLogStatistics {
 		for (let trace of log.traces) {
 			let activities = [];
 			for (let eve of trace.events) {
-				let act = eve.attributes[activityKey].value;
-				activities.push(act);
+				if (activityKey in eve.attributes) {
+					let act = eve.attributes[activityKey].value;
+					activities.push(act);
+				}
 			}
 			activities = activities.toString();
 			let count = ret[activities];
@@ -1927,6 +1952,30 @@ class GeneralLogStatistics {
 		return Object.keys(ret);
 	}
 	
+	static getEventAttributesWithType(log) {
+		let ret = {};
+		for (let trace of log.traces) {
+			for (let eve of trace.events) {
+				for (let attr in eve.attributes) {
+					if (!(attr in ret)) {
+						ret[attr] = typeof eve.attributes[attr].value;
+					}
+				}
+			}
+		}
+		return ret;
+	}
+	
+	static getTraceAttributesWithType(log) {
+		let ret = {};
+		for (let trace of log.traces) {
+			for (let attr in trace.attributes) {
+				ret[attr] = typeof trace.attributes[attr].value;
+			}
+		}
+		return ret;
+	}
+	
 	static numEvents(log) {
 		let ret = 0;
 		for (let trace of log.traces) {
@@ -1939,14 +1988,16 @@ class GeneralLogStatistics {
 		let sojTime = {}
 		for (let trace of log.traces) {
 			for (let eve of trace.events) {
-				let acti = eve.attributes[activityKey].value;
-				if (!(acti in sojTime)) {
-					sojTime[acti] = [];
+				if (activityKey in eve.attributes && startTimestamp in eve.attributes && completeTimestamp in eve.attributes) {
+					let acti = eve.attributes[activityKey].value;
+					if (!(acti in sojTime)) {
+						sojTime[acti] = [];
+					}
+					let st = eve.attributes[startTimestamp].value.getTime();
+					let et = eve.attributes[completeTimestamp].value.getTime();
+					let diff = (et - st)*1000;
+					sojTime[acti].push(diff);
 				}
-				let st = eve.attributes[startTimestamp].value.getTime();
-				let et = eve.attributes[completeTimestamp].value.getTime();
-				let diff = (et - st)*1000;
-				sojTime[acti].push(diff);
 			}
 		}
 		for (let acti in sojTime) {
@@ -4057,6 +4108,49 @@ class FrequencyDfg {
 		this.endActivities = endActivities;
 		this.pathsFrequency = pathsFrequency;
 	}
+	
+	getArtificialDfg() {
+		let artificialActivities = {};
+		let artificialDfg = {};
+		Object.assign(artificialDfg, this.pathsFrequency);
+		Object.assign(artificialActivities, this.activities);
+		let sumSa = 0;
+		for (let sa in this.startActivities) {
+			artificialDfg[["▶", sa]] = this.startActivities[sa];
+			sumSa += this.startActivities[sa];
+		}
+		for (let ea in this.endActivities) {
+			artificialDfg[[ea, "■"]] = this.endActivities[ea];
+		}
+		artificialActivities["▶"] = sumSa;
+		artificialActivities["■"] = sumSa;
+		return [artificialActivities, artificialDfg];
+	}
+	
+	unrollArtificialDfg(vect) {
+		let artificialActivities = vect[0];
+		let artificialDfg = vect[1];
+		let newActivities = {};
+		let newPathsFrequency = {};
+		let newStartActivities = {};
+		let newEndActivities = {};
+		Object.assign(newActivities, artificialActivities);
+		Object.assign(newPathsFrequency, artificialDfg);
+		for (let el0 in artificialDfg) {
+			let el = el0.split(",");
+			if (el[0] == "▶") {
+				newStartActivities[el[1]] = artificialDfg[el0];
+				delete newPathsFrequency[el];
+			}
+			else if (el[1] == "■") {
+				newEndActivities[el[0]] = artificialDfg[el0];
+				delete newPathsFrequency[el];
+			}
+		}
+		delete newActivities["▶"];
+		delete newActivities["■"];
+		return new FrequencyDfg(newActivities, newStartActivities, newEndActivities, newPathsFrequency);
+	}
 }
 
 try {
@@ -4078,12 +4172,245 @@ class PerformanceDfg {
 		this.pathsPerformance = pathsPerformance;
 		this.sojournTimes = sojournTimes;
 	}
+	
+	getArtificialDfg() {
+		let artificialActivities = {};
+		let artificialDfg = {};
+		Object.assign(artificialDfg, this.pathsFrequency);
+		Object.assign(artificialActivities, this.activities);
+		let sumSa = 0;
+		for (let sa in this.startActivities) {
+			artificialDfg[["▶", sa]] = this.startActivities[sa];
+			sumSa += this.startActivities[sa];
+		}
+		for (let ea in this.endActivities) {
+			artificialDfg[[ea, "■"]] = this.endActivities[ea];
+		}
+		artificialActivities["▶"] = sumSa;
+		artificialActivities["■"] = sumSa;
+		return [artificialActivities, artificialDfg];
+	}
+	
+	unrollArtificialDfg(vect) {
+		let artificialActivities = vect[0];
+		let artificialDfg = vect[1];
+		let newActivities = {};
+		let newPathsFrequency = {};
+		let newStartActivities = {};
+		let newEndActivities = {};
+		let newPathsPerformance = {};
+		let newSojournTimes = {};
+		Object.assign(newActivities, artificialActivities);
+		Object.assign(newPathsFrequency, artificialDfg);
+		for (let el0 in artificialDfg) {
+			let el = el0.split(",");
+			if (el[0] == "▶") {
+				newStartActivities[el[1]] = artificialDfg[el0];
+				delete newPathsFrequency[el];
+			}
+			else if (el[1] == "■") {
+				newEndActivities[el[0]] = artificialDfg[el0];
+				delete newPathsFrequency[el];
+			}
+		}
+		delete newActivities["▶"];
+		delete newActivities["■"];
+		for (let act in this.sojournTimes) {
+			if (act in newActivities) {
+				newSojournTimes[act] = this.sojournTimes[act];
+			}
+		}
+		for (let path in this.pathsPerformance) {
+			if (path in newPathsFrequency) {
+				newPathsPerformance[path] = this.pathsPerformance[path];
+			}
+		}
+		return new PerformanceDfg(newActivities, newStartActivities, newEndActivities, newPathsFrequency, newPathsPerformance, newSojournTimes);
+	}
 }
 
 try {
 	require("../../../pm4js.js");
 	module.exports = {PerformanceDfg: PerformanceDfg};
 	global.PerformanceDfg = PerformanceDfg;
+}
+catch (err) {
+	// not in Node
+}
+
+
+class DfgSliders {
+	static checkStartReachability(dfg, mustKeepActivities) {
+		let outgoing = {};
+		for (let path in dfg) {
+			let acts = path.split(",");
+			if (!(acts[0] in outgoing)) {
+				outgoing[acts[0]] = {};
+			}
+			outgoing[acts[0]][acts[1]] = 0;
+		}
+		let visited = {};
+		let toVisit = ["▶"];
+		if (!("▶" in outgoing)) {
+			return false;
+		}
+		while (toVisit.length > 0) {
+			let currAct = toVisit.shift();
+			if (!(currAct in visited)) {
+				for (let otherAct in outgoing[currAct]) {
+					if (!(otherAct in visited)) {
+						toVisit.push(otherAct);
+					}
+				}
+				visited[currAct] = 0;
+			}
+		}
+		for (let act of mustKeepActivities) {
+			if (!(act in visited)) {
+				return false;
+			}
+		}
+		return true;
+	}
+	
+	static checkEndReachability(dfg, mustKeepActivities) {
+		let ingoing = {};
+		for (let path in dfg) {
+			let acts = path.split(",");
+			if (!(acts[1] in ingoing)) {
+				ingoing[acts[1]] = {};
+			}
+			ingoing[acts[1]][acts[0]] = 0;
+		}
+		if (!("■" in ingoing)) {
+			return false;
+		}
+		let visited = {};
+		let toVisit = ["■"];
+		while (toVisit.length > 0) {
+			let currAct = toVisit.shift();
+			if (!(currAct in visited)) {
+				for (let otherAct in ingoing[currAct]) {
+					if (!(otherAct in visited)) {
+						toVisit.push(otherAct);
+					}
+				}
+				visited[currAct] = 0;
+			}
+		}
+		for (let act of mustKeepActivities) {
+			if (!(act in visited)) {
+				return false;
+			}
+		}
+		return true;
+	}
+	
+	static filterDfgOnPercActivities(dfg, perc) {
+		let art = dfg.getArtificialDfg();
+		let artAct = art[0];
+		let artDfg = art[1];
+		let artActArray = [];
+		for (let act in artAct) {
+			if (!(act == "▶" || act == "■")) {
+				artActArray.push([act, artAct[act]]);
+			}
+		}
+		artActArray.sort((a, b) => a[1] - b[1]);
+		let idx = Math.floor((artActArray.length - 1.0) * (1.0 - perc));
+		let activitiesToKeep = [];
+		let i = idx;
+		while (i < artActArray.length) {
+			activitiesToKeep.push(artActArray[i][0]);
+			i++;
+		}
+		i = 0;
+		while (i < artActArray.length) {
+			let thisAct = artActArray[i][0];
+			if (activitiesToKeep.includes(thisAct)) {
+				break;
+			}
+			if (!(thisAct == "▶" || thisAct == "■")) {
+				let newDfg = {};
+				for (let path in artDfg) {
+					let acts = path.split(",");
+					if (!(acts[0] == thisAct || acts[1] == thisAct)) {
+						newDfg[path] = artDfg[path];
+					}
+				}
+				if (DfgSliders.checkStartReachability(newDfg, activitiesToKeep)) {
+					if (DfgSliders.checkEndReachability(newDfg, activitiesToKeep)) {
+						artDfg = newDfg;
+						delete artAct[thisAct];
+					}
+				}
+			}
+			i++;
+		}
+		return dfg.unrollArtificialDfg([artAct, artDfg]);
+	}
+	
+	static filterDfgOnPercPaths(dfg, perc, keepAllActivities=false) {
+		let art = dfg.getArtificialDfg();
+		let artAct = art[0];
+		let artDfg = art[1];
+		let pathsArray = [];
+		for (let path in artDfg) {
+			pathsArray.push([path, artDfg[path]]);
+		}
+		pathsArray.sort((a, b) => a[1] - b[1]);
+		let idx = Math.floor((pathsArray.length - 1.0) * (1.0 - perc));
+		let pathsToKeep = [];
+		let i = idx;
+		while (i < pathsArray.length) {
+			pathsToKeep.push(pathsArray[i][0]);
+			i++;
+		}
+		let activitiesToKeep = [];
+		if (keepAllActivities) {
+			for (let act in artAct) {
+				activitiesToKeep.push(act);
+			}
+		}
+		else {
+			for (let path0 of pathsToKeep) {
+				let path = path0.split(",");
+				if (!(path[0] in activitiesToKeep)) {
+					activitiesToKeep.push(path[0]);
+				}
+				if (!(path[1] in activitiesToKeep)) {
+					activitiesToKeep.push(path[1]);
+				}
+			}
+		}
+		i = 0;
+		while (i < pathsArray.length) {
+			let newDfg = {};
+			Object.assign(newDfg, artDfg);
+			delete newDfg[pathsArray[i][0]];
+			if (DfgSliders.checkStartReachability(newDfg, activitiesToKeep)) {
+				if (DfgSliders.checkEndReachability(newDfg, activitiesToKeep)) {
+					artDfg = newDfg;
+					
+					let newArtAct = {};
+					for (let path in artDfg) {
+						let acts = path.split(",");
+						newArtAct[acts[0]] = artAct[acts[0]];
+						newArtAct[acts[1]] = artAct[acts[1]];
+					}
+					artAct = newArtAct;
+				}
+			}
+			i++;
+		}
+		return dfg.unrollArtificialDfg([artAct, artDfg]);
+	}
+}
+
+try {
+	require("../../../pm4js.js");
+	module.exports = {DfgSliders: DfgSliders};
+	global.DfgSliders = DfgSliders;
 }
 catch (err) {
 	// not in Node
@@ -4103,15 +4430,17 @@ class FrequencyDfgDiscovery {
 		for (let trace of eventLog.traces) {
 			let i = 0;
 			while (i < trace.events.length-1) {
-				let act1 = trace.events[i].attributes[activityKey].value;
-				let act2 = trace.events[i+1].attributes[activityKey].value;
-				let path = act1+","+act2;
-				let pathOcc = paths[path];
-				if (pathOcc == null) {
-					paths[path] = 1;
-				}
-				else {
-					paths[path] = paths[path] + 1;
+				if (activityKey in trace.events[i].attributes && activityKey in trace.events[i+1].attributes) {
+					let act1 = trace.events[i].attributes[activityKey].value;
+					let act2 = trace.events[i+1].attributes[activityKey].value;
+					let path = act1+","+act2;
+					let pathOcc = paths[path];
+					if (pathOcc == null) {
+						paths[path] = 1;
+					}
+					else {
+						paths[path] = paths[path] + 1;
+					}
 				}
 				i++;
 			}
@@ -4139,16 +4468,18 @@ class PerformanceDfgDiscovery {
 		for (let trace of eventLog.traces) {
 			let i = 0;
 			while (i < trace.events.length-1) {
-				let act1 = trace.events[i].attributes[activityKey].value;
-				let act2 = trace.events[i+1].attributes[activityKey].value;
-				let path = act1+","+act2;
-				let ts1 = trace.events[i].attributes[timestampKey].value.getTime();
-				let ts2 = trace.events[i+1].attributes[startTimestampKey].value.getTime();
-				let diff = (ts2 - ts1)/1000;
-				if (!(path in paths)) {
-					paths[path] = [];
+				if (activityKey in trace.events[i].attributes && activityKey in trace.events[i+1].attributes) {
+					let act1 = trace.events[i].attributes[activityKey].value;
+					let act2 = trace.events[i+1].attributes[activityKey].value;
+					let path = act1+","+act2;
+					let ts1 = trace.events[i].attributes[timestampKey].value.getTime();
+					let ts2 = trace.events[i+1].attributes[startTimestampKey].value.getTime();
+					let diff = (ts2 - ts1)/1000;
+					if (!(path in paths)) {
+						paths[path] = [];
+					}
+					paths[path].push(diff);
 				}
-				paths[path].push(diff);
 				i++;
 			}
 		}
@@ -5298,4 +5629,635 @@ try {
 catch (err) {
 	// not in node
 }
+
+class LogSkeleton {
+	constructor(equivalence, neverTogether, alwaysAfter, alwaysBefore, directlyFollows, actCounter) {
+		this.equivalence = equivalence;
+		this.neverTogether = neverTogether;
+		this.alwaysAfter = alwaysAfter;
+		this.alwaysBefore = alwaysBefore;
+		this.directlyFollows = directlyFollows;
+		this.actCounter = actCounter;
+	}
+	
+	filterOnNoiseThreshold(thresh) {
+		thresh = 1.0 - thresh;
+		let newEquivalence = {};
+		let newNeverTogether = {};
+		let newAlwaysAfter = {};
+		let newAlwaysBefore = {};
+		let newDirectlyFollows = {};
+		let newActCounter = {};
+		for (let cou in this.equivalence) {
+			if (this.equivalence[cou] >= thresh) {
+				newEquivalence[cou] = this.equivalence[cou];
+			}
+		}
+		for (let cou in this.neverTogether) {
+			if (this.neverTogether[cou] >= thresh) {
+				newNeverTogether[cou] = this.neverTogether[cou];
+			}
+		}
+		for (let cou in this.alwaysAfter) {
+			if (this.alwaysAfter[cou] >= thresh) {
+				newAlwaysAfter[cou] = this.alwaysAfter[cou];
+			}
+		}
+		for (let cou in this.alwaysBefore) {
+			if (this.alwaysBefore[cou] >= thresh) {
+				newAlwaysBefore[cou] = this.alwaysBefore[cou];
+			}
+		}
+		for (let cou in this.directlyFollows) {
+			if (this.directlyFollows[cou] >= thresh) {
+				newDirectlyFollows[cou] = this.directlyFollows[cou];
+			}
+		}
+		for (let act in this.actCounter) {
+			for (let actocc in this.actCounter[act]) {
+				if (this.actCounter[act][actocc] >= thresh) {
+					if (!(act in newActCounter)) {
+						newActCounter[act] = {};
+					}
+					newActCounter[act][actocc] = this.actCounter[act][actocc];
+				}
+			}
+		}
+		return new LogSkeleton(newEquivalence, newNeverTogether, newAlwaysAfter, newAlwaysBefore, newDirectlyFollows, newActCounter);
+	}
+}
+
+try {
+	require('../../pm4js.js');
+	module.exports = { LogSkeleton: LogSkeleton };
+	global.LogSkeleton = LogSkeleton;
+}
+catch (err) {
+	// not in Node
+	console.log(err);
+}
+
+class LogSkeletonDiscovery {
+	static apply(eventLog, activityKey="concept:name") {
+		let activities = GeneralLogStatistics.getAttributeValues(eventLog, activityKey);
+		let neverTogether = {};
+		let equivalence = {};
+		let equivalenceTotCases = {};
+		let alwaysAfter = {};
+		let alwaysBefore = {};
+		let directlyFollows = {};
+		let actCounter = {};
+		for (let trace of eventLog.traces) {
+			let activitiesCounter = {};
+			for (let eve of trace.events) {
+				let act = eve.attributes[activityKey].value;
+				if (!(act in activitiesCounter)) {
+					activitiesCounter[act] = 1;
+				}
+				else {
+					activitiesCounter[act] += 1;
+				}
+			}
+			for (let act in activitiesCounter) {
+				if (!(act in actCounter)) {
+					actCounter[act] = {};
+				}
+				if (!(activitiesCounter[act] in actCounter[act])) {
+					actCounter[act][activitiesCounter[act]] = 0;
+				}
+				actCounter[act][activitiesCounter[act]] += 1;
+				for (let act2 in activities) {
+					let cou = [act, act2].sort();
+					if (!(act2 in activitiesCounter)) {
+						if (!(cou in neverTogether)) {
+							neverTogether[cou] = 1;
+						}
+						else {
+							neverTogether[cou] += 1;
+						}
+					}
+					else if (act2 != act) {
+						if (!(cou in equivalenceTotCases)) {
+							equivalenceTotCases[cou] = 0;
+						}
+						equivalenceTotCases[cou] += 1;
+						if (activitiesCounter[act] == activitiesCounter[act2]) {
+							if (!(cou in equivalence)) {
+								equivalence[cou] = 0;
+							}
+							equivalence[cou] += 1;
+						}
+					}
+				}
+			}
+			let met = {};
+			let i = 0;
+			while (i < trace.events.length) {
+				met[i] = [];
+				i++;
+			}
+			i = 0;
+			while (i < trace.events.length - 1) {
+				let acti = trace.events[i].attributes[activityKey].value;
+				let j = i + 1;
+				while (j < trace.events.length) {
+					let actj = trace.events[j].attributes[activityKey].value;
+					let cou1 = [acti, actj];
+					let cou2 = [actj, acti];
+					if (!(met[i].includes(actj))) {
+						if (!(cou1 in alwaysAfter)) {
+							alwaysAfter[cou1] = 0;
+						}
+						alwaysAfter[cou1] += 1;
+						if (j == i+1) {
+							if (!(cou1 in directlyFollows)) {
+								directlyFollows[cou1] = 0;
+							}
+							directlyFollows[cou1] += 1;
+						}
+						met[i].push(actj);
+					}
+					if (!(met[j].includes(acti))) {
+						if (!(cou2 in alwaysBefore)) {
+							alwaysBefore[cou2] = 0;
+						}
+						alwaysBefore[cou2] += 1;
+						met[j].push(acti);
+					}
+					j++;
+				}
+				i++;
+			}
+		}
+		// normalize the output before returning
+		for (let cou in neverTogether) {
+			neverTogether[cou] = (0.0 + neverTogether[cou]) / eventLog.traces.length;
+		}
+		for (let act in actCounter) {
+			let intSum = 0;
+			for (let actc in actCounter[act]) {
+				intSum += actCounter[act][actc];
+				actCounter[act][actc] = (0.0 + actCounter[act][actc]) / eventLog.traces.length;
+			}
+			if (eventLog.traces.length > intSum) {
+				actCounter[act]["0"] = (0.0 + eventLog.traces.length - intSum) / eventLog.traces.length;
+			}
+		}
+		for (let cou in equivalence) {
+			equivalence[cou] = (0.0 + equivalence[cou]) / equivalenceTotCases[cou];
+		}
+		for (let path0 in alwaysAfter) {
+			let path = path0.split(",");
+			alwaysAfter[path0] = alwaysAfter[path0] / activities[path[0]];
+		}
+		for (let path0 in directlyFollows) {
+			let path = path0.split(",");
+			directlyFollows[path0] = directlyFollows[path0] / activities[path[0]];
+		}
+		for (let path0 in alwaysBefore) {
+			let path = path0.split(",");
+			alwaysBefore[path0] = alwaysBefore[path0] / activities[path[0]];
+		}
+		return new LogSkeleton(equivalence, neverTogether, alwaysAfter, alwaysBefore, directlyFollows, actCounter);
+	}
+}
+
+try {
+	require('../../../pm4js.js');
+	require('../../../objects/log/log.js');
+	require('../../../objects/skeleton/log_skeleton.js');
+	require('../../../statistics/log/general.js');
+	module.exports = {LogSkeletonDiscovery: LogSkeletonDiscovery};
+	global.LogSkeletonDiscovery = LogSkeletonDiscovery;
+}
+catch (err) {
+	// not in Node
+	console.log(err);
+}
+
+
+class LogSkeletonConformanceCheckingResult {
+	constructor(log, results) {
+		this.results = results;
+		this.totalTraces = log.traces.length;
+		this.fitTraces = 0;
+		this.deviationsRecord = {};
+		let i = 0;
+		while (i < this.results.length) {
+			if (this.results[i].length == 0) {
+				this.fitTraces++;
+			}
+			else {
+				for (let dev of this.results[i]) {
+					if (!(dev in this.deviationsRecord)) {
+						this.deviationsRecord[dev] = [];
+					}
+					this.deviationsRecord[dev].push(i);
+				}
+			}
+			i++;
+		}
+	}
+}
+
+class LogSkeletonConformanceChecking {
+	static apply(log, skeleton0, noiseThreshold=0.0, activityKey="concept:name") {
+		let skeleton = skeleton0.filterOnNoiseThreshold(noiseThreshold);
+		let results = [];
+		for (let trace of log.traces) {
+			results.push(LogSkeletonConformanceChecking.applyTrace(trace, skeleton, activityKey));
+		}
+		return new LogSkeletonConformanceCheckingResult(log, results);
+	}
+	
+	static applyTrace(trace, skeleton, activityKey) {
+		let res = {};
+		LogSkeletonConformanceChecking.applyEquivalence(trace, skeleton.equivalence, activityKey, res);
+		LogSkeletonConformanceChecking.applyAlwaysAfter(trace, skeleton.alwaysAfter, activityKey, res);
+		LogSkeletonConformanceChecking.applyAlwaysBefore(trace, skeleton.alwaysBefore, activityKey, res);
+		LogSkeletonConformanceChecking.applyNeverTogether(trace, skeleton.neverTogether, activityKey, res);
+		LogSkeletonConformanceChecking.applyActCounter(trace, skeleton.actCounter, activityKey, res);
+		LogSkeletonConformanceChecking.applyDirectlyFollows(trace, skeleton.directlyFollows, activityKey, res);
+		return Object.keys(res);
+	}
+	
+	static applyEquivalence(trace, skeletonEquivalence, activityKey, res) {
+		let actCounter = {};
+		for (let eve of trace.events) {
+			let act = eve.attributes[activityKey].value;
+			if (!(act in actCounter)) {
+				actCounter[act] = 1;
+			}
+			else {
+				actCounter[act] += 1;
+			}
+		}
+		for (let cou0 in skeletonEquivalence) {
+			let cou = cou0.split(",");
+			if (cou[0] in actCounter && cou[1] in actCounter && actCounter[cou[0]] != actCounter[cou[1]]) {
+				res[["equivalence", cou]] = 0;
+			}
+		}
+	}
+	
+	static applyAlwaysAfter(trace, skeletonAlwaysAfter, activityKey, res) {
+		let i = 0;
+		while (i < trace.events.length - 1) {
+			let acti = trace.events[i].attributes[activityKey].value;
+			let afterActivities = [];
+			for (let cou0 in skeletonAlwaysAfter) {
+				let cou = cou0.split(",");
+				if (cou[0] == acti) {
+					afterActivities.push(cou[1]);
+				}
+			}
+			let followingActivities = {};
+			let j = i + 1;
+			while (j < trace.events.length) {
+				let actj = trace.events[j].attributes[activityKey].value;
+				followingActivities[actj] = 0;
+				j++;
+			}
+			for (let act of afterActivities) {
+				if (!(act in followingActivities)) {
+					res[["alwaysAfter", acti, act]] = 0;
+				}
+			}
+			i++;
+		}
+	}
+	
+	static applyDirectlyFollows(trace, skeletonDirectlyFollows, activityKey, res) {
+		let i = 0;
+		while (i < trace.events.length - 1) {
+			let acti = trace.events[i].attributes[activityKey].value;
+			let afterActivities = [];
+			for (let cou0 in skeletonDirectlyFollows) {
+				let cou = cou0.split(",");
+				if (cou[0] == acti) {
+					afterActivities.push(cou[1]);
+				}
+			}
+			let actj = trace.events[i+1].attributes[activityKey].value;
+			let followingActivities = [actj];
+			let isOk = afterActivities.length == 0;
+			for (let act of afterActivities) {
+				if (followingActivities.includes(act)) {
+					isOk = true;
+				}
+			}
+			if (!(isOk)) {
+				res[["directlyFollows", acti]] = 0;
+			}
+			i++;
+		}
+	}
+	
+	static applyAlwaysBefore(trace, skeletonAlwaysBefore, activityKey, res) {
+		let i = 1;
+		while (i < trace.events.length) {
+			let acti = trace.events[i].attributes[activityKey].value;
+			let beforeActivities = [];
+			for (let cou0 in skeletonAlwaysBefore) {
+				let cou = cou0.split(",");
+				if (cou[0] == acti) {
+					beforeActivities.push(cou[1]);
+				}
+			}
+			let precedingActivities = {};
+			let j = i - 1;
+			while (j >= 0) {
+				let actj = trace.events[j].attributes[activityKey].value;
+				precedingActivities[actj] = 0;
+				j--;
+			}
+			for (let act of beforeActivities) {
+				if (!(act in precedingActivities)) {
+					res[["alwaysBefore", acti, act]] = 0;
+				}
+			}
+			i++;
+		}
+	}
+	
+	static applyNeverTogether(trace, skeletonNeverTogether, activityKey, res) {
+		let traceActivities = {};
+		for (let eve of trace.events) {
+			let acti = eve.attributes[activityKey].value;
+			traceActivities[acti] = 0;
+		}
+		traceActivities = Object.keys(traceActivities);
+		let i = 0;
+		while (i < traceActivities.length-1) {
+			let j = i + 1;
+			while (j < traceActivities.length) {
+				let cou = [traceActivities[i], traceActivities[j]].sort();
+				if (cou in skeletonNeverTogether) {
+					res[["neverTogether", cou]] = 0;
+				}
+				j++;
+			}
+			i = i + 1;
+		}
+	}
+	
+	static applyActCounter(trace, skeletonActCounter, activityKey, res) {
+		let traceActivities = {};
+		for (let eve of trace.events) {
+			let acti = eve.attributes[activityKey].value;
+			if (!(acti in traceActivities)) {
+				traceActivities[acti] = 1;
+			}
+			else {
+				traceActivities[acti] += 1;
+			}
+		}
+		for (let act in traceActivities) {
+			if (act in skeletonActCounter) {
+				if (!(traceActivities[act] in skeletonActCounter[act])) {
+					res[["actCounter", act, traceActivities[act]]] = 0;
+				}
+			}
+		}
+	}
+}
+
+try {
+	require('../../../pm4js.js');
+	module.exports = {LogSkeletonConformanceChecking: LogSkeletonConformanceChecking, LogSkeletonConformanceCheckingResult: LogSkeletonConformanceCheckingResult};
+	global.LogSkeletonConformanceChecking = LogSkeletonConformanceChecking;
+	global.LogSkeletonConformanceCheckingResult = LogSkeletonConformanceCheckingResult;
+}
+catch (err) {
+	// not in Node
+	console.log(err);
+}
+
+class CaseFeaturesOutput {
+	constructor(data, features) {
+		this.data = data;
+		this.features = features;
+	}
+}
+
+class CaseFeatures {
+	static apply(eventLog, activityKey="concept:name", caseIdKey="concept:name", evStrAttr=null, evNumAttr=null, trStrAttr=null, trNumAttr=null, evSuccStrAttr=null) {
+		let vect = null;
+		if (evStrAttr == null || evNumAttr == null || trStrAttr == null || trNumAttr == null || evSuccStrAttr == null) {
+			vect = CaseFeatures.automaticFeatureSelection(eventLog, activityKey);
+		}
+		if (evStrAttr == null) {
+			evStrAttr = vect[0];
+		}
+		if (evNumAttr == null) {
+			evNumAttr = vect[1];
+		}
+		if (trStrAttr == null) {
+			trStrAttr = vect[2];
+		}
+		if (trNumAttr == null) {
+			trNumAttr = vect[3];
+		}
+		if (evSuccStrAttr == null) {
+			evSuccStrAttr = vect[4];
+		}
+		vect = CaseFeatures.formFeaturesFromSpecification(eventLog, evStrAttr, evNumAttr, trStrAttr, trNumAttr, evSuccStrAttr);
+		let features = vect[0];
+		let valuesCorr = vect[1];
+		let data = [];
+		for (let trace of eventLog.traces) {
+			let vect = [];
+			for (let attr of trNumAttr) {
+				vect.push(trace.attributes[attr].value);
+			}
+			for (let attr of evNumAttr) {
+				let i = trace.events.length - 1;
+				while (i >= 0) {
+					if (attr in trace.events[i].attributes) {
+						vect.push(trace.events[i].attributes[attr].value);
+						break;
+					}
+					i--;
+				}
+			}
+			for (let attr of trStrAttr) {
+				let value = null;
+				if (attr in trace.attributes) {
+					value = trace.attributes[attr].value;
+				}
+				for (let val of valuesCorr["trace@@"+attr]) {
+					if (val == value) {
+						vect.push(1);
+					}
+					else {
+						vect.push(0);
+					}
+				}
+			}
+			for (let attr of evStrAttr) {
+				let values = {};
+				for (let eve of trace.events) {
+					if (attr in eve.attributes) {
+						let val = eve.attributes[attr].value;
+						if (!(val in values)) {
+							values[val] = 1;
+						}
+						else {
+							values[val] += 1;
+						}
+					}
+				}
+				for (let val of valuesCorr["event@@"+attr]) {
+					if (val in values) {
+						vect.push(values[val]);
+					}
+					else {
+						vect.push(0);
+					}
+				}
+			}
+			for (let attr of evSuccStrAttr) {
+				let paths = {};
+				let i = 0;
+				while (i < trace.events.length - 1) {
+					if (attr in trace.events[i].attributes && attr in trace.events[i+1].attributes) {
+						let val1 = trace.events[i].attributes[attr].value;
+						let val2 = trace.events[i+1].attributes[attr].value;
+						let path = val1+","+val2;
+						if (!(path in paths)) {
+							paths[path] = 1;
+						}
+						else {
+							paths[path] += 1;
+						}
+					}
+					i++;
+				}
+				for (let path of valuesCorr["succession@@"+attr]) {
+					if (path in paths) {
+						vect.push(paths[path]);
+					}
+					else {
+						vect.push(0);
+					}
+				}
+			}
+			data.push(vect);
+		}
+		return new CaseFeaturesOutput(data, features);
+	}
+	
+	static formFeaturesFromSpecification(eventLog, evStrAttr, evNumAttr, trStrAttr, trNumAttr, evSuccStrAttr) {
+		let features = [];
+		let valuesCorr = {};
+		for (let attr of evNumAttr) {
+			features.push("event@@"+attr);
+		}
+		for (let attr of trNumAttr) {
+			features.push("trace@@"+attr);
+		}
+		for (let attr of evStrAttr) {
+			let values = Object.keys(GeneralLogStatistics.getAttributeValues(eventLog, attr));
+			valuesCorr["event@@"+attr] = values;
+			for (let val in values) {
+				features.push("event@@"+attr+"##"+val);
+			}
+		}
+		for (let attr of trStrAttr) {
+			let values = Object.keys(GeneralLogStatistics.getTraceAttributeValues(eventLog, attr));
+			valuesCorr["trace@@"+attr] = values;
+			for (let val in values) {
+				features.push("trace@@"+attr+"##"+val);
+			}
+		}
+		for (let attr of evSuccStrAttr) {
+			let frequencyDfg = Object.keys(FrequencyDfgDiscovery.apply(eventLog, attr).pathsFrequency);
+			valuesCorr["succession@@"+attr] = frequencyDfg;
+			for (let path in frequencyDfg) {
+				features.push("succession@@"+attr+"##"+path);
+			}
+		}
+		return [features, valuesCorr];
+	}
+	
+	static automaticFeatureSelection(eventLog, activityKey="concept:name", caseIdKey="concept:name") {
+		let evAttrWithType = GeneralLogStatistics.getEventAttributesWithType(eventLog);
+		let trAttrWithType = GeneralLogStatistics.getTraceAttributesWithType(eventLog);
+		let evStrAttrCandidatesWithValues = {};
+		let evNumAttr = [];
+		let trStrAttrCandidatesWithValues = {};
+		let trNumAttr = [];
+		for (let attr in evAttrWithType) {
+			if (evAttrWithType[attr] == "string") {
+				let values = GeneralLogStatistics.getAttributeValues(eventLog, attr);
+				if (Object.keys(values).length >= 2 && (Object.keys(values).length <= 50 || attr == activityKey)) {
+					evStrAttrCandidatesWithValues[attr] = values;
+				}
+			}
+			else if (evAttrWithType[attr] == "number") {
+				let res = CaseFeatures.checkNumericEventAttribute(eventLog, attr);
+				if (res) {
+					evNumAttr.push(attr);
+				}
+			}
+		}
+		for (let attr in trAttrWithType) {
+			if (trAttrWithType[attr] == "string") {
+				if (attr != caseIdKey) {
+					let values = GeneralLogStatistics.getTraceAttributeValues(eventLog, attr);
+					if (Object.keys(values).length >= 2 && Object.keys(values).length <= 50) {
+						trStrAttrCandidatesWithValues[attr] =  values;
+					}
+				}
+			}
+			else if (trAttrWithType[attr] == "number") {
+				let res = CaseFeatures.checkNumericTraceAttribute(eventLog, attr);
+				if (res) {
+					trNumAttr.push(attr);
+				}
+			}
+		}
+		return [Object.keys(evStrAttrCandidatesWithValues), evNumAttr, Object.keys(trStrAttrCandidatesWithValues), trNumAttr, [activityKey]];
+	}
+	
+	static checkNumericEventAttribute(log, attr) {
+		for (let trace of log.traces) {
+			let found = false;
+			for (let eve of trace.events) {
+				if (attr in eve.attributes) {
+					found = true;
+					break;
+				}
+			}
+			if (!(found)) {
+				return false;
+			}
+		}
+		return true;
+	}
+	
+	static checkNumericTraceAttribute(log, attr) {
+		for (let trace of log.traces) {
+			if (!(attr in trace.attributes)) {
+				return false;
+			}
+		}
+		return true;
+	}
+}
+
+try {
+	require('../../pm4js.js');
+	require('../discovery/dfg/algorithm.js');
+	require('../../statistics/log/general.js');
+	module.exports = {CaseFeatures: CaseFeatures};
+	global.CaseFeatures = CaseFeatures;
+}
+catch (err) {
+	// not in node
+	console.log(err);
+}
+
+
+
 
