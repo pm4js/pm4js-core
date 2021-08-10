@@ -29,7 +29,9 @@ class LogSkeletonConformanceChecking {
 		for (let trace of log.traces) {
 			results.push(LogSkeletonConformanceChecking.applyTrace(trace, skeleton, activityKey));
 		}
-		return new LogSkeletonConformanceCheckingResult(log, results);
+		let ret = new LogSkeletonConformanceCheckingResult(log, results);
+		Pm4JS.registerObject(ret, "Log-Log Skeleton Conformance Checking Result");
+		return ret;
 	}
 	
 	static applyTrace(trace, skeleton, activityKey) {
@@ -194,3 +196,5 @@ catch (err) {
 	// not in Node
 	console.log(err);
 }
+
+Pm4JS.registerAlgorithm("LogSkeletonConformanceChecking", "apply", ["EventLog", "LogSkeleton"], "LogSkeletonConformanceCheckingResult", "Perform Conformance Checking using the Log Skeleton", "Alessandro Berti");

@@ -119,7 +119,9 @@ class LogSkeletonDiscovery {
 			let path = path0.split(",");
 			alwaysBefore[path0] = alwaysBefore[path0] / activities[path[0]];
 		}
-		return new LogSkeleton(equivalence, neverTogether, alwaysAfter, alwaysBefore, directlyFollows, actCounter);
+		let ret = new LogSkeleton(equivalence, neverTogether, alwaysAfter, alwaysBefore, directlyFollows, actCounter);
+		Pm4JS.registerObject(ret, "Log Skeleton");
+		return ret;
 	}
 }
 
@@ -135,3 +137,5 @@ catch (err) {
 	// not in Node
 	console.log(err);
 }
+
+Pm4JS.registerAlgorithm("LogSkeletonDiscovery", "apply", ["EventLog"], "LogSkeleton", "Discover Log Skeleton from Log", "Alessandro Berti");

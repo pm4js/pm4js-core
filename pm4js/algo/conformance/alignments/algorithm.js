@@ -107,7 +107,9 @@ class PetriNetAlignments {
 			res.push(alignedTraces[listAct]);
 			count++;
 		}
-		return new PetriNetAlignmentsResults(logActivities, acceptingPetriNet, res);
+		let ret = new PetriNetAlignmentsResults(logActivities, acceptingPetriNet, res);
+		Pm4JS.registerObject(ret, "Alignments Result");
+		return ret;
 	}
 	
 	static checkClosed(closedSet, tup) {
@@ -209,3 +211,5 @@ catch (err) {
 	// not in Node
 	console.log(err);
 }
+
+Pm4JS.registerAlgorithm("PetriNetAlignments", "apply", ["EventLog", "AcceptingPetriNet"], "PetriNetAlignmentsResults", "Perform Alignments", "Alessandro Berti");
