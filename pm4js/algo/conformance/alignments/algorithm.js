@@ -1,3 +1,22 @@
+class PetriNetAlignmentsResults {
+	constructor(logActivities, acceptingPetriNet, overallResult) {
+		this.logActivities = logActivities;
+		this.acceptingPetriNet = acceptingPetriNet;
+		this.overallResult = overallResult;
+		this.movesUsage = {};
+		for (let alTrace of this.overallResult) {
+			for (let move of alTrace["alignment"].split(",")) {
+				if (!(move in this.movesUsage)) {
+					this.movesUsage[move] = 1;
+				}
+				else {
+					this.movesUsage[move] += 1;
+				}
+			}
+		}
+	}
+}
+
 class PetriNetAlignments {
 	static apply(log, acceptingPetriNet, activityKey="concept:name", syncCosts=null, modelMoveCosts=null, logMoveCosts=null) {
 		let logActivities = GeneralLogStatistics.getAttributeValues(log, activityKey);
@@ -77,11 +96,10 @@ class PetriNetAlignments {
 			}
 			if (!(listAct in alignedTraces)) {
 				alignedTraces[listAct] = PetriNetAlignments.applyTrace(listAct, acceptingPetriNet.net, acceptingPetriNet.im, acceptingPetriNet.fm, syncCosts, modelMoveCosts, logMoveCosts, comparator);
-				console.log(alignedTraces[listAct]);
 			}
 			res.push(alignedTraces[listAct]);
 		}
-		return res;
+		return new PetriNetAlignmentsResults(logActivities, acceptingPetriNet, res);
 	}
 	
 	static checkClosed(closedSet, tup) {
@@ -156,13 +174,13 @@ class PetriNetAlignments {
 			let currTrans = tup[5];
 			if (currTrans == null) {
 				// lm
-				ret.push("("+listAct[tup[1]-1]+",>>)")
+				ret.push("("+listAct[tup[1]-1]+";>>)")
 			}
 			else if (isMM) {
-				ret.push("(>>,"+currTrans.name+")")
+				ret.push("(>>;"+currTrans.name+")")
 			}
 			else {
-				ret.push("("+listAct[tup[1]-1]+","+currTrans.name+")")
+				ret.push("("+listAct[tup[1]-1]+";"+currTrans.name+")")
 			}
 			tup = tup[6];
 		}
