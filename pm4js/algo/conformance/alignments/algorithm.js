@@ -12,7 +12,24 @@ class PetriNetAlignments {
 			for (let transId in acceptingPetriNet.net.transitions) {
 				let trans = acceptingPetriNet.net.transitions[transId];
 				if (trans.label == null) {
-					modelMoveCosts[transId] = 0;
+					let prem = trans.getPreMarking();
+					let mark = new Marking(acceptingPetriNet.net);
+					for (let pl in prem) {
+						mark.setTokens(pl, prem[pl]);
+					}
+					let thisEnabledTransitions = mark.getEnabledTransitions();
+					let visibleEnabledTransitions = [];
+					for (let trans of thisEnabledTransitions) {
+						if (trans.label != null) {
+							visibleEnabledTransitions.push(trans);
+						}
+					}
+					if (thisEnabledTransitions.length == 0) {
+						modelMoveCosts[transId] = 0;
+					}
+					else {
+						modelMoveCosts[transId] = 1;
+					}
 				}
 				else {
 					modelMoveCosts[transId] = 10000;
@@ -60,9 +77,9 @@ class PetriNetAlignments {
 			}
 			if (!(listAct in alignedTraces)) {
 				alignedTraces[listAct] = PetriNetAlignments.applyTrace(listAct, acceptingPetriNet.net, acceptingPetriNet.im, acceptingPetriNet.fm, syncCosts, modelMoveCosts, logMoveCosts, comparator);
+				console.log(alignedTraces[listAct]);
 			}
 			res.push(alignedTraces[listAct]);
-			console.log(alignedTraces[listAct]);
 		}
 		return res;
 	}
