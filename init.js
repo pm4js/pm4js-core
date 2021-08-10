@@ -32,3 +32,5 @@ require('./pm4js/objects/skeleton/log_skeleton.js');
 require('./pm4js/algo/discovery/log_skeleton/algorithm.js');
 require('./pm4js/algo/conformance/log_skeleton/algorithm.js');
 require('./pm4js/algo/transformation/case_features.js');
+require('./pm4js/algo/conformance/alignments/heapq.js');
+require('./pm4js/algo/conformance/alignments/algorithm.js');
