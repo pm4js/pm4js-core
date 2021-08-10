@@ -4,6 +4,8 @@ class PetriNetAlignmentsResults {
 		this.acceptingPetriNet = acceptingPetriNet;
 		this.overallResult = overallResult;
 		this.movesUsage = {};
+		this.fitTraces = 0;
+		this.totalCost = 0;
 		for (let alTrace of this.overallResult) {
 			for (let move of alTrace["alignment"].split(",")) {
 				if (!(move in this.movesUsage)) {
@@ -13,6 +15,10 @@ class PetriNetAlignmentsResults {
 					this.movesUsage[move] += 1;
 				}
 			}
+			if (alTrace["cost"] < 10000) {
+				this.fitTraces += 1;
+			}
+			this.totalCost += alTrace["cost"];
 		}
 	}
 }
@@ -89,6 +95,7 @@ class PetriNetAlignments {
 		};
 		let alignedTraces = {};
 		let res = [];
+		let count = 0;
 		for (let trace of log.traces) {
 			let listAct = [];
 			for (let eve of trace.events) {
@@ -98,22 +105,22 @@ class PetriNetAlignments {
 				alignedTraces[listAct] = PetriNetAlignments.applyTrace(listAct, acceptingPetriNet.net, acceptingPetriNet.im, acceptingPetriNet.fm, syncCosts, modelMoveCosts, logMoveCosts, comparator);
 			}
 			res.push(alignedTraces[listAct]);
+			count++;
 		}
 		return new PetriNetAlignmentsResults(logActivities, acceptingPetriNet, res);
 	}
 	
 	static checkClosed(closedSet, tup) {
-		if (tup[3] in closedSet && tup[2] <= closedSet[tup[3]]) {
-			return true;
+		if (tup[3] in closedSet) {
+			if (tup[1] <= closedSet[tup[3]]) {
+				return true;
+			}
 		}
 		return false;
 	}
 	
 	static closeTuple(closedSet, tup) {
-		if (!(tup[3] in closedSet)) {
-			closedSet[tup[3]] = tup[2];
-		}
-		closedSet[tup[3]] = Math.max(tup[2], closedSet[tup[3]]);
+		closedSet[tup[3]] = tup[1];
 	}
 	
 	static applyTrace(listAct, net, im, fm, syncCosts, modelMoveCosts, logMoveCosts, comparator) {
@@ -124,6 +131,7 @@ class PetriNetAlignments {
 		while (true) {
 			count++;
 			let tup = queue.pop();
+			//console.log(tup[0]);
 			if (tup == null) {
 				return null;
 			}
