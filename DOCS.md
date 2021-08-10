@@ -26,6 +26,7 @@
 		* [Directly Follows Graphs](#directly-follows-graphs)
 	* Conformance Checking
 		* [Token-Based Replay](#token-based-replay)
+		* [Alignments on Petri nets](#alignments-on-petri-nets)
 		* [Conformance Checking using the Log Skeleton](#conformance-checking-using-the-log-skeleton)
 * Statistics
 	* Log
@@ -344,7 +345,7 @@ The dictionary contains for each case the following properties:
 * **isFit**: boolean value that is True if the number of missing tokens is 0 and **missingActivitiesInModel** is empty; False otherwise
 * **reachedMarking**: the marking reached at the end of the replay.
 
-### Alignments on Petri net
+### Alignments on Petri nets
 
 The optimal alignments approach try to find the best match between a process execution and a process model. The output of an alignment includes a list of moves,
 of which the first component is referring to the trace, and the second component is referring to the model, leading both the trace/process execution
@@ -356,6 +357,7 @@ Each move of the alignments can be:
 * a move on log (when an activity is executed in the trace without a corresponding move in the model). These are such taht: **(>>; register request)**.
 
 To execute (optimal) alignments based on a Petri net model, the following command can be executed:
+
 **let alignmentResult = PetriNetAlignments.apply(eventLog, acceptingPetriNet)**
 (as additional parameter, also the activity key, such as concept:name, can be provided).
 
