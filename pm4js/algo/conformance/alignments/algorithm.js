@@ -62,6 +62,8 @@ class PetriNetAlignments {
 				alignedTraces[listAct] = PetriNetAlignments.applyTrace(listAct, acceptingPetriNet.net, acceptingPetriNet.im, acceptingPetriNet.fm, syncCosts, modelMoveCosts, logMoveCosts, comparator);
 			}
 			res.push(alignedTraces[listAct]);
+			console.log(alignedTraces[listAct]);
+			break;
 		}
 		return res;
 	}
@@ -73,13 +75,10 @@ class PetriNetAlignments {
 		while (true) {
 			count++;
 			let tup = queue.pop();
-			if (tup[0] >= 10000) {
-				throw "Ciao";
-			}
 			if (tup == null) {
 				return null;
 			}
-			else if (tup[3].equals(fm) && tup[1] == listAct.length + 1) {
+			else if (tup[3].equals(fm) && tup[1] == listAct.length) {
 				return tup;
 			}
 			else {
@@ -87,16 +86,20 @@ class PetriNetAlignments {
 					let enabledTransitions = tup[3].getEnabledTransitions();
 					for (let trans of enabledTransitions) {
 						let newTup = null;
-						if (trans.label == listAct[tup[1]]) {
+						if (tup[1] < listAct.length && trans.label == listAct[tup[1]]) {
 							// sync move
 							newTup = [tup[0] + syncCosts[trans.toString()], tup[1] + 1, count, tup[3].execute(trans), false, trans, tup];
+							queue.push(newTup);
 						}
 						else {
 							// move on model
 							newTup = [tup[0] + modelMoveCosts[trans.toString()], tup[1], count, tup[3].execute(trans), true, trans, tup];
+							queue.push(newTup);
 						}
-						queue.push(newTup);
 					}
+				}
+				if (tup[1] < listAct.length && !(tup[4])) {
+					queue.push([tup[0] + logMoveCosts[listAct[tup[1]]], tup[1] + 1, count, tup[3], false, null, tup]);
 				}
 			}
 		}
