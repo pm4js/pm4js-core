@@ -344,6 +344,31 @@ The dictionary contains for each case the following properties:
 * **isFit**: boolean value that is True if the number of missing tokens is 0 and **missingActivitiesInModel** is empty; False otherwise
 * **reachedMarking**: the marking reached at the end of the replay.
 
+### Alignments on Petri net
+
+The optimal alignments approach try to find the best match between a process execution and a process model. The output of an alignment includes a list of moves,
+of which the first component is referring to the trace, and the second component is referring to the model, leading both the trace/process execution
+and the model from the initial to the final state. Alignments can act on different types of models. Here we consider alignments performed on accepting Petri nets.
+
+Each move of the alignments can be:
+* a sync move (when an activity is executed corresponding to a transition in the model). These are such that: **(register request; register request)**
+* a move on model (when a transition is executed without a corresponding move in the process execution). These are such that: **(register request; >>)**
+* a move on log (when an activity is executed in the trace without a corresponding move in the model). These are such taht: **(>>; register request)**.
+
+To execute (optimal) alignments based on a Petri net model, the following command can be executed:
+**let alignmentResult = PetriNetAlignments.apply(eventLog, acceptingPetriNet)**
+(as additional parameter, also the activity key, such as concept:name, can be provided).
+
+The object **alignmentResult**, of type **PetriNetAlignmentsResults**, contains the following properties:
+* **logActivities**: dictionary associating to each activity of the event log its number of occurrences.
+* **acceptingPetriNet**: the accepting Petri net against which the alignments are performed.
+* **overallResult**: array containing the alignments results for each trace of the event log. Each alignment is a dictionary with two keys: **alignment**, that is the
+list of moves performed during the alignments, and **cost**, that is the total cost of the moves (with the assumption that a sync move has cost 0, an move on model corresponding
+to an invisible transition can have either cost 0 or 1, another move on model or a move on log has cost 10000; so, traces having an alignment cost lower than 10000 are to be considered fit).
+* **movesUsage**: the number of occurrences for each move in all the reported alignments.
+* **fitTraces**: the number of traces that are fit, given the optimal alignment.
+* **totalCost**: the sum of the costs of all the alignments that are performed.
+
 ### Conformance Checking using the Log Skeleton
 
 It is possible to perform conformance checking between an event log and a log skeleton model. The command to perform conformance checking follows (the second is a more detailed version,
