@@ -11,7 +11,7 @@ Install pm4js by doing **npm install -g pm4js**. Then, PM4Js can be used in Node
 #### Node (local installation)
 Clone the Git project, and install the required packages by doing **npm install**.
 ### Documentation
+Extensive documentation is available [here](./DOCS.md).
 Some examples are included in the **examples/html** folder (HTML pages) and **examples/node** folder (Node.JS examples).
-Extensive documentation will follow.
 ### Support
 Support is provided by mail at the following mail address: [Alessandro Berti](mailto:a.berti@pads.rwth-aachen.de).
