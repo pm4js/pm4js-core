@@ -387,14 +387,14 @@ The returned object is of type *LogSkeletonConformanceCheckingResult*, and inclu
 ## Filtering
 
 PM4JS offers different filtering functionalities, which can be used to restrict the behavior of an event log to the desidered one:
-* **LogGeneralFiltering.filterStartActivities(log, activitiesArray, <positive>, <activityKey>)**: filters the cases having as start activity one of the ones specified in activitiesArray.
+* **LogGeneralFiltering.filterStartActivities(log, activitiesArray, $positive$, $activityKey$)**: filters the cases having as start activity one of the ones specified in activitiesArray.
 Can be reversed (keeping the traces not having as start activity one of the specified) by setting the positive parameter to false.
-* **LogGeneralFiltering.filterEndActivities(log, activityArray, <positive>, <activityKey>)**: filters the cases having as end activity one of the ones specified in activitiesArray.
+* **LogGeneralFiltering.filterEndActivities(log, activityArray, $positive$, $activityKey$)**: filters the cases having as end activity one of the ones specified in activitiesArray.
 Can be reversed (keeping the traces not having as end activity one of the specified) by setting the positive parameter to false.
-* **LogGeneralFiltering.filterVariants(log, variantsArray, <positive>, <activityKey>)**: filters the cases having as variant one of the ones specified in variantsArray.
+* **LogGeneralFiltering.filterVariants(log, variantsArray, $positive$, $activityKey$)**: filters the cases having as variant one of the ones specified in variantsArray.
 Can be reversed (keeping the traces not having as variant one of the specified) by setting the postiive parameter to false.
-* **LogGeneralFiltering.filterCaseSize(log, <minSize>, <maxSize>)**: filters the cases having a length (number of events) included in the specified range.
-* **LogGeneralFiltering.filterCaseDuration(log, <minDuration>, <maxDuration>, <timestampKey>)**: filters the cases having a duration included in the specified range, with regards to the attribute
+* **LogGeneralFiltering.filterCaseSize(log, $minSize$, $maxSize$)**: filters the cases having a length (number of events) included in the specified range.
+* **LogGeneralFiltering.filterCaseDuration(log, $minDuration$, $maxDuration$, $timestampKey$)**: filters the cases having a duration included in the specified range, with regards to the attribute
 specified in **timestampKey**.
 
 
