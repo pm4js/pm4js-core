@@ -30,7 +30,9 @@ class LogGeneralFiltering {
 		for (let trace of log.traces) {
 			let varArray = [];
 			for (let eve of trace.events) {
-				varArray.push(eve.attributes[activityKey].value);
+				if (activityKey in eve.attributes) {
+					varArray.push(eve.attributes[activityKey].value);
+				}
 			}
 			varArray = varArray.toString();
 			let bo = variantsArray.includes(varArray);
@@ -71,8 +73,10 @@ class LogGeneralFiltering {
 		for (let trace of log.traces) {
 			let bo = false;
 			for (let eve of trace.events) {
-				let val = eve.attributes[attributeKey].value;
-				bo = bo || valuesArray.includes(val);
+				if (attributeKey in eve.attributes) {
+					let val = eve.attributes[attributeKey].value;
+					bo = bo || valuesArray.includes(val);
+				}
 			}
 			if ((bo && positive) || (!bo && !positive)) {
 				filteredLog.traces.push(trace);
@@ -86,10 +90,12 @@ class LogGeneralFiltering {
 		for (let trace of log.traces) {
 			let newTrace = new Trace();
 			for (let eve of trace.events) {
-				let val = eve.attributes[attributeKey].value;
-				let bo = valuesArray.includes(val);
-				if ((bo && positive) || (!bo && !positive)) {
-					newTrace.events.push(eve);
+				if (attributeKey in eve.attributes) {
+					let val = eve.attributes[attributeKey].value;
+					let bo = valuesArray.includes(val);
+					if ((bo && positive) || (!bo && !positive)) {
+						newTrace.events.push(eve);
+					}
 				}
 			}
 			if (addEvenIfEmpty || newTrace.events.length > 0) {
