@@ -28,6 +28,7 @@
 		* [Token-Based Replay](#token-based-replay)
 		* [Alignments on Petri nets](#alignments-on-petri-nets)
 		* [Conformance Checking using the Log Skeleton](#conformance-checking-using-the-log-skeleton)
+	* [Filtering](#filtering)
 * Statistics
 	* Log
 		* [General Statistics](#log---general-statistics)
@@ -396,7 +397,10 @@ Can be reversed (keeping the traces not having as variant one of the specified) 
 * **LogGeneralFiltering.filterCaseSize(log, $minSize$, $maxSize$)**: filters the cases having a length (number of events) included in the specified range.
 * **LogGeneralFiltering.filterCaseDuration(log, $minDuration$, $maxDuration$, $timestampKey$)**: filters the cases having a duration included in the specified range, with regards to the attribute
 specified in **timestampKey**.
-
+* **LogGeneralFiltering.filterCasesHavingEventAttributeValue(log, valuesArray, $positive$, $attributeKey$)**: filters the cases having at least one event for which the value for attribute key
+falls in the specified range. Setting positive to false, it keeps the cases having no event for which the value for the attribute falls in the specified range.
+* **LogGeneralFiltering.filterEventsHavingEventAttributeValues(log, valuesArray, $positive$, $attributeKey$)**: filters the events (trimming the cases) having the specified value for the attribute.
+Setting positive to false, it keeps the events for which the value for the attribute do not fall in the specified range.
 
 # Statistics
 
