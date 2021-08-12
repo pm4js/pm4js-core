@@ -30,7 +30,8 @@
 		* [Alignments on Petri nets](#alignments-on-petri-nets)
 		* [Alignments on Directly Follows Graphs](#alignments-on-directly-follows-graphs)
 		* [Conformance Checking using the Log Skeleton](#conformance-checking-using-the-log-skeleton)
-	* [Filtering](#filtering)
+	* [Filtering]
+		* [Filtering Event Logs](#filtering-event-logs)
 * Statistics
 	* Log
 		* [General Statistics](#log---general-statistics)
@@ -416,6 +417,8 @@ The returned object is of type *LogSkeletonConformanceCheckingResult*, and inclu
 * **fitTraces**: number of traces of the event log which are fit according to the log skeleton model.
 
 ## Filtering
+
+### Filtering Event Logs
 
 PM4JS offers different filtering functionalities, which can be used to restrict the behavior of an event log to the desidered one:
 * **LogGeneralFiltering.filterStartActivities(log, activitiesArray, $positive$, $activityKey$)**: filters the cases having as start activity one of the ones specified in activitiesArray.
