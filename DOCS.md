@@ -30,7 +30,7 @@
 		* [Alignments on Petri nets](#alignments-on-petri-nets)
 		* [Alignments on Directly Follows Graphs](#alignments-on-directly-follows-graphs)
 		* [Conformance Checking using the Log Skeleton](#conformance-checking-using-the-log-skeleton)
-	* [Filtering]
+	* Filtering
 		* [Filtering Event Logs](#filtering-event-logs)
 		* [Sliding Directly Follows Graphs](#sliding-directly-follows-graphs)
 * Statistics
