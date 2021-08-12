@@ -133,7 +133,6 @@ class PetriNetAlignments {
 		while (true) {
 			count++;
 			let tup = queue.pop();
-			//console.log(tup[0]);
 			if (tup == null) {
 				return null;
 			}
@@ -166,7 +165,8 @@ class PetriNetAlignments {
 					}
 				}
 				if (tup[1] < listAct.length && !(tup[4])) {
-					let newTup = [tup[0] + logMoveCosts[listAct[tup[1]]], tup[1] + 1, count, tup[3], false, null, tup]
+					// move on log
+					let newTup = [tup[0] + logMoveCosts[listAct[tup[1]]], tup[1] + 1, count, tup[3], false, null, tup];
 					if (!(PetriNetAlignments.checkClosed(closedSet, newTup))) {
 						queue.push(newTup);
 					}
