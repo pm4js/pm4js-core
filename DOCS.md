@@ -28,6 +28,7 @@
 	* Conformance Checking
 		* [Token-Based Replay](#token-based-replay)
 		* [Alignments on Petri nets](#alignments-on-petri-nets)
+		* [Alignments on Directly Follows Graphs](#alignments-on-directly-follows-graphs)
 		* [Conformance Checking using the Log Skeleton](#conformance-checking-using-the-log-skeleton)
 	* [Filtering](#filtering)
 * Statistics
@@ -368,7 +369,7 @@ and the model from the initial to the final state. Alignments can act on differe
 Each move of the alignments can be:
 * a sync move (when an activity is executed corresponding to a transition in the model). These are such that: **(register request; register request)**
 * a move on model (when a transition is executed without a corresponding move in the process execution). These are such that: **(register request; >>)**
-* a move on log (when an activity is executed in the trace without a corresponding move in the model). These are such taht: **(>>; register request)**.
+* a move on log (when an activity is executed in the trace without a corresponding move in the model). These are such that: **(>>; register request)**.
 
 To execute (optimal) alignments based on a Petri net model, the following command can be executed:
 
@@ -378,6 +379,22 @@ To execute (optimal) alignments based on a Petri net model, the following comman
 The object **alignmentResult**, of type **PetriNetAlignmentsResults**, contains the following properties:
 * **logActivities**: dictionary associating to each activity of the event log its number of occurrences.
 * **acceptingPetriNet**: the accepting Petri net against which the alignments are performed.
+* **overallResult**: array containing the alignments results for each trace of the event log. Each alignment is a dictionary with two keys: **alignment**, that is the
+list of moves performed during the alignments, and **cost**, that is the total cost of the moves (with the assumption that a sync move has cost 0, an move on model corresponding
+to an invisible transition can have either cost 0 or 1, another move on model or a move on log has cost 10000; so, traces having an alignment cost lower than 10000 are to be considered fit).
+* **movesUsage**: the number of occurrences for each move in all the reported alignments.
+* **fitTraces**: the number of traces that are fit, given the optimal alignment.
+* **totalCost**: the sum of the costs of all the alignments that are performed.
+
+### Alignments on Directly Follows Graphs
+
+The optimal alignments approach on DFGs works in a similar way to the aforementioned approach on Petri nets. To execute (optimal) alignments based on a DFG, the following command can be executed:
+
+**let alignmentResult = DfgAlignments.apply(eventLog, frequencyDfg);**
+
+The object **alignmentResult**, of type **DfgAlignmentsResults**, contains the following properties:
+* **logActivities**: dictionary associating to each activity of the event log its number of occurrences.
+* **frequencyDfg**: the frequency directly-follows graph against which the alignments are performed.
 * **overallResult**: array containing the alignments results for each trace of the event log. Each alignment is a dictionary with two keys: **alignment**, that is the
 list of moves performed during the alignments, and **cost**, that is the total cost of the moves (with the assumption that a sync move has cost 0, an move on model corresponding
 to an invisible transition can have either cost 0 or 1, another move on model or a move on log has cost 10000; so, traces having an alignment cost lower than 10000 are to be considered fit).
