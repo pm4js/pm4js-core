@@ -1,4 +1,26 @@
 class DfgAlignmentsResults {
+	constructor(logActivities, frequencyDfg, overallResult) {
+		this.logActivities = logActivities;
+		this.overallResult = overallResult;
+		this.frequencyDfg = frequencyDfg;
+		this.movesUsage = {};
+		this.fitTraces = 0;
+		this.totalCost = 0;
+		for (let alTrace of this.overallResult) {
+			for (let move of alTrace["alignment"].split(",")) {
+				if (!(move in this.movesUsage)) {
+					this.movesUsage[move] = 1;
+				}
+				else {
+					this.movesUsage[move] += 1;
+				}
+			}
+			if (alTrace["cost"] < 10000) {
+				this.fitTraces += 1;
+			}
+			this.totalCost += alTrace["cost"];
+		}
+	}
 }
 
 class DfgAlignments {
@@ -72,11 +94,13 @@ class DfgAlignments {
 			}
 			if (!(listAct in alignedTraces)) {
 				alignedTraces[listAct] = DfgAlignments.applyTrace(listAct, frequencyDfg, outgoing, syncCosts, modelMoveCosts, logMoveCosts, comparator);
-				console.log(alignedTraces[listAct]);
 			}
 			res.push(alignedTraces[listAct]);
 			count++;
 		}
+		let ret = new DfgAlignmentsResults(logActivities, frequencyDfg0, res);
+		Pm4JS.registerObject(ret, "DFG Alignments Result");
+		return ret;
 	}
 	
 	static checkClosed(closedSet, tup) {
@@ -180,3 +204,5 @@ catch (err) {
 	// not in Node
 	console.log(err);
 }
+
+Pm4JS.registerAlgorithm("DfgAlignments", "apply", ["EventLog", "FrequencyDfg"], "DfgAlignmentsResults", "Perform Alignments on DFG", "Alessandro Berti");

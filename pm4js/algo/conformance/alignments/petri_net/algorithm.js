@@ -1,8 +1,8 @@
 class PetriNetAlignmentsResults {
 	constructor(logActivities, acceptingPetriNet, overallResult) {
 		this.logActivities = logActivities;
-		this.acceptingPetriNet = acceptingPetriNet;
 		this.overallResult = overallResult;
+		this.acceptingPetriNet = acceptingPetriNet;
 		this.movesUsage = {};
 		this.fitTraces = 0;
 		this.totalCost = 0;
@@ -108,7 +108,7 @@ class PetriNetAlignments {
 			count++;
 		}
 		let ret = new PetriNetAlignmentsResults(logActivities, acceptingPetriNet, res);
-		Pm4JS.registerObject(ret, "Alignments Result");
+		Pm4JS.registerObject(ret, "Petri nets Alignments Result");
 		return ret;
 	}
 	
@@ -212,4 +212,4 @@ catch (err) {
 	console.log(err);
 }
 
-Pm4JS.registerAlgorithm("PetriNetAlignments", "apply", ["EventLog", "AcceptingPetriNet"], "PetriNetAlignmentsResults", "Perform Alignments", "Alessandro Berti");
+Pm4JS.registerAlgorithm("PetriNetAlignments", "apply", ["EventLog", "AcceptingPetriNet"], "PetriNetAlignmentsResults", "Perform Alignments on Petri nets", "Alessandro Berti");
