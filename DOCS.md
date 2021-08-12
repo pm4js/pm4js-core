@@ -32,6 +32,7 @@
 		* [Conformance Checking using the Log Skeleton](#conformance-checking-using-the-log-skeleton)
 	* [Filtering]
 		* [Filtering Event Logs](#filtering-event-logs)
+		* [Sliding Directly Follows Graphs](#sliding-directly-follows-graphs)
 * Statistics
 	* Log
 		* [General Statistics](#log---general-statistics)
@@ -434,6 +435,21 @@ specified in **timestampKey**.
 falls in the specified range. Setting positive to false, it keeps the cases having no event for which the value for the attribute falls in the specified range.
 * **LogGeneralFiltering.filterEventsHavingEventAttributeValues(log, valuesArray, $positive$, $attributeKey$)**: filters the events (trimming the cases) having the specified value for the attribute.
 Setting positive to false, it keeps the events for which the value for the attribute do not fall in the specified range.
+
+### Sliding Directly Follows Graphs
+
+PM4JS offers the possibility to slide the directly-follows graph, restricting the behavior to the desidered number of activities/paths.
+
+To filter the directly-follows graph on the specified percentage of activities, the following command can be used:
+
+**let filteredDfg = DfgSliders.filterDfgOnPercActivities(frequencyDfg, $percentage$)**
+
+where percentage can be a number between 0 and 1. On the other hand, to filter the DFG on a specified amount of paths, the following command can be used:
+
+**let filteredDfg = DfgSliders.filterDfgOnPercPaths(frequencyDfg, $percentage$, $keepAllActivities$)**
+
+where percentage can be a number between 0 and 1; the **keepAllActivities** parameter is boolean (true/false) and establishes whether the filter is allowed
+to remove activities (keepAllActivities=false) if the paths connecting them are infrequent, or is forced to keep the activities and at least one path entering/exiting them.
 
 # Statistics
 
