@@ -1,11 +1,20 @@
 class InductiveMiner {
 	static applyPlugin(eventLog, activityKey="concept:name", threshold=0.0, removeNoise=false) {
-		return InductiveMiner.apply(eventLog, activityKey, threshold, removeNoise);
+		return InductiveMiner.apply(eventLog, activityKey, threshold, null, removeNoise);
+	}
+	
+	static applyPluginDFG(frequencyDfg, activityKey="concept:name", threshold=0.0, removeNoise=false) {
+		return InductiveMiner.apply(null, activityKey, threshold, frequencyDfg, removeNoise);
 	}
 	
 	static apply(eventLog, activityKey="concept:name", threshold=0.0, freqDfg=null, removeNoise=false) {
 		let tree = InductiveMiner.inductiveMiner(eventLog, null, activityKey, removeNoise, threshold, freqDfg);
-		Pm4JS.registerObject(tree, "Process Tree (Inductive Miner)");
+		if (eventLog == null) {
+			Pm4JS.registerObject(tree, "Process Tree (Inductive Miner DFG)");
+		}
+		else {
+			Pm4JS.registerObject(tree, "Process Tree (Inductive Miner)");
+		}
 		return tree;
 	}
 	
@@ -1159,3 +1168,4 @@ catch (err) {
 }
 
 Pm4JS.registerAlgorithm("InductiveMiner", "applyPlugin", ["EventLog"], "ProcessTree", "Mine a Process Tree using the Inductive Miner", "Alessandro Berti");
+Pm4JS.registerAlgorithm("InductiveMiner", "applyPluginDFG", ["FrequencyDfg"], "ProcessTree", "Mine a Process Tree using the Inductive Miner Directly-Follows", "Alessandro Berti");
