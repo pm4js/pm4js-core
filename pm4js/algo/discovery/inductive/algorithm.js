@@ -3,8 +3,8 @@ class InductiveMiner {
 		return InductiveMiner.apply(eventLog, activityKey, threshold, removeNoise, true);
 	}
 	
-	static apply(eventLog, activityKey="concept:name", threshold=0.0, removeNoise=false, addObject=false) {
-		let tree = InductiveMiner.inductiveMiner(eventLog, null, activityKey, removeNoise, threshold);
+	static apply(eventLog, activityKey="concept:name", threshold=0.0, removeNoise=false, addObject=false, freqDfg=null) {
+		let tree = InductiveMiner.inductiveMiner(eventLog, null, activityKey, removeNoise, threshold, freqDfg);
 		if (addObject) {
 			Pm4JS.registerObject(tree, "Process Tree (Inductive Miner)");
 		}
@@ -29,21 +29,23 @@ class InductiveMiner {
 		return newEventLog;
 	}
 		
-	static inductiveMiner(log, treeParent, activityKey, removeNoise, threshold) {
-		if (threshold == 0) {
-			log = InductiveMiner.keepOneTracePerVariant(log, activityKey);
-		}
-		let freqDfg = FrequencyDfgDiscovery.apply(log, activityKey);
-		if (threshold > 0 && removeNoise) {
-			freqDfg = InductiveMiner.removeNoiseFromDfg(freqDfg, threshold);
-		}
-		let emptyTraces = InductiveMiner.countEmptyTraces(log);
-		if (emptyTraces > threshold * log.traces.length) {
-			let xor = new ProcessTree(treeParent, ProcessTreeOperator.EXCLUSIVE, null);
-			let skip = new ProcessTree(xor, null, null);
-			xor.children.push(InductiveMiner.inductiveMiner(InductiveMiner.filterNonEmptyTraces(log), xor, activityKey, false, threshold));
-			xor.children.push(skip);
-			return xor;
+	static inductiveMiner(log, treeParent, activityKey, removeNoise, threshold, freqDfg=null, skippable=false) {
+		if (log != null) {
+			if (threshold == 0) {
+				log = InductiveMiner.keepOneTracePerVariant(log, activityKey);
+			}
+			freqDfg = FrequencyDfgDiscovery.apply(log, activityKey);
+			if (threshold > 0 && removeNoise) {
+				freqDfg = InductiveMiner.removeNoiseFromDfg(freqDfg, threshold);
+			}
+			let emptyTraces = InductiveMiner.countEmptyTraces(log);
+			if (emptyTraces > threshold * log.traces.length) {
+				let xor = new ProcessTree(treeParent, ProcessTreeOperator.EXCLUSIVE, null);
+				let skip = new ProcessTree(xor, null, null);
+				xor.children.push(InductiveMiner.inductiveMiner(InductiveMiner.filterNonEmptyTraces(log), xor, activityKey, false, threshold));
+				xor.children.push(skip);
+				return xor;
+			}
 		}
 		if (Object.keys(freqDfg.pathsFrequency).length == 0) {
 			return InductiveMiner.baseCase(freqDfg, treeParent);
@@ -52,14 +54,16 @@ class InductiveMiner {
 		if (detectedCut != null) {
 			return detectedCut;
 		}
-		if (!(removeNoise)) {
-			let detectedFallthrough = InductiveMiner.detectFallthroughs(log, freqDfg, treeParent, activityKey, threshold);
-			if (detectedFallthrough != null) {
-				return detectedFallthrough;
+		if (log != null) {
+			if (!(removeNoise)) {
+				let detectedFallthrough = InductiveMiner.detectFallthroughs(log, freqDfg, treeParent, activityKey, threshold);
+				if (detectedFallthrough != null) {
+					return detectedFallthrough;
+				}
 			}
-		}
-		if (!(removeNoise) && threshold > 0) {
-			return InductiveMiner.inductiveMiner(log, treeParent, activityKey, true, threshold);
+			if (!(removeNoise) && threshold > 0) {
+				return InductiveMiner.inductiveMiner(log, treeParent, activityKey, true, threshold);
+			}
 		}
 		return InductiveMiner.mineFlower(freqDfg, treeParent);
 	}
@@ -110,6 +114,9 @@ class InductiveMiner {
 		let xorCut = InductiveMinerExclusiveCutDetector.detect(freqDfg, activityKey);
 		if (xorCut != null) {
 			//console.log("InductiveMinerExclusiveCutDetector");
+			let vect = InductiveMinerExclusiveCutDetector.projectDfg(freqDfg, xorCut);
+			let subdfgs = vect[0];
+			let skippable = vect[1];
 			let logs = InductiveMinerExclusiveCutDetector.project(log, xorCut, activityKey);
 			let xorNode = new ProcessTree(treeParent, ProcessTreeOperator.EXCLUSIVE, null);
 			for (let sublog of logs) {
@@ -121,6 +128,9 @@ class InductiveMiner {
 		let andCut = InductiveMinerParallelCutDetector.detect(freqDfg, activityKey);
 		if (andCut != null) {
 			//console.log("InductiveMinerParallelCutDetector");
+			let vect = InductiveMinerParallelCutDetector.projectDfg(freqDfg, andCut);
+			let subdfgs = vect[0];
+			let skippable = vect[1];
 			let logs = InductiveMinerParallelCutDetector.project(log, andCut, activityKey);
 			let parNode = new ProcessTree(treeParent, ProcessTreeOperator.PARALLEL, null);
 			for (let sublog of logs) {
@@ -587,6 +597,15 @@ class InductiveMinerLoopCutDetector {
 		}
 		return sublogs;
 	}
+	
+	static projectDfg(frequencyDfg, groups) {
+		let dfgs = [];
+		let skippable = [];
+		for (let gind of groups) {
+			skippable.push(false);
+		}
+		return [dfgs, skippable];
+	}
 }
 
 class InductiveMinerParallelCutDetector {
@@ -681,6 +700,42 @@ class InductiveMinerParallelCutDetector {
 		}
 		return ret;
 	}
+	
+	static projectDfg(frequencyDfg, groups) {
+		let dfgs = [];
+		let skippable = [];
+		for (let gind in groups) {
+			let g = groups[gind];
+			let startActivities = {};
+			let endActivities = {};
+			let activities = {};
+			let pathsFrequency = {};
+			for (let act in frequencyDfg.startActivities) {
+				if (g.includes(act)) {
+					startActivities[act] = frequencyDfg.startActivities[act];
+				}
+			}
+			for (let act in frequencyDfg.endActivities) {
+				if (g.includes(act)) {
+					endActivities[act] = frequencyDfg.endActivities[act];
+				}
+			}
+			for (let act in frequencyDfg.activities) {
+				if (g.includes(act)) {
+					activities[act] = frequencyDfg.activities[act];
+				}
+			}
+			for (let arc0 in frequencyDfg.pathsFrequency) {
+				let arc = arc0.split(",");
+				if (g.includes(arc[0]) && g.includes(arc[1])) {
+					pathsFrequency[arc0] = frequencyDfg.pathsFrequency[arc0];
+				}
+			}
+			dfgs.push(new FrequencyDfg(activities, startActivities, endActivities, pathsFrequency));
+			skippable.push(false);
+		}
+		return [dfgs, skippable];
+	}
 }
 
 class InductiveMinerExclusiveCutDetector {
@@ -690,6 +745,42 @@ class InductiveMinerExclusiveCutDetector {
 			return connComp;
 		}
 		return null;
+	}
+	
+	static projectDfg(frequencyDfg, groups) {
+		let dfgs = [];
+		let skippable = [];
+		for (let gind in groups) {
+			let g = groups[gind];
+			let startActivities = {};
+			let endActivities = {};
+			let activities = {};
+			let pathsFrequency = {};
+			for (let act in frequencyDfg.startActivities) {
+				if (g.includes(act)) {
+					startActivities[act] = frequencyDfg.startActivities[act];
+				}
+			}
+			for (let act in frequencyDfg.endActivities) {
+				if (g.includes(act)) {
+					endActivities[act] = frequencyDfg.endActivities[act];
+				}
+			}
+			for (let act in frequencyDfg.activities) {
+				if (g.includes(act)) {
+					activities[act] = frequencyDfg.activities[act];
+				}
+			}
+			for (let arc0 in frequencyDfg.pathsFrequency) {
+				let arc = arc0.split(",");
+				if (g.includes(arc[0]) && g.includes(arc[1])) {
+					pathsFrequency[arc0] = frequencyDfg.pathsFrequency[arc0];
+				}
+			}
+			dfgs.push(new FrequencyDfg(activities, startActivities, endActivities, pathsFrequency));
+			skippable.push(false);
+		}
+		return [dfgs, skippable];
 	}
 	
 	static project(log, groups, activityKey) {
