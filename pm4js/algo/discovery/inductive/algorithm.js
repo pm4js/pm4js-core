@@ -93,7 +93,7 @@ class InductiveMiner {
 		if (freqDfg == null) {
 			freqDfg = FrequencyDfgDiscovery.apply(log, activityKey);
 		}
-		let seqCut = InductiveMinerSequenceCutDetector.detect(log, freqDfg, activityKey);
+		let seqCut = InductiveMinerSequenceCutDetector.detect(freqDfg, activityKey);
 		if (seqCut != null) {
 			//console.log("InductiveMinerSequenceCutDetector");
 			let logs = InductiveMinerSequenceCutDetector.project(log, seqCut, activityKey);
@@ -104,7 +104,7 @@ class InductiveMiner {
 			}
 			return seqNode;
 		}
-		let xorCut = InductiveMinerExclusiveCutDetector.detect(log, freqDfg, activityKey);
+		let xorCut = InductiveMinerExclusiveCutDetector.detect(freqDfg, activityKey);
 		if (xorCut != null) {
 			//console.log("InductiveMinerExclusiveCutDetector");
 			let logs = InductiveMinerExclusiveCutDetector.project(log, xorCut, activityKey);
@@ -115,7 +115,7 @@ class InductiveMiner {
 			}
 			return xorNode;
 		}
-		let andCut = InductiveMinerParallelCutDetector.detect(log, freqDfg, activityKey);
+		let andCut = InductiveMinerParallelCutDetector.detect(freqDfg, activityKey);
 		if (andCut != null) {
 			//console.log("InductiveMinerParallelCutDetector");
 			let logs = InductiveMinerParallelCutDetector.project(log, andCut, activityKey);
@@ -126,7 +126,7 @@ class InductiveMiner {
 			}
 			return parNode;
 		}
-		let loopCut = InductiveMinerLoopCutDetector.detect(log, freqDfg, activityKey);
+		let loopCut = InductiveMinerLoopCutDetector.detect(freqDfg, activityKey);
 		if (loopCut != null) {
 			//console.log("InductiveMinerLoopCutDetector");
 			let logs = InductiveMinerLoopCutDetector.project(log, loopCut, activityKey);
@@ -238,7 +238,7 @@ class InductiveMinerSequenceCutDetector {
     // 2. merge pairwise reachable nodes (based on transitive relations)
     // 3. merge pairwise unreachable nodes (based on transitive relations)
     // 4. sort the groups based on their reachability
-	static detect(log, freqDfg, activityKey) {
+	static detect(freqDfg, activityKey) {
 		let actReach = InductiveMinerGeneralUtilities.activityReachability(freqDfg);
 		let groups = [];
 		for (let act in actReach) {
@@ -378,7 +378,7 @@ class InductiveMinerLoopCutDetector {
     // 3. detect connected components in (undirected representative) of the reduced graph
     // 4. check if each component meets the start/end criteria of the loop cut definition (merge with the 'do' group if not)
     // 5. return the cut if at least two groups remain
-	static detect(log, freqDfg0, activityKey) {
+	static detect(freqDfg0, activityKey) {
 		let freqDfg = Object();
 		freqDfg.pathsFrequency = {};
 		for (let path in freqDfg0.pathsFrequency) {
@@ -477,7 +477,7 @@ class InductiveMinerLoopCutDetector {
 }
 
 class InductiveMinerParallelCutDetector {
-	static detect(log, freqDfg, activityKey) {
+	static detect(freqDfg, activityKey) {
 		let ret = [];
 		for (let act in freqDfg.activities) {
 			ret.push([act]);
@@ -571,7 +571,7 @@ class InductiveMinerParallelCutDetector {
 }
 
 class InductiveMinerExclusiveCutDetector {
-	static detect(log, freqDfg, activityKey) {
+	static detect(freqDfg, activityKey) {
 		let connComp = InductiveMinerGeneralUtilities.getConnectedComponents(freqDfg);
 		if (connComp.length > 1) {
 			return connComp;
