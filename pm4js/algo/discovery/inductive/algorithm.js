@@ -567,22 +567,51 @@ class InductiveMinerLoopCutDetector {
 			}
 		}
 		freqDfg.activities = remainingActivities;
+		let actReach = InductiveMinerGeneralUtilities.activityReachability(freqDfg0);
 		let connComp = InductiveMinerGeneralUtilities.getConnectedComponents(freqDfg);
 		for (let conn of connComp) {
 			let isRedo = true;
-			for (let act of conn) {
-				for (let sa in freqDfg0.startActivities) {
-					if (!([act, sa] in freqDfg0.pathsFrequency)) {
+			for (let act in freqDfg0.startActivities) {
+				for (let act2 of conn) {
+					if (!(act2 in actReach[act])) {
 						isRedo = false;
 						break;
 					}
 				}
-				/*for (let ea in freqDfg0.endActivities) {
-					if (!([ea, act] in freqDfg0.pathsFrequency)) {
-						isRedo = false;
-						break;
+			}
+			if (isRedo) {
+				for (let act in freqDfg0.endActivities) {
+					for (let act2 of conn) {
+						if (!(act2 in actReach[act])) {
+							isRedo = false;
+							break;
+						}
 					}
-				}*/
+				}
+			}
+			if (isRedo) {
+				for (let act of conn) {
+					for (let sa in freqDfg0.startActivities) {
+						if (!(sa in freqDfg0.endActivities)) {
+							if (!([act, sa] in freqDfg0.pathsFrequency)) {
+								isRedo = false;
+								break;
+							}
+						}
+					}
+				}
+			}
+			if (isRedo) {
+				for (let act of conn) {
+					for (let ea in freqDfg0.endActivities) {
+						if (!(ea in freqDfg0.startActivities)) {
+							if (!([ea, act] in freqDfg0.pathsFrequency)) {
+								isRedo = false;
+								break;
+							}
+						}
+					}
+				}
 			}
 			for (let act of conn) {
 				if (isRedo) {
