@@ -96,6 +96,9 @@ class InductiveMiner {
 		let seqCut = InductiveMinerSequenceCutDetector.detect(freqDfg, activityKey);
 		if (seqCut != null) {
 			//console.log("InductiveMinerSequenceCutDetector");
+			let vect = InductiveMinerSequenceCutDetector.projectDfg(freqDfg, seqCut);
+			let subdfgs = vect[0];
+			let skippable = vect[1];
 			let logs = InductiveMinerSequenceCutDetector.project(log, seqCut, activityKey);
 			let seqNode = new ProcessTree(treeParent, ProcessTreeOperator.SEQUENCE, null);
 			for (let sublog of logs) {
@@ -318,6 +321,116 @@ class InductiveMinerSequenceCutDetector {
 			}
 		}
 		return groups;
+	}
+	
+	static projectDfg(dfg, groups) {
+		let startActivities = [];
+		let endActivities = [];
+		let activities = [];
+		let dfgs = [];
+		let skippable = [];
+		for (let g of groups) {
+			skippable.push(false);
+		}
+		let activitiesIdx = {};
+		for (let gind in groups) {
+			let g = groups[gind]
+			for (let act of g) {
+				activitiesIdx[act] = parseInt(gind);
+			}
+		}
+		let i = 0;
+		while (i < groups.length) {
+			let toSuccArcs = {};
+			let fromPrevArcs = {};
+			if (i < groups.length - 1) {
+				for (let arc0 in dfg.pathsFrequency) {
+					let arc = arc0.split(",");
+					if (groups[i].includes(arc[0]) && groups[i+1].includes(arc[1])) {
+						if (!(arc[0] in toSuccArcs)) {
+							toSuccArcs[arc[0]] = 0;
+						}
+						toSuccArcs[arc[0]] += dfg.pathsFrequency[arc0];
+					}
+				}
+			}
+			if (i > 0) {
+				for (let arc0 in dfg.pathsFrequency) {
+					let arc = arc0.split(",");
+					if (groups[i-1].includes(arc[0]) && groups[i].includes(arc[1])) {
+						if (!(arc[1] in fromPrevArcs)) {
+							fromPrevArcs[arc[1]] = 0;
+						}
+						fromPrevArcs[arc[1]] += dfg.pathsFrequency[arc0];
+					}
+				}
+			}
+			
+			if (i == 0) {
+				startActivities.push({});
+				for (let act in dfg.startActivities) {
+					if (groups[i].includes(act)) {
+						startActivities[i][act] = dfg.startActivities[act];
+					}
+					else {
+						let j = i;
+						while (j < activitiesIdx[act]) {
+							skippable[j] = true;
+							j++;
+						}
+					}
+				}
+			}
+			else {
+				startActivities.push(fromPrevArcs);
+			}
+			
+			if (i == groups.length - 1) {
+				endActivities.push({});
+				for (let act in dfg.endActivities) {
+					if (groups[i].includes(act)) {
+						endActivities[i][act] = dfg.endActivities[act];
+					}
+					else {
+						let j = activitiesIdx[act] + 1;
+						while (j <= i) {
+							skippable[j] = true;
+							j++;
+						}
+					}
+				}
+			}
+			else {
+				endActivities.push(toSuccArcs);
+			}
+			activities.push({});
+			for (let act of groups[i]) {
+				activities[i][act] = dfg.activities[act];
+			}
+			dfgs.push({});
+			for (let arc0 in dfg.pathsFrequency) {
+				let arc = arc0.split(",");
+				if (groups[i].includes(arc[0]) && groups[i].includes(arc[1])) {
+					dfgs[i][arc0] = dfg.pathsFrequency[arc0];
+				}
+			}
+			i++;
+		}
+		i = 0;
+		while (i < dfgs.length) {
+			dfgs[i] = new FrequencyDfg(activities[i], startActivities[i], endActivities[i], dfgs[i]);
+			i++;
+		}
+		for (let arc0 in dfg.pathsFrequency) {
+			let arc = arc0.split(",");
+			let z = activitiesIdx[arc[1]];
+			let j = activitiesIdx[arc[0]] + 1;
+			while (j < z) {
+				skippable[j] = false;
+				j++;
+			}
+		}
+		return [dfgs, skippable];
 	}
 	
 	static project(log, groups, activityKey) {
