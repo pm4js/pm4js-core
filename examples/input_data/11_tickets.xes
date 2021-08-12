@@ -1,0 +1,203 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<log>
+  <string key="origin" value="csv"/>
+  <trace>
+    <int key="concept:name" value="1"/>
+    <event>
+      <string key="concept:name" value="Assign seriousness"/>
+      <string key="time:timestamp" value="1980-01-01 01:01:01"/>
+    </event>
+    <event>
+      <string key="concept:name" value="Take in charge ticket"/>
+      <string key="time:timestamp" value="1980-01-01 01:01:01"/>
+    </event>
+    <event>
+      <string key="concept:name" value="Resolve ticket"/>
+      <string key="time:timestamp" value="1980-01-01 01:01:01"/>
+    </event>
+    <event>
+      <string key="concept:name" value="Closed"/>
+      <string key="time:timestamp" value="1980-01-01 01:01:01"/>
+    </event>
+  </trace>
+  <trace>
+    <int key="concept:name" value="2"/>
+    <event>
+      <string key="concept:name" value="Assign seriousness"/>
+      <string key="time:timestamp" value="1980-01-01 01:01:01"/>
+    </event>
+    <event>
+      <string key="concept:name" value="Take in charge ticket"/>
+      <string key="time:timestamp" value="1980-01-01 01:01:01"/>
+    </event>
+    <event>
+      <string key="concept:name" value="Wait"/>
+      <string key="time:timestamp" value="1980-01-01 01:01:01"/>
+    </event>
+    <event>
+      <string key="concept:name" value="Resolve ticket"/>
+      <string key="time:timestamp" value="1980-01-01 01:01:01"/>
+    </event>
+    <event>
+      <string key="concept:name" value="Closed"/>
+      <string key="time:timestamp" value="1980-01-01 01:01:01"/>
+    </event>
+  </trace>
+  <trace>
+    <int key="concept:name" value="3"/>
+    <event>
+      <string key="concept:name" value="Assign seriousness"/>
+      <string key="time:timestamp" value="1980-01-01 01:01:01"/>
+    </event>
+    <event>
+      <string key="concept:name" value="Take in charge ticket"/>
+      <string key="time:timestamp" value="1980-01-01 01:01:01"/>
+    </event>
+    <event>
+      <string key="concept:name" value="Wait"/>
+      <string key="time:timestamp" value="1980-01-01 01:01:01"/>
+    </event>
+    <event>
+      <string key="concept:name" value="Take in charge ticket"/>
+      <string key="time:timestamp" value="1980-01-01 01:01:01"/>
+    </event>
+    <event>
+      <string key="concept:name" value="Resolve ticket"/>
+      <string key="time:timestamp" value="1980-01-01 01:01:01"/>
+    </event>
+    <event>
+      <string key="concept:name" value="Closed"/>
+      <string key="time:timestamp" value="1980-01-01 01:01:01"/>
+    </event>
+  </trace>
+  <trace>
+    <int key="concept:name" value="4"/>
+    <event>
+      <string key="concept:name" value="Assign seriousness"/>
+      <string key="time:timestamp" value="1980-01-01 01:01:01"/>
+    </event>
+    <event>
+      <string key="concept:name" value="Assign seriousness"/>
+      <string key="time:timestamp" value="1980-01-01 01:01:01"/>
+    </event>
+    <event>
+      <string key="concept:name" value="Take in charge ticket"/>
+      <string key="time:timestamp" value="1980-01-01 01:01:01"/>
+    </event>
+    <event>
+      <string key="concept:name" value="Resolve ticket"/>
+      <string key="time:timestamp" value="1980-01-01 01:01:01"/>
+    </event>
+    <event>
+      <string key="concept:name" value="Closed"/>
+      <string key="time:timestamp" value="1980-01-01 01:01:01"/>
+    </event>
+  </trace>
+  <trace>
+    <int key="concept:name" value="5"/>
+    <event>
+      <string key="concept:name" value="Assign seriousness"/>
+      <string key="time:timestamp" value="1980-01-01 01:01:01"/>
+    </event>
+    <event>
+      <string key="concept:name" value="Resolve ticket"/>
+      <string key="time:timestamp" value="1980-01-01 01:01:01"/>
+    </event>
+    <event>
+      <string key="concept:name" value="Closed"/>
+      <string key="time:timestamp" value="1980-01-01 01:01:01"/>
+    </event>
+  </trace>
+  <trace>
+    <int key="concept:name" value="6"/>
+    <event>
+      <string key="concept:name" value="Assign seriousness"/>
+      <string key="time:timestamp" value="1980-01-01 01:01:01"/>
+    </event>
+    <event>
+      <string key="concept:name" value="Take in charge ticket"/>
+      <string key="time:timestamp" value="1980-01-01 01:01:01"/>
+    </event>
+    <event>
+      <string key="concept:name" value="Resolve ticket"/>
+      <string key="time:timestamp" value="1980-01-01 01:01:01"/>
+    </event>
+    <event>
+      <string key="concept:name" value="Resolve ticket"/>
+      <string key="time:timestamp" value="1980-01-01 01:01:01"/>
+    </event>
+    <event>
+      <string key="concept:name" value="Closed"/>
+      <string key="time:timestamp" value="1980-01-01 01:01:01"/>
+    </event>
+  </trace>
+  <trace>
+    <int key="concept:name" value="7"/>
+    <event>
+      <string key="concept:name" value="Insert ticket"/>
+      <string key="time:timestamp" value="1980-01-01 01:01:01"/>
+    </event>
+    <event>
+      <string key="concept:name" value="Assign seriousness"/>
+      <string key="time:timestamp" value="1980-01-01 01:01:01"/>
+    </event>
+    <event>
+      <string key="concept:name" value="Take in charge ticket"/>
+      <string key="time:timestamp" value="1980-01-01 01:01:01"/>
+    </event>
+    <event>
+      <string key="concept:name" value="Resolve ticket"/>
+      <string key="time:timestamp" value="1980-01-01 01:01:01"/>
+    </event>
+    <event>
+      <string key="concept:name" value="Closed"/>
+      <string key="time:timestamp" value="1980-01-01 01:01:01"/>
+    </event>
+  </trace>
+  <trace>
+    <int key="concept:name" value="8"/>
+    <event>
+      <string key="concept:name" value="Assign seriousness"/>
+      <string key="time:timestamp" value="1980-01-01 01:01:01"/>
+    </event>
+    <event>
+      <string key="concept:name" value="Resolve ticket"/>
+      <string key="time:timestamp" value="1980-01-01 01:01:01"/>
+    </event>
+    <event>
+      <string key="concept:name" value="Resolve ticket"/>
+      <string key="time:timestamp" value="1980-01-01 01:01:01"/>
+    </event>
+    <event>
+      <string key="concept:name" value="Closed"/>
+      <string key="time:timestamp" value="1980-01-01 01:01:01"/>
+    </event>
+  </trace>
+  <trace>
+    <int key="concept:name" value="9"/>
+    <event>
+      <string key="concept:name" value="Assign seriousness"/>
+      <string key="time:timestamp" value="1980-01-01 01:01:01"/>
+    </event>
+    <event>
+      <string key="concept:name" value="Take in charge ticket"/>
+      <string key="time:timestamp" value="1980-01-01 01:01:01"/>
+    </event>
+    <event>
+      <string key="concept:name" value="Resolve ticket"/>
+      <string key="time:timestamp" value="1980-01-01 01:01:01"/>
+    </event>
+    <event>
+      <string key="concept:name" value="Take in charge ticket"/>
+      <string key="time:timestamp" value="1980-01-01 01:01:01"/>
+    </event>
+    <event>
+      <string key="concept:name" value="Resolve ticket"/>
+      <string key="time:timestamp" value="1980-01-01 01:01:01"/>
+    </event>
+    <event>
+      <string key="concept:name" value="Closed"/>
+      <string key="time:timestamp" value="1980-01-01 01:01:01"/>
+    </event>
+  </trace>
+</log>
