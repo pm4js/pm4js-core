@@ -34,3 +34,4 @@ require('./pm4js/algo/conformance/log_skeleton/algorithm.js');
 require('./pm4js/algo/transformation/case_features.js');
 require('./pm4js/algo/conformance/alignments/heapq.js');
 require('./pm4js/algo/conformance/alignments/petri_net/algorithm.js');
+require('./pm4js/algo/conformance/alignments/dfg/algorithm.js');
