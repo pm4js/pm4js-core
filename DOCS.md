@@ -22,6 +22,7 @@
 * Algorithms 
 	* Process Discovery
 		* [Inductive Miner](#inductive-miner)
+		* [Inductive Miner Directly Follows](#inductive-miner-directly-follows)
 		* [Log Skeleton](#log-skeleton)
 		* [Directly Follows Graphs](#directly-follows-graphs)
 	* Conformance Checking
@@ -276,6 +277,17 @@ To discover a process tree from an event log using the inductive miner, the foll
 
 The command can be provided with some parameters, including the activity key and the threshold for IMf (removing some noise from the log):
 **let processTree = InductiveMiner.apply(eventLog, "concept:name", 0.2);**
+
+### Inductive Miner Directly Follows**
+
+The Inductive Miner Directly-Follows is a version of the popular Inductive Miner algorithm that accepts as input a directly-follows graph and returns a process tree.
+The process tree can then be converted to a Petri net model, using the conversion method.
+
+To discover a process tree from an event log using the inductive miner, the following commands can be used:
+
+**let frequencyDfg = FrequencyDfgDiscovery.apply(log, "concept:name"); **
+**let processTree = InductiveMiner.apply(null, null, 0.0, frequencyDfg); **
+
 
 ### Log Skeleton
 
