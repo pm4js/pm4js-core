@@ -38,3 +38,4 @@ require('./pm4js/algo/conformance/alignments/heapq.js');
 require('./pm4js/algo/conformance/alignments/petri_net/algorithm.js');
 require('./pm4js/algo/conformance/alignments/dfg/algorithm.js');
 require('./pm4js/algo/simulation/playout/dfg/algorithm.js');
+require('./pm4js/objects/dfg/util/maximize.js');
