@@ -1,3 +1,6 @@
+// Implementation taken from:
+// https://github.com/pineapplemachine/interval-tree-type-js
+
 // Credit to these implementations for serving as a reference:
 // https://github.com/IvanPinezhaninov/IntervalTree
 // https://github.com/stanislavkozlovski/Red-Black-Tree
