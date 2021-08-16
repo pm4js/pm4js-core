@@ -26,7 +26,7 @@ try {
 }
 catch (err) {
 	// not in Node
-	console.log(err);
+	//console.log(err);
 }
 
 Pm4JS.registerAlgorithm("GeneralizationTbr", "apply", ["TokenBasedReplayResult"], "GeneralizationTbrResults", "Calculate Generalization", "Alessandro Berti");

@@ -202,7 +202,7 @@ try {
 }
 catch (err) {
 	// not in Node
-	console.log(err);
+	//console.log(err);
 }
 
 Pm4JS.registerAlgorithm("DfgAlignments", "apply", ["EventLog", "FrequencyDfg"], "DfgAlignmentsResults", "Perform Alignments on DFG", "Alessandro Berti");

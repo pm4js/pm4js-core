@@ -91,7 +91,7 @@ try {
 }
 catch (err) {
 	// not in node
-	console.log(err);
+	//console.log(err);
 }
 
 Pm4JS.registerExporter("XesExporter", "apply", "EventLog", "xes", "text/xml", "XES Exporter", "Alessandro Berti");

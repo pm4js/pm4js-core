@@ -94,7 +94,7 @@ try {
 	global.PetriNetReduction = PetriNetReduction;
 }
 catch (err) {
-	console.log(err);
+	//console.log(err);
 	// not in Node
 }
 

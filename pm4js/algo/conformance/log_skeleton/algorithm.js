@@ -194,7 +194,7 @@ try {
 }
 catch (err) {
 	// not in Node
-	console.log(err);
+	//console.log(err);
 }
 
 Pm4JS.registerAlgorithm("LogSkeletonConformanceChecking", "apply", ["EventLog", "LogSkeleton"], "LogSkeletonConformanceCheckingResult", "Perform Conformance Checking using the Log Skeleton", "Alessandro Berti");

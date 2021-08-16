@@ -85,7 +85,7 @@ try {
 }
 catch (err) {
 	// not in node
-	console.log(err);
+	//console.log(err);
 }
 
 //Pm4JS.registerImporter("CsvImporter", "apply", ["csv"], "CSV Importer", "Alessandro Berti");

@@ -135,7 +135,7 @@ try {
 }
 catch (err) {
 	// not in Node
-	console.log(err);
+	//console.log(err);
 }
 
 Pm4JS.registerAlgorithm("LogSkeletonDiscovery", "apply", ["EventLog"], "LogSkeleton", "Discover Log Skeleton from Log", "Alessandro Berti");

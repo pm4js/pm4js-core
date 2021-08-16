@@ -84,7 +84,7 @@ try {
 }
 catch (err) {
 	// not in node
-	console.log(err);
+	//console.log(err);
 }
 
 Pm4JS.registerExporter("CsvExporter", "apply", "EventLog", "csv", "text/csv", "CSV Exporter", "Alessandro Berti");

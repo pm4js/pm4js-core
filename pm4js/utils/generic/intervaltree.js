@@ -1349,5 +1349,5 @@ try {
 }
 catch (err) {
 	// not in Node.JS
-	console.log(err);
+	//console.log(err);
 }

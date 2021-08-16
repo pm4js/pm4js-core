@@ -113,7 +113,7 @@ try {
 }
 catch (err) {
 	// not in node
-	console.log(err);
+	//console.log(err);
 }
 
 Pm4JS.registerExporter("PnmlExporter", "apply", "AcceptingPetriNet", "pnml", "text/xml", "Petri net Exporter (.pnml)", "Alessandro Berti");

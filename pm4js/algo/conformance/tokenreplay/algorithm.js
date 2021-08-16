@@ -416,7 +416,7 @@ try {
 }
 catch (err) {
 	// not in Node
-	console.log(err);
+	//console.log(err);
 }
 
 Pm4JS.registerAlgorithm("TokenBasedReplay", "apply", ["EventLog", "AcceptingPetriNet"], "TokenBasedReplayResult", "Perform Token Based Replay", "Alessandro Berti");

@@ -158,7 +158,7 @@ try {
 	global.ProcessTreeToPetriNetConverter = ProcessTreeToPetriNetConverter;
 }
 catch (err) {
-	console.log(err);
+	//console.log(err);
 	// not in Node
 }
 

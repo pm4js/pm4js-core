@@ -209,7 +209,7 @@ try {
 }
 catch (err) {
 	// not in Node
-	console.log(err);
+	//console.log(err);
 }
 
 Pm4JS.registerAlgorithm("PetriNetAlignments", "apply", ["EventLog", "AcceptingPetriNet"], "PetriNetAlignmentsResults", "Perform Alignments on Petri nets", "Alessandro Berti");
