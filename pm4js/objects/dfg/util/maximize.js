@@ -2,7 +2,6 @@ class FilteredDfgMaximization {
 	static apply(freqDfg) {
 		let vect = freqDfg.getArtificialDfg();
 		let activities = vect[0];
-		console.log(activities);
 		let paths = vect[1];
 		let activitiesKeys = Object.keys(activities);
 		let ingoing = {};
