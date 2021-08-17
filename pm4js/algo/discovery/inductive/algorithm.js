@@ -1169,3 +1169,4 @@ catch (err) {
 
 Pm4JS.registerAlgorithm("InductiveMiner", "applyPlugin", ["EventLog"], "ProcessTree", "Mine a Process Tree using the Inductive Miner", "Alessandro Berti");
 Pm4JS.registerAlgorithm("InductiveMiner", "applyPluginDFG", ["FrequencyDfg"], "ProcessTree", "Mine a Process Tree using the Inductive Miner Directly-Follows", "Alessandro Berti");
+Pm4JS.registerAlgorithm("InductiveMiner", "applyPluginDFG", ["PerformanceDfg"], "ProcessTree", "Mine a Process Tree using the Inductive Miner Directly-Follows", "Alessandro Berti");

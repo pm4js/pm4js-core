@@ -65,7 +65,7 @@ class DfgSliders {
 		return true;
 	}
 	
-	static filterDfgOnPercActivities(dfg, perc) {
+	static filterDfgOnPercActivities(dfg, perc=0.2) {
 		let art = dfg.getArtificialDfg();
 		let artAct = art[0];
 		let artDfg = art[1];
@@ -106,10 +106,12 @@ class DfgSliders {
 			}
 			i++;
 		}
-		return dfg.unrollArtificialDfg([artAct, artDfg]);
+		let ret = dfg.unrollArtificialDfg([artAct, artDfg]);
+		Pm4JS.registerObject(ret, "DFG (activity sliding)");
+		return ret;
 	}
 	
-	static filterDfgOnPercPaths(dfg, perc, keepAllActivities=false) {
+	static filterDfgOnPercPaths(dfg, perc=0.2, keepAllActivities=false) {
 		let art = dfg.getArtificialDfg();
 		let artAct = art[0];
 		let artDfg = art[1];
@@ -162,7 +164,9 @@ class DfgSliders {
 			}
 			i++;
 		}
-		return dfg.unrollArtificialDfg([artAct, artDfg]);
+		let ret = dfg.unrollArtificialDfg([artAct, artDfg]);
+		Pm4JS.registerObject(ret, "DFG (paths sliding)");
+		return ret;
 	}
 }
 
@@ -174,3 +178,8 @@ try {
 catch (err) {
 	// not in Node
 }
+
+Pm4JS.registerAlgorithm("DfgSliders", "filterDfgOnPercActivities", ["FrequencyDfg"], "FrequencyDfg", "Slide DFG on activities", "Alessandro Berti");
+Pm4JS.registerAlgorithm("DfgSliders", "filterDfgOnPercActivities", ["PerformanceDfg"], "PerformanceDfg", "Slide DFG on activities", "Alessandro Berti");
+Pm4JS.registerAlgorithm("DfgSliders", "filterDfgOnPercPaths", ["FrequencyDfg"], "FrequencyDfg", "Slide DFG on paths", "Alessandro Berti");
+Pm4JS.registerAlgorithm("DfgSliders", "filterDfgOnPercPaths", ["PerformanceDfg"], "PerformanceDfg", "Slide DFG on paths", "Alessandro Berti");

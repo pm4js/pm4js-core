@@ -97,7 +97,9 @@ class FilteredDfgMaximization {
 				paths[pathsKeys[pind]] = val;
 			}
 		}
-		return freqDfg.unrollArtificialDfg([activities, paths]);
+		let ret = freqDfg.unrollArtificialDfg([activities, paths]);
+		Pm4JS.registerObject(ret, "Maximized DFG");
+		return ret;
 	}
 }
 
@@ -109,3 +111,6 @@ try {
 catch (err) {
 	// not in Node
 }
+
+Pm4JS.registerAlgorithm("FilteredDfgMaximization", "apply", ["FrequencyDfg"], "FrequencyDfg", "Maximize DFG capacity", "Alessandro Berti");
+Pm4JS.registerAlgorithm("FilteredDfgMaximization", "apply", ["PerformanceDfg"], "PerformanceDfg", "Maximize DFG capacity", "Alessandro Berti");
