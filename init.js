@@ -9,7 +9,7 @@ require('./pm4js/objects/log/importer/csv/importer.js');
 require('./pm4js/objects/log/exporter/csv/exporter.js');
 require('./pm4js/objects/log/exporter/xes/exporter.js');
 require('./pm4js/objects/petri_net/petri_net.js');
-require('./pm4js/objects/petri_net/reduction.js');
+require('./pm4js/objects/petri_net/util/reduction.js');
 require('./pm4js/objects/petri_net/importer/importer.js');
 require('./pm4js/objects/petri_net/exporter/exporter.js');
 require('./pm4js/objects/process_tree/process_tree.js');

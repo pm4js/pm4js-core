@@ -88,8 +88,8 @@ class PetriNetReduction {
 }
 
 try {
-	require('../../pm4js.js');
-	require('./petri_net.js');
+	require('../../../pm4js.js');
+	require('../petri_net.js');
 	module.exports = {PetriNetReduction: PetriNetReduction};
 	global.PetriNetReduction = PetriNetReduction;
 }
