@@ -59,7 +59,7 @@ class Pm4JS {
 	}
 }
 
-Pm4JS.VERSION = "0.0.7";
+Pm4JS.VERSION = "0.0.8";
 Pm4JS.registrationEnabled = false;
 Pm4JS.objects = [];
 Pm4JS.algorithms = [];
@@ -8488,8 +8488,8 @@ class PetriNetReduction {
 }
 
 try {
-	require('../../pm4js.js');
-	require('./petri_net.js');
+	require('../../../pm4js.js');
+	require('../petri_net.js');
 	module.exports = {PetriNetReduction: PetriNetReduction};
 	global.PetriNetReduction = PetriNetReduction;
 }
@@ -8499,6 +8499,48 @@ catch (err) {
 }
 
 Pm4JS.registerAlgorithm("PetriNetReduction", "apply", ["AcceptingPetriNet"], "AcceptingPetriNet", "SESE Reduction of Accepting Petri Net", "Alessandro Berti");
+
+
+class PetriNetReachableVisibleTransitions {
+	static apply(net, marking) {
+		let reachableVisibleTransitions = {};
+		let visited = {};
+		let toVisit = [];
+		toVisit.push(marking);
+		while (toVisit.length > 0) {
+			//console.log(reachableVisibleTransitions);
+			let currMarking = toVisit.shift();
+			if (currMarking in visited) {
+				continue;
+			}
+			visited[currMarking] = 0;
+			let enabledTransitions = currMarking.getEnabledTransitions();
+			for (let trans of enabledTransitions) {
+				if (trans.label != null) {
+					reachableVisibleTransitions[trans.label] = 0;
+				}
+				else {
+					let newMarking = currMarking.execute(trans);
+					if (!(newMarking in visited)) {
+						toVisit.push(newMarking);
+					}
+				}
+			}
+		}
+		return Object.keys(reachableVisibleTransitions);
+	}
+}
+
+try {
+	require('../../../pm4js.js');
+	require('../petri_net.js');
+	module.exports = {PetriNetReachableVisibleTransitions: PetriNetReachableVisibleTransitions};
+	global.PetriNetReachableVisibleTransitions = PetriNetReachableVisibleTransitions;
+}
+catch (err) {
+	//console.log(err);
+	// not in Node
+}
 
 
 class PnmlImporter {
@@ -8982,7 +9024,7 @@ try {
 	require('../../../pm4js.js');
 	require('../../process_tree/process_tree.js');
 	require('../../petri_net/petri_net.js');
-	require('../../petri_net/reduction.js');
+	require('../../petri_net/util/reduction.js');
 	module.exports = {ProcessTreeToPetriNetConverter: ProcessTreeToPetriNetConverter};
 	global.ProcessTreeToPetriNetConverter = ProcessTreeToPetriNetConverter;
 }
@@ -9412,6 +9454,8 @@ class TokenBasedReplayResult {
 		this.totalTraces = this.result.length;
 		this.fitTraces = 0;
 		this.logFitness = 0.0;
+		this.averageTraceFitness = 0.0;
+		this.percentageFitTraces = 0.0;
 		this.compute();
 	}
 	
@@ -9424,15 +9468,6 @@ class TokenBasedReplayResult {
 			this.totalProduced += res["produced"];
 			this.totalMissing += res["missing"];
 			this.totalRemaining += res["remaining"];
-			let fitMC = 0.0;
-			let fitRP = 0.0;
-			if (this.totalConsumed > 0) {
-				fitMC = 1.0 - this.totalMissing / this.totalConsumed;
-			}
-			if (this.totalProduced > 0) {
-				fitRP = 1.0 - this.totalRemaining / this.totalProduced;
-			}
-			this.logFitness = 0.5*fitMC + 0.5*fitRP;
 			for (let t of res["visitedTransitions"]) {
 				this.transExecutions[t]++;
 				for (let a in t.inArcs) {
@@ -9448,7 +9483,19 @@ class TokenBasedReplayResult {
 				this.totalMissingPerPlace[p] += res["missingPerPlace"][p];
 				this.totalRemainingPerPlace[p] += res["remainingPerPlace"][p];
 			}
+			this.averageTraceFitness += res["fitness"];
 		}
+		let fitMC = 0.0;
+		let fitRP = 0.0;
+		if (this.totalConsumed > 0) {
+			fitMC = 1.0 - this.totalMissing / this.totalConsumed;
+		}
+		if (this.totalProduced > 0) {
+			fitRP = 1.0 - this.totalRemaining / this.totalProduced;
+		}
+		this.logFitness = 0.5*fitMC + 0.5*fitRP;
+		this.averageTraceFitness = this.averageTraceFitness / this.result.length;
+		this.percentageFitTraces = this.fitTraces / this.totalTraces;
 	}
 }
 
@@ -9480,6 +9527,29 @@ class TokenBasedReplay {
 		Pm4JS.registerObject(finalResult, "Token-Based Replay Result");
 		
 		return finalResult;
+	}
+	
+	static applyListListAct(listListActivities, acceptingPetriNet, reachFm=true, retMarking=false) {
+		let invisibleChain = TokenBasedReplay.buildInvisibleChain(acceptingPetriNet.net);
+		let transitionsMap = {};
+		for (let transId in acceptingPetriNet.net.transitions) {
+			let trans = acceptingPetriNet.net.transitions[transId];
+			if (trans.label != null) {
+				transitionsMap[trans.label] = trans;
+			}
+		}
+		let ret = [];
+		for (let activities of listListActivities) {
+			let tbrResult = TokenBasedReplay.performTbr(activities.split(","), transitionsMap, acceptingPetriNet, invisibleChain, reachFm);
+			if (retMarking) {
+				let isFit = tbrResult.isFit;
+				tbrResult = tbrResult.visitedMarkings;
+				tbrResult = tbrResult[tbrResult.length - 1];
+				tbrResult.isFit = isFit;
+			}
+			ret.push(tbrResult);
+		}
+		return ret;
 	}
 	
 	static performTbr(activities, transitionsMap, acceptingPetriNet, invisibleChain, reachFm) {
@@ -9814,7 +9884,11 @@ class GeneralizationTbrResults {
 }
 
 class GeneralizationTbr {
-	static apply(tbrResults) {
+	static apply(log, acceptingPetriNet) {
+		return GeneralizationTbr.evaluate(TokenBasedReplay.apply(log, acceptingPetriNet));
+	}
+	
+	static evaluate(tbrResults) {
 		let invSqOccSum = 0.0
 		for (let trans in tbrResults.transExecutions) {
 			let thisTerm = 1.0 / Math.sqrt(Math.max(tbrResults.transExecutions[trans], 1));
@@ -9827,8 +9901,8 @@ class GeneralizationTbr {
 }
 
 try {
-	require("../../../pm4js.js");
-	require("../../conformance/tokenreplay/algorithm.js");
+	require("../../../../pm4js.js");
+	require("../../../conformance/tokenreplay/algorithm.js");
 	module.exports = {GeneralizationTbr: GeneralizationTbr, GeneralizationTbrResults: GeneralizationTbrResults};
 	global.GeneralizationTbr = GeneralizationTbr;
 	global.GeneralizationTbrResults = GeneralizationTbrResults;
@@ -9838,7 +9912,7 @@ catch (err) {
 	//console.log(err);
 }
 
-Pm4JS.registerAlgorithm("GeneralizationTbr", "apply", ["TokenBasedReplayResult"], "GeneralizationTbrResults", "Calculate Generalization", "Alessandro Berti");
+Pm4JS.registerAlgorithm("GeneralizationTbr", "evaluate", ["TokenBasedReplayResult"], "GeneralizationTbrResults", "Calculate Generalization", "Alessandro Berti");
 
 
 class SimplicityArcDegreeResults {
@@ -9849,6 +9923,10 @@ class SimplicityArcDegreeResults {
 
 class SimplicityArcDegree {
 	static apply(acceptingPetriNet, k=0) {
+		return SimplicityArcDegree.evaluate(acceptingPetriNet, k);
+	}
+	
+	static evaluate(acceptingPetriNet, k=0) {
 		let summ = 0.0;
 		let count = 0;
 		for (let placeId in acceptingPetriNet.net.places) {
@@ -9875,8 +9953,8 @@ class SimplicityArcDegree {
 }
 
 try {
-	require("../../../pm4js.js");
-	require("../../../objects/petri_net/petri_net.js");
+	require("../../../../pm4js.js");
+	require("../../../../objects/petri_net/petri_net.js");
 	module.exports = {SimplicityArcDegree: SimplicityArcDegree, SimplicityArcDegreeResults: SimplicityArcDegreeResults};
 	global.SimplicityArcDegree = SimplicityArcDegree;
 	global.SimplicityArcDegreeResults = SimplicityArcDegreeResults;
@@ -9886,7 +9964,7 @@ catch (err) {
 	//console.log(err);
 }
 
-Pm4JS.registerAlgorithm("SimplicityArcDegree", "apply", ["AcceptingPetriNet"], "SimplicityArcDegreeResults", "Calculate Simplicity (Arc Degree)", "Alessandro Berti");
+Pm4JS.registerAlgorithm("SimplicityArcDegree", "evaluate", ["AcceptingPetriNet"], "SimplicityArcDegreeResults", "Calculate Simplicity (Arc Degree)", "Alessandro Berti");
 
 
 class FrequencyDfg {
@@ -11989,6 +12067,7 @@ class LogSkeletonConformanceCheckingResult {
 			}
 			i++;
 		}
+		this.percentageFitTraces = this.fitTraces / this.totalTraces;
 	}
 }
 
@@ -12483,8 +12562,11 @@ class PetriNetAlignmentsResults {
 		this.overallResult = overallResult;
 		this.acceptingPetriNet = acceptingPetriNet;
 		this.movesUsage = {};
+		this.totalTraces = this.overallResult.length;
 		this.fitTraces = 0;
 		this.totalCost = 0;
+		this.totalBwc = 0;
+		this.averageTraceFitness = 0;
 		for (let alTrace of this.overallResult) {
 			for (let move of alTrace["alignment"].split(",")) {
 				if (!(move in this.movesUsage)) {
@@ -12494,11 +12576,16 @@ class PetriNetAlignmentsResults {
 					this.movesUsage[move] += 1;
 				}
 			}
-			if (alTrace["cost"] < 10000) {
+			if (alTrace["cost"] < 1) {
 				this.fitTraces += 1;
 			}
+			this.totalBwc += alTrace["bwc"];
 			this.totalCost += alTrace["cost"];
+			this.averageTraceFitness += alTrace["fitness"];
 		}
+		this.averageTraceFitness = this.averageTraceFitness / this.overallResult.length;
+		this.logFitness = 1.0 - (this.totalCost)/(this.totalBwc);
+		this.percentageFitTraces = this.fitTraces / this.totalTraces;
 	}
 }
 
@@ -12575,13 +12662,24 @@ class PetriNetAlignments {
 		let alignedTraces = {};
 		let res = [];
 		let count = 0;
+		let minPathInModelCost = Math.floor(PetriNetAlignments.applyTrace([], acceptingPetriNet.net, acceptingPetriNet.im, acceptingPetriNet.fm, syncCosts, modelMoveCosts, logMoveCosts, comparator)["cost"] / 10000);
 		for (let trace of log.traces) {
+			let bwc = trace.events.length + minPathInModelCost;
 			let listAct = [];
 			for (let eve of trace.events) {
 				listAct.push(eve.attributes[activityKey].value);
 			}
 			if (!(listAct in alignedTraces)) {
-				alignedTraces[listAct] = PetriNetAlignments.applyTrace(listAct, acceptingPetriNet.net, acceptingPetriNet.im, acceptingPetriNet.fm, syncCosts, modelMoveCosts, logMoveCosts, comparator);
+				let ali = PetriNetAlignments.applyTrace(listAct, acceptingPetriNet.net, acceptingPetriNet.im, acceptingPetriNet.fm, syncCosts, modelMoveCosts, logMoveCosts, comparator);
+				let fitness = 1.0;
+				let dividedCost = Math.floor(ali["cost"] / 10000);
+				if (bwc > 0) {
+					fitness = 1.0 - dividedCost / bwc;
+				}
+				ali["cost"] = dividedCost;
+				ali["fitness"] = fitness;
+				ali["bwc"] = bwc;
+				alignedTraces[listAct] = ali;
 			}
 			res.push(alignedTraces[listAct]);
 			count++;
@@ -12700,8 +12798,11 @@ class DfgAlignmentsResults {
 		this.overallResult = overallResult;
 		this.frequencyDfg = frequencyDfg;
 		this.movesUsage = {};
+		this.totalTraces = this.overallResult.length;
 		this.fitTraces = 0;
 		this.totalCost = 0;
+		this.totalBwc = 0;
+		this.averageTraceFitness = 0;
 		for (let alTrace of this.overallResult) {
 			for (let move of alTrace["alignment"].split(",")) {
 				if (!(move in this.movesUsage)) {
@@ -12711,11 +12812,16 @@ class DfgAlignmentsResults {
 					this.movesUsage[move] += 1;
 				}
 			}
-			if (alTrace["cost"] < 10000) {
+			if (alTrace["cost"] < 1) {
 				this.fitTraces += 1;
 			}
 			this.totalCost += alTrace["cost"];
+			this.totalBwc += alTrace["bwc"];
+			this.averageTraceFitness += alTrace["fitness"];
 		}
+		this.averageTraceFitness = this.averageTraceFitness / this.overallResult.length;
+		this.logFitness = 1.0 - (this.totalCost)/(this.totalBwc);
+		this.percentageFitTraces = this.fitTraces / this.totalTraces;
 	}
 }
 
@@ -12783,13 +12889,24 @@ class DfgAlignments {
 		let alignedTraces = {};
 		let res = [];
 		let count = 0;
+		let minPathInModelCost = Math.floor(DfgAlignments.applyTrace([], frequencyDfg, outgoing, syncCosts, modelMoveCosts, logMoveCosts, comparator)["cost"] / 10000);
 		for (let trace of log.traces) {
+			let bwc = trace.events.length + minPathInModelCost;
 			let listAct = [];
 			for (let eve of trace.events) {
 				listAct.push(eve.attributes[activityKey].value);
 			}
 			if (!(listAct in alignedTraces)) {
-				alignedTraces[listAct] = DfgAlignments.applyTrace(listAct, frequencyDfg, outgoing, syncCosts, modelMoveCosts, logMoveCosts, comparator);
+				let ali = DfgAlignments.applyTrace(listAct, frequencyDfg, outgoing, syncCosts, modelMoveCosts, logMoveCosts, comparator);
+				let fitness = 1.0;
+				let dividedCost = Math.floor(ali["cost"] / 10000);
+				if (bwc > 0) {
+					fitness = 1.0 - dividedCost / bwc;
+				}
+				ali["cost"] = dividedCost;
+				ali["fitness"] = fitness;
+				ali["bwc"] = bwc;
+				alignedTraces[listAct] = ali;
 			}
 			res.push(alignedTraces[listAct]);
 			count++;
@@ -13082,5 +13199,160 @@ catch (err) {
 
 Pm4JS.registerAlgorithm("FilteredDfgMaximization", "apply", ["FrequencyDfg"], "FrequencyDfg", "Maximize DFG capacity", "Alessandro Berti");
 Pm4JS.registerAlgorithm("FilteredDfgMaximization", "apply", ["PerformanceDfg"], "PerformanceDfg", "Maximize DFG capacity", "Alessandro Berti");
+
+
+class EventLogPrefixes {
+	static apply(eventLog, activityKey="concept:name") {
+		let prefixes = {};
+		let i = 0;
+		for (let trace of eventLog.traces) {
+			i = 0;
+			let actArray = [];
+			while (i < trace.events.length - 1) {
+				let act = trace.events[i].attributes[activityKey].value;
+				let nextAct = trace.events[i+1].attributes[activityKey].value;
+				actArray.push(act);
+				if (!(actArray in prefixes)) {
+					prefixes[actArray] = {};
+				}
+				if (!(nextAct in prefixes[actArray])) {
+					prefixes[actArray][nextAct] = 0;
+				}
+				prefixes[actArray][nextAct] += 1;
+				i++;
+			}
+		}
+		return prefixes;
+	}
+}
+
+try {
+	require('../../../pm4js.js');
+	require('../log.js');
+	module.exports = {EventLogPrefixes: EventLogPrefixes};
+	global.EventLogPrefixes = EventLogPrefixes;
+}
+catch (err) {
+	// not in node
+	//console.log(err);
+}
+
+
+class TbrFitness {
+	static apply(eventLog, acceptingPetriNet) {
+		return TokenBasedReplay.apply(eventLog, acceptingPetriNet);
+	}
+	
+	static evaluate(tbrResults) {
+		return tbrResults;
+	}
+}
+
+try {
+	require("../../../../pm4js.js");
+	require("../../../conformance/tokenreplay/algorithm.js");
+	module.exports = {TbrFitness: TbrFitness};
+	global.TbrFitness = TbrFitness;
+}
+catch (err) {
+	// not in Node
+	//console.log(err);
+}
+
+
+class AlignmentsFitness {
+	static apply(eventLog, acceptingPetriNet) {
+		return PetriNetAlignments.apply(eventLog, acceptingPetriNet);
+	}
+	
+	static evaluate(alignResults) {
+		return alignResults;
+	}
+}
+
+try {
+	require("../../../../pm4js.js");
+	require("../../../conformance/alignments/petri_net/algorithm.js");
+	module.exports = {AlignmentsFitness: AlignmentsFitness};
+	global.AlignmentsFitness = AlignmentsFitness;
+}
+catch (err) {
+	// not in Node
+	//console.log(err);
+}
+
+
+class ETConformanceResult {
+	constructor(activatedTransitions, escapingEdges, precision) {
+		this.activatedTransitions = activatedTransitions;
+		this.escapingEdges = escapingEdges;
+		this.precision = precision;
+	}
+}
+
+class ETConformance {
+	static apply(eventLog, acceptingPetriNet, activityKey="concept:name") {
+		let prefixes = EventLogPrefixes.apply(eventLog, activityKey);
+		let prefixesKeys = Object.keys(prefixes);
+		let ret = TokenBasedReplay.applyListListAct(prefixesKeys, acceptingPetriNet, false, true);
+		let i = 0;
+		let sum_at = 0;
+		let sum_ee = 0;
+		let logTransitions = Object.keys(GeneralLogStatistics.getStartActivities(eventLog, activityKey));
+		let activatedTransitions = PetriNetReachableVisibleTransitions.apply(acceptingPetriNet.net, acceptingPetriNet.im);
+		let escapingEdges = [];
+		for (let at of activatedTransitions) {
+			if (!(logTransitions.includes(at))) {
+				escapingEdges.push(at);
+			}
+		}
+		sum_at += activatedTransitions.length * eventLog.traces.length;
+		sum_ee += escapingEdges.length * eventLog.traces.length;
+		i = 0;
+		while (i < prefixesKeys.length) {
+			if (ret[i].isFit) {
+				let activatedTransitions = PetriNetReachableVisibleTransitions.apply(acceptingPetriNet.net, ret[i]);
+				let prefix = prefixesKeys[i];
+				let logTransitions = Object.keys(prefixes[prefix]);
+				let sumPrefix = 0;
+				for (let transition of logTransitions) {
+					sumPrefix += prefixes[prefix][transition];
+				}
+				let escapingEdges = [];
+				for (let at of activatedTransitions) {
+					if (!(logTransitions.includes(at))) {
+						escapingEdges.push(at);
+					}
+				}
+				sum_at += activatedTransitions.length * sumPrefix;
+				sum_ee += escapingEdges.length * sumPrefix;
+			}
+			i++;
+		}
+		let precision = 1.0;
+		if (sum_at > 0) {
+			precision = 1.0 - (sum_ee / (0.0 + sum_at));
+		}
+		let finalResult = new ETConformanceResult(sum_at, sum_ee, precision);
+		Pm4JS.registerObject(finalResult, "ETConformance Precision Results");
+		return finalResult;
+	}
+}
+
+try {
+	require("../../../../pm4js.js");
+	require("../../../../objects/petri_net/petri_net.js");
+	require("../../../../objects/petri_net/util/reachable_visible_transitions.js");
+	require("../../../../statistics/log/general.js");
+	module.exports = {ETConformance: ETConformance, ETConformanceResult: ETConformanceResult};
+	global.ETConformance = ETConformance;
+	global.ETConformanceResult = ETConformanceResult;
+}
+catch (err) {
+	// not in Node
+	//console.log(err);
+}
+
+Pm4JS.registerAlgorithm("ETConformance", "apply", ["EventLog", "AcceptingPetriNet"], "ETConformanceResult", "Calculate Precision (ETConformance based on TBR)", "Alessandro Berti");
 
 
