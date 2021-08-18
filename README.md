@@ -13,5 +13,48 @@ Clone the Git project, and install the required packages by doing **npm install*
 ### Documentation
 Extensive documentation is available [here](./DOCS.md).
 Some examples are included in the **examples/html** folder (HTML pages) and **examples/node** folder (Node.JS examples).
+### Features
+The library currently offers the following set of features:
+
+* Objects
+   * [Working with Event Logs](./DOCS.md#working-with-event-logs)
+        * [Importing XES logs](./DOCS.md#importing-xes-logs)
+        * [Importing CSV logs](./DOCS.md#importing-csv-logs)
+        * [Exporting XES logs](./DOCS.md#exporting-xes-logs)
+        * [Exporting CSV logs](./DOCS.md#exporting-csv-logs)
+    * Petri Nets
+	     * [Data Structure](./DOCS.md#petri-nets---data-structure)
+	     * [Creation of a Petri net](./DOCS.md#petri-nets---creation-of-a-petri-net)
+         * [Execution Semantics](./DOCS.md#petri-nets---execution-semantics)
+         * [Importing Exporting](./DOCS.md#petri-nets---importing-exporting)
+         * [Visualization (vanilla Graphviz)](./DOCS.md#petri-nets---visualization-vanilla-graphviz)
+    * Process Trees
+	    * [Data Structure](./DOCS.md#process-trees---data-structure)
+	    * [Importing](./DOCS.md#process-trees---importing)
+	    * [Visualization (vanilla Graphviz)](./DOCS.md#process-trees---visualization-vanilla-graphviz)
+	    * [Conversion to an accepting Petri net](./DOCS.md#process-trees---conversion-to-an-accepting-petri-net)
+* Algorithms 
+	* Process Discovery
+		* [Inductive Miner](./DOCS.md#inductive-miner)
+		* [Inductive Miner Directly Follows](./DOCS.md#inductive-miner-directly-follows)
+		* [Log Skeleton](./DOCS.md#log-skeleton)
+		* [Directly Follows Graphs](./DOCS.md#directly-follows-graphs)
+	* Conformance Checking
+		* [Token-Based Replay](./DOCS.md#token-based-replay)
+		* [Alignments on Petri nets](./DOCS.md#alignments-on-petri-nets)
+		* [Alignments on Directly Follows Graphs](./DOCS.md#alignments-on-directly-follows-graphs)
+		* [Conformance Checking using the Log Skeleton](./DOCS.md#conformance-checking-using-the-log-skeleton)
+	* Evaluation
+		* [Replay Fitness of Petri nets](./DOCS.md#replay-fitness-of-petri-nets)
+		* [ETConformance precision of Petri nets](./DOCS.md#etconformance-precision-of-petri-nets)
+		* [Generalization of Petri nets](./DOCS.md#generalization-of-petri-nets)
+		* [Simplicity of Petri nets](./DOCS.md#simplicity-of-petri-nets)
+	* Filtering
+		* [Filtering Event Logs](./DOCS.md#filtering-event-logs)
+		* [Sliding Directly Follows Graphs](./DOCS.md#sliding-directly-follows-graphs)
+* Statistics
+	* Log
+		* [General Statistics](./DOCS.md#log---general-statistics)
+
 ### Support
 Support is provided by mail at the following mail address: [Alessandro Berti](mailto:a.berti@pads.rwth-aachen.de).
