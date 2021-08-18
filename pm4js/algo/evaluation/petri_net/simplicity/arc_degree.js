@@ -6,6 +6,10 @@ class SimplicityArcDegreeResults {
 
 class SimplicityArcDegree {
 	static apply(acceptingPetriNet, k=0) {
+		return SimplicityArcDegree.evaluate(acceptingPetriNet, k);
+	}
+	
+	static evaluate(acceptingPetriNet, k=0) {
 		let summ = 0.0;
 		let count = 0;
 		for (let placeId in acceptingPetriNet.net.places) {
@@ -43,4 +47,4 @@ catch (err) {
 	console.log(err);
 }
 
-Pm4JS.registerAlgorithm("SimplicityArcDegree", "apply", ["AcceptingPetriNet"], "SimplicityArcDegreeResults", "Calculate Simplicity (Arc Degree)", "Alessandro Berti");
+Pm4JS.registerAlgorithm("SimplicityArcDegree", "evaluate", ["AcceptingPetriNet"], "SimplicityArcDegreeResults", "Calculate Simplicity (Arc Degree)", "Alessandro Berti");
