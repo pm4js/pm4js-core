@@ -35,6 +35,6 @@ try {
 	global.PetriNetReachableVisibleTransitions = PetriNetReachableVisibleTransitions;
 }
 catch (err) {
-	console.log(err);
+	//console.log(err);
 	// not in Node
 }
