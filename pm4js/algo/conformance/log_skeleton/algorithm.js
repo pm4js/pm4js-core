@@ -19,6 +19,7 @@ class LogSkeletonConformanceCheckingResult {
 			}
 			i++;
 		}
+		this.percentageFitTraces = this.fitTraces / this.totalTraces;
 	}
 }
 
