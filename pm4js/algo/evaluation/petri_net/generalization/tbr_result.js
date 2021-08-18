@@ -5,7 +5,11 @@ class GeneralizationTbrResults {
 }
 
 class GeneralizationTbr {
-	static apply(tbrResults) {
+	static apply(log, acceptingPetriNet) {
+		return GeneralizationTbr.evaluate(TokenBasedReplay.apply(log, acceptingPetriNet));
+	}
+	
+	static evaluate(tbrResults) {
 		let invSqOccSum = 0.0
 		for (let trans in tbrResults.transExecutions) {
 			let thisTerm = 1.0 / Math.sqrt(Math.max(tbrResults.transExecutions[trans], 1));
@@ -29,4 +33,4 @@ catch (err) {
 	console.log(err);
 }
 
-Pm4JS.registerAlgorithm("GeneralizationTbr", "apply", ["TokenBasedReplayResult"], "GeneralizationTbrResults", "Calculate Generalization", "Alessandro Berti");
+Pm4JS.registerAlgorithm("GeneralizationTbr", "evaluate", ["TokenBasedReplayResult"], "GeneralizationTbrResults", "Calculate Generalization", "Alessandro Berti");
