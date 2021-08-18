@@ -27,6 +27,7 @@ class DfgAlignmentsResults {
 		}
 		this.averageTraceFitness = this.averageTraceFitness / this.overallResult.length;
 		this.logFitness = 1.0 - (this.totalCost)/(this.totalBwc);
+		this.percentageFitTraces = this.fitTraces / this.totalTraces;
 	}
 }
 

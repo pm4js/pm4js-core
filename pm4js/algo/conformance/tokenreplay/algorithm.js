@@ -28,6 +28,7 @@ class TokenBasedReplayResult {
 		this.fitTraces = 0;
 		this.logFitness = 0.0;
 		this.averageTraceFitness = 0.0;
+		this.percentageFitTraces = 0.0;
 		this.compute();
 	}
 	
@@ -67,6 +68,7 @@ class TokenBasedReplayResult {
 		}
 		this.logFitness = 0.5*fitMC + 0.5*fitRP;
 		this.averageTraceFitness = this.averageTraceFitness / this.result.length;
+		this.percentageFitTraces = this.fitTraces / this.totalTraces;
 	}
 }
 
