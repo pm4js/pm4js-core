@@ -438,7 +438,21 @@ The returned object is of type *LogSkeletonConformanceCheckingResult*, and inclu
 
 ### Replay Fitness of Petri nets
 
-here talk about the replay fitness.
+The replay fitness on Petri nets can be computed on different dimensions:
+* The percentage of the traces of the log which are fit against the model.
+* The overall log fitness.
+* The average of the fitness for the single traces of the log.
+
+The methods to calculate the fitness are derived from the implementations of token-based replay and alignments.
+Namely,
+
+**let fitnessResult = TbrFitness.apply(eventLog, acceptingPetriNet)** measures the fitness of the event log against the accepting Petri net model
+using token-based replay. And
+
+**let fitnessResult = AlignmentsFitness.apply(eventLog, acceptingPetriNet)** measures the fitness of the event log against the accepting Petri net model
+using alignments.
+
+The outputs of these methods are the ones described in the conformance checking section.
 
 ### ETConformance precision of Petri nets
 
