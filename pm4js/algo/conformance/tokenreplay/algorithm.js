@@ -102,6 +102,27 @@ class TokenBasedReplay {
 		return finalResult;
 	}
 	
+	static applyListListAct(listListActivities, acceptingPetriNet, reachFm=true, retMarking=false) {
+		let invisibleChain = TokenBasedReplay.buildInvisibleChain(acceptingPetriNet.net);
+		let transitionsMap = {};
+		for (let transId in acceptingPetriNet.net.transitions) {
+			let trans = acceptingPetriNet.net.transitions[transId];
+			if (trans.label != null) {
+				transitionsMap[trans.label] = trans;
+			}
+		}
+		let ret = [];
+		for (let activities of listListActivities) {
+			let tbrResult = TokenBasedReplay.performTbr(activities.split(","), transitionsMap, acceptingPetriNet, invisibleChain, reachFm);
+			if (retMarking) {
+				tbrResult = tbrResult.visitedMarkings;
+				tbrResult = tbrResult[tbrResult.length - 1];
+			}
+			ret.push(tbrResult);
+		}
+		return ret;
+	}
+	
 	static performTbr(activities, transitionsMap, acceptingPetriNet, invisibleChain, reachFm) {
 		let marking = acceptingPetriNet.im.copy();
 		let consumed = 0;
