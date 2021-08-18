@@ -49,7 +49,9 @@ class ETConformance {
 		if (sum_at > 0) {
 			precision = 1.0 - (sum_ee / (0.0 + sum_at));
 		}
-		return new ETConformanceResult(sum_at, sum_ee, precision);
+		let ret = new ETConformanceResult(sum_at, sum_ee, precision);
+		Pm4JS.registerObject(ret, "Precision Results");
+		return ret;
 	}
 }
 
