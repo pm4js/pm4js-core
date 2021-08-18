@@ -456,7 +456,20 @@ The outputs of these methods are the ones described in the conformance checking 
 
 ### ETConformance precision of Petri nets
 
-here talk about the precision.
+The ETConformance is a way to measure precision which compare, for every possible prefix
+of the event log, the set of transitions enabled in the log (the successors of the prefix)
+and the transitions enabled in the model after replaying the prefix (using a replay technique such
+as token-based replay). With these two sets of transitions, a set of escaping edges is found,
+which is used to assign the precision. The ETConformance approach is described [here](http://www.bpm2010.org/wp-content/uploads/2010/05/Munoz-Gama-BPM10slides.pdf).
+
+The precision using the ETConformance approach can be measured as follows:
+
+**let precision = ETConformance.apply(eventLog, acceptingPetriNet)**
+
+The output object (of class **ETConformanceResult**) contains the following properties:
+* **activatedTransitions**: the total number of transitions activated in the model during the replay of the prefixes of the event log.
+* **escapingEdges**: the total number of escaping edges obtained comparing the behavior allowed in the log and in the model.
+* **precision**: the value of precision (between **0** and **1**).
 
 ### Generalization of Petri nets
 
