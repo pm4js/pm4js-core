@@ -4,8 +4,11 @@ class DfgAlignmentsResults {
 		this.overallResult = overallResult;
 		this.frequencyDfg = frequencyDfg;
 		this.movesUsage = {};
+		this.totalTraces = this.overallResult.length;
 		this.fitTraces = 0;
 		this.totalCost = 0;
+		this.totalBwc = 0;
+		this.averageTraceFitness = 0;
 		for (let alTrace of this.overallResult) {
 			for (let move of alTrace["alignment"].split(",")) {
 				if (!(move in this.movesUsage)) {
@@ -15,11 +18,15 @@ class DfgAlignmentsResults {
 					this.movesUsage[move] += 1;
 				}
 			}
-			if (alTrace["cost"] < 10000) {
+			if (alTrace["cost"] < 1) {
 				this.fitTraces += 1;
 			}
 			this.totalCost += alTrace["cost"];
+			this.totalBwc += alTrace["bwc"];
+			this.averageTraceFitness += alTrace["fitness"];
 		}
+		this.averageTraceFitness = this.averageTraceFitness / this.overallResult.length;
+		this.logFitness = 1.0 - (this.totalCost)/(this.totalBwc);
 	}
 }
 
@@ -87,13 +94,24 @@ class DfgAlignments {
 		let alignedTraces = {};
 		let res = [];
 		let count = 0;
+		let minPathInModelCost = Math.floor(DfgAlignments.applyTrace([], frequencyDfg, outgoing, syncCosts, modelMoveCosts, logMoveCosts, comparator)["cost"] / 10000);
 		for (let trace of log.traces) {
+			let bwc = trace.events.length + minPathInModelCost;
 			let listAct = [];
 			for (let eve of trace.events) {
 				listAct.push(eve.attributes[activityKey].value);
 			}
 			if (!(listAct in alignedTraces)) {
-				alignedTraces[listAct] = DfgAlignments.applyTrace(listAct, frequencyDfg, outgoing, syncCosts, modelMoveCosts, logMoveCosts, comparator);
+				let ali = DfgAlignments.applyTrace(listAct, frequencyDfg, outgoing, syncCosts, modelMoveCosts, logMoveCosts, comparator);
+				let fitness = 1.0;
+				let dividedCost = Math.floor(ali["cost"] / 10000);
+				if (bwc > 0) {
+					fitness = 1.0 - dividedCost / bwc;
+				}
+				ali["cost"] = dividedCost;
+				ali["fitness"] = fitness;
+				ali["bwc"] = bwc;
+				alignedTraces[listAct] = ali;
 			}
 			res.push(alignedTraces[listAct]);
 			count++;
