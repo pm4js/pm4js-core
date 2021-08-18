@@ -473,11 +473,30 @@ The output object (of class **ETConformanceResult**) contains the following prop
 
 ### Generalization of Petri nets
 
-here talk about the generalization.
+The generalization is a less-well-defined concept than fitness and precision, but it is still one of the four fundamental evaluation properties. In [this](http://www.padsweb.rwth-aachen.de/wvdaalst/old/publications/p801.pdf) paper,
+the generalization is defined as an average of the usage of the single transitions in the model during the replay. The more the transitions are needed during the
+replay of the traces of the log, the more the generalization is high. We implemented the generalization approach using the token-based replay as underlying replay
+algorithm.
+
+The generalization (using this approach) can be measured as follows:
+
+**let generalization = GeneralizationTbr.apply(eventLog, acceptingPetriNet)**
+
+The output object (of class **GeneralizationTbrResults**) contains the following properties:
+* **value**: the value of the generalization metric.
 
 ### Simplicity of Petri nets
 
-here talk about the simplicity.
+The simplicity is a less-well-defined concept than fitness and precision, but it is still one of the four fundamental evaluation properties.
+In [this](https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.1066.6138&rep=rep1&type=pdf) paper, an approach to compute the simplicity is provided.
+The average arc degree is calculated for both places and transitions. Then the simplicity is defined as an inverse of this mean degree (the details are contained in the paper).
+
+The simplicity (using this approach) can be measured as follows:
+
+**let simplicity = SimplicityArcDegree.apply(acceptingPetriNet)**
+
+The output object (of class **SimplicityArcDegreeResults**) contains the following properties:
+* **value**: the value of the simplicity metric.
 
 ## Filtering
 
