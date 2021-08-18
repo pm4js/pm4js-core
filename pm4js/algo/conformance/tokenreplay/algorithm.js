@@ -115,8 +115,10 @@ class TokenBasedReplay {
 		for (let activities of listListActivities) {
 			let tbrResult = TokenBasedReplay.performTbr(activities.split(","), transitionsMap, acceptingPetriNet, invisibleChain, reachFm);
 			if (retMarking) {
+				let isFit = tbrResult.isFit;
 				tbrResult = tbrResult.visitedMarkings;
 				tbrResult = tbrResult[tbrResult.length - 1];
+				tbrResult.isFit = isFit;
 			}
 			ret.push(tbrResult);
 		}

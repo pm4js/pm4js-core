@@ -43,3 +43,4 @@ require('./pm4js/objects/dfg/util/maximize.js');
 require('./pm4js/objects/log/util/prefixes.js');
 require('./pm4js/algo/evaluation/petri_net/fitness/tbr.js');
 require('./pm4js/algo/evaluation/petri_net/fitness/alignments.js');
+require('./pm4js/algo/evaluation/petri_net/precision/tbr.js');
