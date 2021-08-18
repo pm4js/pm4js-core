@@ -30,6 +30,11 @@
 		* [Alignments on Petri nets](#alignments-on-petri-nets)
 		* [Alignments on Directly Follows Graphs](#alignments-on-directly-follows-graphs)
 		* [Conformance Checking using the Log Skeleton](#conformance-checking-using-the-log-skeleton)
+	* Evaluation
+		* [Replay Fitness of Petri nets](#replay-fitness-of-petri-nets)
+		* [ETConformance precision of Petri nets](#etconformance-precision-of-petri-nets)
+		* [Generalization of Petri nets](#generalization-of-petri-nets)
+		* [Simplicity of Petri nets](#simplicity-of-petri-nets)
 	* Filtering
 		* [Filtering Event Logs](#filtering-event-logs)
 		* [Sliding Directly Follows Graphs](#sliding-directly-follows-graphs)
@@ -349,6 +354,8 @@ The returned object contains the following properties:
 * **fitTraces**: the number of cases that are perfectly fit according to the Petri net model.
 * **logFitness**: the log fitness **0.5(1 - M/C) + 0.5(1 - R/P)**.
 * **result**: contains a dictionary (replay results) for every case of the log.
+* **averageTraceFitness*: the average of the fitness at the trace level, for all the cases of the log.
+* **percentageFitTraces**: the ratio (between 0 and 1) of the traces of the log which are fit against the model.
 
 The dictionary contains for each case the following properties:
 * **consumed**: the number of consumed tokens during the replay.
@@ -383,10 +390,15 @@ The object **alignmentResult**, of type **PetriNetAlignmentsResults**, contains 
 * **acceptingPetriNet**: the accepting Petri net against which the alignments are performed.
 * **overallResult**: array containing the alignments results for each trace of the event log. Each alignment is a dictionary with two keys: **alignment**, that is the
 list of moves performed during the alignments, and **cost**, that is the total cost of the moves (with the assumption that a sync move has cost 0, an move on model corresponding
-to an invisible transition can have either cost 0 or 1, another move on model or a move on log has cost 10000; so, traces having an alignment cost lower than 10000 are to be considered fit).
+to an invisible transition can have either cost 0 or 1, another move on model or a move on log has cost 10000) which is then integer divided by 10000.
 * **movesUsage**: the number of occurrences for each move in all the reported alignments.
+* **totalTraces**: the number of traces of the underlying event log.
 * **fitTraces**: the number of traces that are fit, given the optimal alignment.
 * **totalCost**: the sum of the costs of all the alignments that are performed.
+* **logFitness**: the log fitness against the model.
+* **averageTraceFitness*: the average of the fitness at the trace level. The fitness for a trace is calculated as **1 - cost/bwc**, where *bwc* is the sum of the length of the trace and the
+length of the shortest path in the model taking from the initial marking to the final marking.
+* **percentageFitTraces**: the ratio (between 0 and 1) of the traces of the log which are fit against the model.
 
 ### Alignments on Directly Follows Graphs
 
@@ -399,10 +411,15 @@ The object **alignmentResult**, of type **DfgAlignmentsResults**, contains the f
 * **frequencyDfg**: the frequency directly-follows graph against which the alignments are performed.
 * **overallResult**: array containing the alignments results for each trace of the event log. Each alignment is a dictionary with two keys: **alignment**, that is the
 list of moves performed during the alignments, and **cost**, that is the total cost of the moves (with the assumption that a sync move has cost 0, an move on model corresponding
-to an invisible transition can have either cost 0 or 1, another move on model or a move on log has cost 10000; so, traces having an alignment cost lower than 10000 are to be considered fit).
+to an invisible transition can have either cost 0 or 1, another move on model or a move on log has cost 10000) which is then integer divided by 10000.
 * **movesUsage**: the number of occurrences for each move in all the reported alignments.
+* **totalTraces**: the number of traces of the underlying event log.
 * **fitTraces**: the number of traces that are fit, given the optimal alignment.
 * **totalCost**: the sum of the costs of all the alignments that are performed.
+* **logFitness**: the log fitness against the model.
+* **averageTraceFitness*: the average of the fitness at the trace level. The fitness for a trace is calculated as **1 - cost/bwc**, where *bwc* is the sum of the length of the trace and the
+length of the shortest path in the model taking from the initial marking to the final marking.
+* **percentageFitTraces**: the ratio (between 0 and 1) of the traces of the log which are fit against the model.
 
 ### Conformance Checking using the Log Skeleton
 
@@ -416,6 +433,24 @@ The returned object is of type *LogSkeletonConformanceCheckingResult*, and inclu
 * **deviationsRecord**: dictionary that associates to each type of deviation the list of indexes of the cases for which the deviation happen.
 * **totalTraces**: total number of traces of the event log.
 * **fitTraces**: number of traces of the event log which are fit according to the log skeleton model.
+
+## Evaluation
+
+### Replay Fitness of Petri nets
+
+here talk about the replay fitness.
+
+### ETConformance precision of Petri nets
+
+here talk about the precision.
+
+### Generalization of Petri nets
+
+here talk about the generalization.
+
+### Simplicity of Petri nets
+
+here talk about the simplicity.
 
 ## Filtering
 
