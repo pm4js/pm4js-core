@@ -27,6 +27,7 @@ class TokenBasedReplayResult {
 		this.totalTraces = this.result.length;
 		this.fitTraces = 0;
 		this.logFitness = 0.0;
+		this.averageTraceFitness = 0.0;
 		this.compute();
 	}
 	
@@ -39,15 +40,6 @@ class TokenBasedReplayResult {
 			this.totalProduced += res["produced"];
 			this.totalMissing += res["missing"];
 			this.totalRemaining += res["remaining"];
-			let fitMC = 0.0;
-			let fitRP = 0.0;
-			if (this.totalConsumed > 0) {
-				fitMC = 1.0 - this.totalMissing / this.totalConsumed;
-			}
-			if (this.totalProduced > 0) {
-				fitRP = 1.0 - this.totalRemaining / this.totalProduced;
-			}
-			this.logFitness = 0.5*fitMC + 0.5*fitRP;
 			for (let t of res["visitedTransitions"]) {
 				this.transExecutions[t]++;
 				for (let a in t.inArcs) {
@@ -63,7 +55,18 @@ class TokenBasedReplayResult {
 				this.totalMissingPerPlace[p] += res["missingPerPlace"][p];
 				this.totalRemainingPerPlace[p] += res["remainingPerPlace"][p];
 			}
+			this.averageTraceFitness += res["fitness"];
 		}
+		let fitMC = 0.0;
+		let fitRP = 0.0;
+		if (this.totalConsumed > 0) {
+			fitMC = 1.0 - this.totalMissing / this.totalConsumed;
+		}
+		if (this.totalProduced > 0) {
+			fitRP = 1.0 - this.totalRemaining / this.totalProduced;
+		}
+		this.logFitness = 0.5*fitMC + 0.5*fitRP;
+		this.averageTraceFitness = this.averageTraceFitness / this.result.length;
 	}
 }
 
