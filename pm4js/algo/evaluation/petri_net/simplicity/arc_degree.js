@@ -32,15 +32,15 @@ class SimplicityArcDegree {
 }
 
 try {
-	require("../../../pm4js.js");
-	require("../../../objects/petri_net/petri_net.js");
+	require("../../../../pm4js.js");
+	require("../../../../objects/petri_net/petri_net.js");
 	module.exports = {SimplicityArcDegree: SimplicityArcDegree, SimplicityArcDegreeResults: SimplicityArcDegreeResults};
 	global.SimplicityArcDegree = SimplicityArcDegree;
 	global.SimplicityArcDegreeResults = SimplicityArcDegreeResults;
 }
 catch (err) {
 	// not in Node
-	//console.log(err);
+	console.log(err);
 }
 
 Pm4JS.registerAlgorithm("SimplicityArcDegree", "apply", ["AcceptingPetriNet"], "SimplicityArcDegreeResults", "Calculate Simplicity (Arc Degree)", "Alessandro Berti");

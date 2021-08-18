@@ -18,15 +18,15 @@ class GeneralizationTbr {
 }
 
 try {
-	require("../../../pm4js.js");
-	require("../../conformance/tokenreplay/algorithm.js");
+	require("../../../../pm4js.js");
+	require("../../../conformance/tokenreplay/algorithm.js");
 	module.exports = {GeneralizationTbr: GeneralizationTbr, GeneralizationTbrResults: GeneralizationTbrResults};
 	global.GeneralizationTbr = GeneralizationTbr;
 	global.GeneralizationTbrResults = GeneralizationTbrResults;
 }
 catch (err) {
 	// not in Node
-	//console.log(err);
+	console.log(err);
 }
 
 Pm4JS.registerAlgorithm("GeneralizationTbr", "apply", ["TokenBasedReplayResult"], "GeneralizationTbrResults", "Calculate Generalization", "Alessandro Berti");
