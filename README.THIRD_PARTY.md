@@ -1,7 +1,7 @@
 # PM4JS Third Party Dependencies
 
 PM4JS depends on third party libraries to implement some functionality. This document describes which libraries
-PM4Py depends upon. This is a best effort attempt to describe the library's dependencies, it is subject to change as libraries are added/removed.
+PM4JS depends upon. This is a best effort attempt to describe the library's dependencies, it is subject to change as libraries are added/removed.
 
 Common dependencies (Javascript library and Node package)
 
