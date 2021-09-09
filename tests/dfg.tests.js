@@ -63,3 +63,14 @@ test("DFG playout reviewing", () => {
 	let simulatedLog = DfgPlayout.apply(filteredDfg, 100, "concept:name");
 });
 
+test("Performance DFG discovery", () => {
+	let data = fs.readFileSync('examples/input_data/reviewing.xes', {encoding: 'utf-8'});
+	let eventLog = XesImporter.apply(data);
+	for (let trace of eventLog.traces) {
+		for (let eve of trace.events) {
+			eve.attributes["@@classifier"] = new Attribute(eve.attributes["concept:name"].value + "+" + eve.attributes["lifecycle:transition"].value);
+		}
+	}
+	let performanceDfg = PerformanceDfgDiscovery.apply(eventLog, "@@classifier");
+	let filteredDfg = DfgSliders.filterDfgOnPercPaths(performanceDfg, 0.2);
+});
