@@ -19,3 +19,4 @@ Other dependencies of the Node package:
 | jsdom | https://www.npmjs.com/package/jsdom | [MIT](https://opensource.org/licenses/MIT) | 16.6.0 |
 | xmldom | https://www.npmjs.com/package/xmldom | [MIT](https://opensource.org/licenses/MIT) | 0.6.0 |
 | xmlserializer | https://www.npmjs.com/package/xmlserializer | [MIT](https://opensource.org/licenses/MIT) | 0.6.1 |
+| jest | https://www.npmjs.com/package/jest | [MIT](https://opensource.org/licenses/MIT) | 27.1.1 |
