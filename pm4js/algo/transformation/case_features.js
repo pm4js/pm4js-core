@@ -124,21 +124,21 @@ class CaseFeatures {
 		for (let attr of evStrAttr) {
 			let values = Object.keys(GeneralLogStatistics.getAttributeValues(eventLog, attr));
 			valuesCorr["event@@"+attr] = values;
-			for (let val in values) {
+			for (let val of values) {
 				features.push("event@@"+attr+"##"+val);
 			}
 		}
 		for (let attr of trStrAttr) {
 			let values = Object.keys(GeneralLogStatistics.getTraceAttributeValues(eventLog, attr));
 			valuesCorr["trace@@"+attr] = values;
-			for (let val in values) {
+			for (let val of values) {
 				features.push("trace@@"+attr+"##"+val);
 			}
 		}
 		for (let attr of evSuccStrAttr) {
 			let frequencyDfg = Object.keys(FrequencyDfgDiscovery.apply(eventLog, attr).pathsFrequency);
 			valuesCorr["succession@@"+attr] = frequencyDfg;
-			for (let path in frequencyDfg) {
+			for (let path of frequencyDfg) {
 				features.push("succession@@"+attr+"##"+path);
 			}
 		}
