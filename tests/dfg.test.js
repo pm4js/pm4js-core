@@ -60,7 +60,7 @@ test("DFG playout reviewing", () => {
 		}
 	}
 	let frequencyDfg = FrequencyDfgDiscovery.apply(eventLog, "@@classifier");
-	let simulatedLog = DfgPlayout.apply(filteredDfg, 100, "concept:name");
+	let simulatedLog = DfgPlayout.apply(frequencyDfg, 100, "concept:name");
 });
 
 test("Performance DFG discovery", () => {
