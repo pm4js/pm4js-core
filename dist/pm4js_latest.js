@@ -59,7 +59,7 @@ class Pm4JS {
 	}
 }
 
-Pm4JS.VERSION = "0.0.8";
+Pm4JS.VERSION = "0.0.9";
 Pm4JS.registrationEnabled = false;
 Pm4JS.objects = [];
 Pm4JS.algorithms = [];
@@ -9884,8 +9884,8 @@ class GeneralizationTbrResults {
 }
 
 class GeneralizationTbr {
-	static apply(log, acceptingPetriNet) {
-		return GeneralizationTbr.evaluate(TokenBasedReplay.apply(log, acceptingPetriNet));
+	static apply(log, acceptingPetriNet, activityKey="concept:name") {
+		return GeneralizationTbr.evaluate(TokenBasedReplay.apply(log, acceptingPetriNet, activityKey));
 	}
 	
 	static evaluate(tbrResults) {
@@ -12375,21 +12375,21 @@ class CaseFeatures {
 		for (let attr of evStrAttr) {
 			let values = Object.keys(GeneralLogStatistics.getAttributeValues(eventLog, attr));
 			valuesCorr["event@@"+attr] = values;
-			for (let val in values) {
+			for (let val of values) {
 				features.push("event@@"+attr+"##"+val);
 			}
 		}
 		for (let attr of trStrAttr) {
 			let values = Object.keys(GeneralLogStatistics.getTraceAttributeValues(eventLog, attr));
 			valuesCorr["trace@@"+attr] = values;
-			for (let val in values) {
+			for (let val of values) {
 				features.push("trace@@"+attr+"##"+val);
 			}
 		}
 		for (let attr of evSuccStrAttr) {
 			let frequencyDfg = Object.keys(FrequencyDfgDiscovery.apply(eventLog, attr).pathsFrequency);
 			valuesCorr["succession@@"+attr] = frequencyDfg;
-			for (let path in frequencyDfg) {
+			for (let path of frequencyDfg) {
 				features.push("succession@@"+attr+"##"+path);
 			}
 		}
@@ -13239,8 +13239,8 @@ catch (err) {
 
 
 class TbrFitness {
-	static apply(eventLog, acceptingPetriNet) {
-		return TokenBasedReplay.apply(eventLog, acceptingPetriNet);
+	static apply(eventLog, acceptingPetriNet, activityKey="concept:name") {
+		return TokenBasedReplay.apply(eventLog, acceptingPetriNet, activityKey);
 	}
 	
 	static evaluate(tbrResults) {
@@ -13261,8 +13261,8 @@ catch (err) {
 
 
 class AlignmentsFitness {
-	static apply(eventLog, acceptingPetriNet) {
-		return PetriNetAlignments.apply(eventLog, acceptingPetriNet);
+	static apply(eventLog, acceptingPetriNet, activityKey="concept:name") {
+		return PetriNetAlignments.apply(eventLog, acceptingPetriNet, activityKey);
 	}
 	
 	static evaluate(alignResults) {
