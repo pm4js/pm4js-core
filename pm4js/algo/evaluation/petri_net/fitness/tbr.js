@@ -1,6 +1,6 @@
 class TbrFitness {
-	static apply(eventLog, acceptingPetriNet) {
-		return TokenBasedReplay.apply(eventLog, acceptingPetriNet);
+	static apply(eventLog, acceptingPetriNet, activityKey="concept:name") {
+		return TokenBasedReplay.apply(eventLog, acceptingPetriNet, activityKey);
 	}
 	
 	static evaluate(tbrResults) {

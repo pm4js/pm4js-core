@@ -5,8 +5,8 @@ class GeneralizationTbrResults {
 }
 
 class GeneralizationTbr {
-	static apply(log, acceptingPetriNet) {
-		return GeneralizationTbr.evaluate(TokenBasedReplay.apply(log, acceptingPetriNet));
+	static apply(log, acceptingPetriNet, activityKey="concept:name") {
+		return GeneralizationTbr.evaluate(TokenBasedReplay.apply(log, acceptingPetriNet, activityKey));
 	}
 	
 	static evaluate(tbrResults) {

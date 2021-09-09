@@ -1,6 +1,6 @@
 class AlignmentsFitness {
-	static apply(eventLog, acceptingPetriNet) {
-		return PetriNetAlignments.apply(eventLog, acceptingPetriNet);
+	static apply(eventLog, acceptingPetriNet, activityKey="concept:name") {
+		return PetriNetAlignments.apply(eventLog, acceptingPetriNet, activityKey);
 	}
 	
 	static evaluate(alignResults) {
