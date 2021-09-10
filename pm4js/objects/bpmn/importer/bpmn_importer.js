@@ -16,6 +16,9 @@ class BpmnImporter {
 					if (attr.name == "id") {
 						bpmnGraph.id = attr.value;
 					}
+					else if (attr.name == "name") {
+						bpmnGraph.name = attr.value;
+					}
 					else {
 						if (attr.value != null) {
 							bpmnGraph.properties[attr.name] = attr.value;

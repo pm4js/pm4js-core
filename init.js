@@ -46,3 +46,4 @@ require('./pm4js/algo/evaluation/petri_net/fitness/alignments.js');
 require('./pm4js/algo/evaluation/petri_net/precision/tbr.js');
 require('./pm4js/objects/bpmn/bpmn_graph.js');
 require('./pm4js/objects/bpmn/importer/bpmn_importer.js');
+require('./pm4js/objects/bpmn/exporter/bpmn_exporter.js');

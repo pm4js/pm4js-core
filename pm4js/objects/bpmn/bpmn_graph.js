@@ -1,6 +1,7 @@
 class BpmnGraph {
-	constructor(id="") {
-		this.id=id;
+	constructor(id="", name="") {
+		this.id = id;
+		this.name = name;
 		this.nodes = {};
 		this.edges = {};
 		this.properties = {};
