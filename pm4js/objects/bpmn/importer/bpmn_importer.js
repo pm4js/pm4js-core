@@ -2,7 +2,13 @@ class BpmnImporter {
 	static apply(xmlString) {
 		let parser = new DOMParser();
 		var xmlDoc = parser.parseFromString(xmlString, "text/xml");
-		let definitions = xmlDoc.getElementsByTagName("definitions")[0];
+		let definitions = null;
+		for (let childId in xmlDoc.childNodes) {
+			let child = xmlDoc.childNodes[childId];
+			if (child.tagName != null && child.tagName.endsWith("definitions")) {
+				definitions = child;
+			}
+		}
 		let bpmnGraph = new BpmnGraph();
 		BpmnImporter.parseRecursive(definitions, null, bpmnGraph);
 		return bpmnGraph;
@@ -148,7 +154,8 @@ class BpmnImporter {
 				}
 				let bpmnNode = bpmnGraph.addNode(nodeId);
 				bpmnNode.name = nodeName;
-				bpmnNode.type = nodeType;
+				bpmnNode.type = nodeType.split(":");
+				bpmnNode.type = bpmnNode.type[bpmnNode.type.length - 1];
 				for (let attrId in el.attributes) {
 					let attr = el.attributes[attrId];
 					if (attr.value != null) {
