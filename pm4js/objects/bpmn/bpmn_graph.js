@@ -28,6 +28,7 @@ class BpmnNode {
 		this.graph = graph;
 		this.id = id;
 		this.name = "";
+		this.type = null;
 		this.incoming = {};
 		this.outgoing = {};
 		this.bounds = {};

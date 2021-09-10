@@ -122,12 +122,18 @@ class BpmnImporter {
 				bpmnEdge.setSource(flowSourceRef);
 				bpmnEdge.setTarget(flowTargetRef);
 			}
-			else if (thisParent != null) {
-				console.log(thisParent.constructor.name);
+			else if (thisParent != null && thisParent.constructor.name == "BpmnNode") {
+				if (el.tagName == "incoming") {
+					thisParent.addIncoming(el.textContent);					
+				}
+				else if (el.tagName == "outgoing") {
+					thisParent.addOutgoing(el.textContent);
+				}
 			}
 			else {
 				let nodeId = null;
 				let nodeName = "";
+				let nodeType = el.tagName;
 				for (let attrId in el.attributes) {
 					let attr = el.attributes[attrId];
 					if (attr.name == "id") {
@@ -139,6 +145,7 @@ class BpmnImporter {
 				}
 				let bpmnNode = bpmnGraph.addNode(nodeId);
 				bpmnNode.name = nodeName;
+				bpmnNode.type = nodeType;
 				for (let attrId in el.attributes) {
 					let attr = el.attributes[attrId];
 					if (attr.value != null) {
@@ -147,8 +154,10 @@ class BpmnImporter {
 						}
 					}
 				}
-				console.log(bpmnNode);
-				//console.log(el.tagName);
+				for (let childId in el.childNodes) {
+					let child = el.childNodes[childId];
+					BpmnImporter.parseRecursive(child, bpmnNode, bpmnGraph);
+				}
 			}
 		}
 	}
