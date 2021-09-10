@@ -49,7 +49,7 @@ class BpmnExporter {
 			xmlEdge.setAttribute("bpmnElement", edgeId);
 			xmlEdge.setAttribute("id", edgeId+"_gui");
 			for (let waypoint of edge.waypoints) {
-				let xmlWaypoint = document.createElementNS("", "omgdc"+BpmnExporter.DUMMY_SEP+"waypoint");
+				let xmlWaypoint = document.createElementNS("", "omgdi"+BpmnExporter.DUMMY_SEP+"waypoint");
 				xmlWaypoint.setAttribute("x", ""+waypoint[0]);
 				xmlWaypoint.setAttribute("y", ""+waypoint[1]);
 				xmlEdge.appendChild(xmlWaypoint);
