@@ -22,6 +22,10 @@ class BpmnGraph {
 		this.edges[id] = new BpmnEdge(this, id);
 		return this.edges[id];
 	}
+	
+	toString() {
+		return this.id;
+	}
 }
 
 class BpmnNode {
@@ -44,6 +48,10 @@ class BpmnNode {
 	addOutgoing(id) {
 		let edge = this.graph.addEdge(id);
 		this.outgoing[id] = edge;
+	}
+	
+	toString() {
+		return this.id;
 	}
 }
 
@@ -68,6 +76,10 @@ class BpmnEdge {
 		let targetNode = this.graph.addNode(id);
 		targetNode.incoming[this.id] = this;
 		this.target = targetNode;
+	}
+	
+	toString() {
+		return this.id;
 	}
 }
 
