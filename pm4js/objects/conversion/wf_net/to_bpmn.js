@@ -26,7 +26,7 @@ class WfNetToBpmnConverter {
 			let trans = acceptingPetriNet.net.transitions[transId];
 			if (trans.label == null) {
 				let node = bpmnGraph.addNode(WfNetToBpmnConverter.nodeUuid());
-				if (trans.inArcs.length > 1 || trans.outArcs.length > 1) {
+				if (Object.keys(trans.inArcs).length > 1 || Object.keys(trans.outArcs).length > 1) {
 					node.type = "parallelGateway";
 				}
 				else {
@@ -39,14 +39,15 @@ class WfNetToBpmnConverter {
 				let enteringNode = bpmnGraph.addNode(WfNetToBpmnConverter.nodeUuid());
 				let exitingNode = bpmnGraph.addNode(WfNetToBpmnConverter.nodeUuid());
 				let task = bpmnGraph.addNode(WfNetToBpmnConverter.nodeUuid());
-				if (trans.inArcs.length > 1) {
+				
+				if (Object.keys(trans.inArcs).length > 1) {
 					enteringNode.type = "parallelGateway";
 				}
 				else {
 					enteringNode.type = "exclusiveGateway";
 				}
 				
-				if (trans.outArcs.length > 1) {
+				if (Object.keys(trans.outArcs).length > 1) {
 					exitingNode.type = "parallelGateway";
 				}
 				else {
