@@ -77,15 +77,15 @@ class WfNetToBpmnConverter {
 		
 		let startNode = bpmnGraph.addNode(WfNetToBpmnConverter.nodeUuid());
 		let endNode = bpmnGraph.addNode(WfNetToBpmnConverter.nodeUuid());
-		startNode.type = "startNode";
-		endNode.type = "endNode";
-		for (let placeId in acceptingPetriNet.net.places) {
+		startNode.type = "startEvent";
+		endNode.type = "endEvent";
+		for (let placeId in acceptingPetriNet.im.tokens) {
 			let place = acceptingPetriNet.net.places[placeId];
 			let edge = bpmnGraph.addEdge(WfNetToBpmnConverter.nodeUuid());
 			edge.setSource(startNode);
 			edge.setTarget(enteringDictio[place]);
 		}
-		for (let placeId in acceptingPetriNet.net.places) {
+		for (let placeId in acceptingPetriNet.fm.tokens) {
 			let place = acceptingPetriNet.net.places[placeId];
 			let edge = bpmnGraph.addEdge(WfNetToBpmnConverter.nodeUuid());
 			edge.setSource(exitingDictio[place]);
