@@ -47,7 +47,9 @@ class FrequencyDfgImporter {
 			}
 			i++;
 		}
-		return new FrequencyDfg(activitiesIngoing, startActivities, endActivities, pathsFrequency);
+		let ret = new FrequencyDfg(activitiesIngoing, startActivities, endActivities, pathsFrequency);
+		Pm4JS.registerObject(ret, "Frequency DFG");
+		return ret;
 	}
 }
 
@@ -61,4 +63,4 @@ catch (err) {
 	//console.log(err);
 }
 
-Pm4JS.registerImporter("FrequencyDfgImporter", "apply", ["FrequencyDfg"], "Frequency DFG Importer", "Alessandro Berti");
+Pm4JS.registerImporter("FrequencyDfgImporter", "apply", ["dfg"], "Frequency DFG Importer", "Alessandro Berti");
