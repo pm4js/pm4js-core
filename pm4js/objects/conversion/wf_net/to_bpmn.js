@@ -53,7 +53,7 @@ class WfNetToBpmnConverter {
 					exitingNode.type = "exclusiveGateway";
 				}
 				
-				task.type = "manualTask";
+				task.type = "task";
 				task.name = trans.label;
 				
 				let edge = bpmnGraph.addEdge(WfNetToBpmnConverter.nodeUuid());
