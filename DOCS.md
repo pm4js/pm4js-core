@@ -21,8 +21,8 @@
 	    * [Visualization (vanilla Graphviz)](#process-trees---visualization-vanilla-graphviz)
 	    * [Conversion to an accepting Petri net](#process-trees---conversion-to-an-accepting-petri-net)
 	* Directly-Follows Graphs
-		* [Frequency DFG] (#frequency-dfg)
-		* [Performance DFG] (#performance-dfg)
+		* [Frequency DFG](#frequency-dfg)
+		* [Performance DFG](#performance-dfg)
 * Algorithms 
 	* Process Discovery
 		* [Inductive Miner](#inductive-miner)
