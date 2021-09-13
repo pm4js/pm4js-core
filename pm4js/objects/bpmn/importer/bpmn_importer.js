@@ -11,6 +11,7 @@ class BpmnImporter {
 		}
 		let bpmnGraph = new BpmnGraph();
 		BpmnImporter.parseRecursive(definitions, null, bpmnGraph);
+		
 		return bpmnGraph;
 	}
 	
@@ -184,3 +185,5 @@ catch (err) {
 	// not in Node
 	//console.log(err);
 }
+
+Pm4JS.registerImporter("BpmnImporter", "apply", ["bpmn"], "BPMN Importer", "Alessandro Berti");

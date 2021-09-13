@@ -124,3 +124,5 @@ catch (err) {
 	// not in node
 	//console.log(err);
 }
+
+Pm4JS.registerExporter("BpmnExporter", "apply", "BpmnGraph", "bpmn", "text/xml", "BPMN Exporter (.bpmn)", "Alessandro Berti");

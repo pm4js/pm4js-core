@@ -130,6 +130,9 @@ class BpmnToPetriNetConverter {
 		
 		let acceptingPetriNet = new AcceptingPetriNet(petriNet, im, fm);
 		PetriNetReduction.apply(acceptingPetriNet, false);
+		
+		Pm4JS.registerObject(acceptingPetriNet, "Accepting Petri Net");
+
 		return acceptingPetriNet;
 	}
 }
@@ -146,3 +149,5 @@ catch (err) {
 	//console.log(err);
 	// not in Node
 }
+
+Pm4JS.registerAlgorithm("BpmnToPetriNetConverter", "apply", ["BpmnGraph"], "AcceptingPetriNet", "Convert BPMN graph to an Accepting Petri Net", "Alessandro Berti");
