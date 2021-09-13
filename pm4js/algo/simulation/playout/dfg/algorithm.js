@@ -45,6 +45,7 @@ class DfgPlayout {
 				queue.push([newActivities, el[1] + outgoing[lastActivity][act]]);
 			}
 		}
+		Pm4JS.registerObject(eventLog, "Simulated Event log (from DFG)");
 		return eventLog;
 	}
 }
@@ -53,9 +54,12 @@ try {
 	require('../../../../pm4js.js');
 	require('../../../conformance/alignments/heapq.js');
 	module.exports = {DfgPlayout: DfgPlayout};
-	global.DfgPlayout = DfgPlayout
+	global.DfgPlayout = DfgPlayout;
 }
 catch (err) {
 	// not in Node
 	//console.log(err);
 }
+
+Pm4JS.registerAlgorithm("DfgPlayout", "apply", ["FrequencyDfg"], "EventLog", "Perform Playout on a DFG", "Alessandro Berti");
+Pm4JS.registerAlgorithm("DfgPlayout", "apply", ["PerformanceDfg"], "EventLog", "Perform Playout on a DFG", "Alessandro Berti");
