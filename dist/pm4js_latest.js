@@ -59,7 +59,7 @@ class Pm4JS {
 	}
 }
 
-Pm4JS.VERSION = "0.0.9";
+Pm4JS.VERSION = "0.0.10";
 Pm4JS.registrationEnabled = false;
 Pm4JS.objects = [];
 Pm4JS.algorithms = [];
@@ -13019,6 +13019,7 @@ catch (err) {
 }
 
 Pm4JS.registerAlgorithm("DfgAlignments", "apply", ["EventLog", "FrequencyDfg"], "DfgAlignmentsResults", "Perform Alignments on DFG", "Alessandro Berti");
+Pm4JS.registerAlgorithm("DfgAlignments", "apply", ["EventLog", "PerformanceDfg"], "DfgAlignmentsResults", "Perform Alignments on DFG", "Alessandro Berti");
 
 
 class DfgPlayout {
@@ -13068,6 +13069,7 @@ class DfgPlayout {
 				queue.push([newActivities, el[1] + outgoing[lastActivity][act]]);
 			}
 		}
+		Pm4JS.registerObject(eventLog, "Simulated Event log (from DFG)");
 		return eventLog;
 	}
 }
@@ -13076,12 +13078,16 @@ try {
 	require('../../../../pm4js.js');
 	require('../../../conformance/alignments/heapq.js');
 	module.exports = {DfgPlayout: DfgPlayout};
-	global.DfgPlayout = DfgPlayout
+	global.DfgPlayout = DfgPlayout;
 }
 catch (err) {
 	// not in Node
 	//console.log(err);
 }
+
+Pm4JS.registerAlgorithm("DfgPlayout", "apply", ["FrequencyDfg"], "EventLog", "Perform Playout on a DFG", "Alessandro Berti");
+Pm4JS.registerAlgorithm("DfgPlayout", "apply", ["PerformanceDfg"], "EventLog", "Perform Playout on a DFG", "Alessandro Berti");
+
 
 class FilteredDfgMaximization {
 	static apply(freqDfg) {
@@ -13354,5 +13360,996 @@ catch (err) {
 }
 
 Pm4JS.registerAlgorithm("ETConformance", "apply", ["EventLog", "AcceptingPetriNet"], "ETConformanceResult", "Calculate Precision (ETConformance based on TBR)", "Alessandro Berti");
+
+
+class BpmnGraph {
+	constructor(id="", name="") {
+		this.id = id;
+		this.name = name;
+		this.nodes = {};
+		this.edges = {};
+		this.properties = {};
+	}
+	
+	addNode(id) {
+		if (id == null) {
+			throw "addNode called with id=null";
+		}
+		if (id in this.nodes) {
+			return this.nodes[id];
+		}
+		this.nodes[id] = new BpmnNode(this, id);
+		return this.nodes[id];
+	}
+	
+	addEdge(id) {
+		if (id == null) {
+			throw "addEdge called with id=null";
+		}
+		if (id in this.edges) {
+			return this.edges[id];
+		}
+		this.edges[id] = new BpmnEdge(this, id);
+		return this.edges[id];
+	}
+	
+	toString() {
+		return this.id;
+	}
+	
+	removeNode(id) {
+		if (id == null) {
+			throw "removeNode called with id=null";
+		}
+		if (id in this.nodes) {
+			let node = this.nodes[id];
+			for (let edgeId in node.incoming) {
+				let edge = node.incoming[edgeId];
+				let source = edge.source;
+				delete source.outgoing[edge];
+				delete this.edges[edge];
+			}
+			for (let edgeId in node.outgoing) {
+				let edge = node.outgoing[edgeId];
+				let target = edge.target;
+				delete target.incoming[edge];
+				delete this.edges[edge];
+			}
+			delete this.nodes[id];
+		}
+	}
+}
+
+class BpmnNode {
+	constructor(graph, id) {
+		this.graph = graph;
+		this.id = id;
+		this.name = "";
+		this.type = null;
+		this.incoming = {};
+		this.outgoing = {};
+		this.bounds = {};
+		this.properties = {};
+	}
+	
+	addIncoming(id) {
+		if (id == null) {
+			throw "addIncoming called with id=null";
+		}
+		let edge = this.graph.addEdge(id);
+		this.incoming[id] = edge;
+	}
+	
+	addOutgoing(id) {
+		if (id == null) {
+			throw "addOutgoing called with id=null";
+		}
+		let edge = this.graph.addEdge(id);
+		this.outgoing[id] = edge;
+	}
+	
+	toString() {
+		return this.id;
+	}
+}
+
+class BpmnEdge {
+	constructor(graph, id) {
+		this.graph = graph;
+		this.id = id;
+		this.name = "";
+		this.source = null;
+		this.target = null;
+		this.waypoints = [];
+		this.properties = {};
+	}
+	
+	setSource(id) {
+		if (id == null) {
+			throw "setSource called with id=null";
+		}
+		if (!(id in this.graph.nodes)) {
+			console.log("creating node with ID "+id+" before node instantiation");
+		}
+		let sourceNode = this.graph.addNode(id);
+		sourceNode.outgoing[this.id] = this;
+		this.source = sourceNode;
+	}
+	
+	setTarget(id) {
+		if (id == null) {
+			throw "setTarget called with id=null";
+		}
+		if (!(id in this.graph.nodes)) {
+			console.log("creating node with ID "+id+" before node instantiation");
+		}
+		let targetNode = this.graph.addNode(id);
+		targetNode.incoming[this.id] = this;
+		this.target = targetNode;
+	}
+	
+	toString() {
+		return this.id;
+	}
+}
+
+try {
+	require('../../pm4js.js');
+	module.exports = {BpmnGraph: BpmnGraph, BpmnNode: BpmnNode, BpmnEdge: BpmnEdge};
+	global.BpmnGraph = BpmnGraph;
+	global.BpmnNode = BpmnNode;
+	global.BpmnEdge = BpmnEdge;
+}
+catch (err) {
+	// not in node
+}
+
+class BpmnImporter {
+	static apply(xmlString) {
+		let parser = new DOMParser();
+		var xmlDoc = parser.parseFromString(xmlString, "text/xml");
+		let definitions = null;
+		for (let childId in xmlDoc.childNodes) {
+			let child = xmlDoc.childNodes[childId];
+			if (child.tagName != null && child.tagName.endsWith("definitions")) {
+				definitions = child;
+			}
+		}
+		let bpmnGraph = new BpmnGraph();
+		BpmnImporter.parseRecursive(definitions, null, bpmnGraph);
+		
+		Pm4JS.registerObject(bpmnGraph, "BPMN graph imported from a .bpmn file");
+
+		return bpmnGraph;
+	}
+	
+	static parseRecursive(el, thisParent, bpmnGraph) {
+		if (el.tagName != null) {
+			if (el.tagName.endsWith("BPMNDiagram")) {
+				for (let attrId in el.attributes) {
+					let attr = el.attributes[attrId];
+					if (attr.name == "id") {
+						bpmnGraph.id = attr.value;
+					}
+					else if (attr.name == "name") {
+						bpmnGraph.name = attr.value;
+					}
+					else {
+						if (attr.value != null) {
+							bpmnGraph.properties[attr.name] = attr.value;
+						}
+					}
+				}
+				for (let childId in el.childNodes) {
+					let child = el.childNodes[childId];
+					BpmnImporter.parseRecursive(child, thisParent, bpmnGraph);
+				}
+			}
+			else if (el.tagName.endsWith("definitions")) {
+				for (let childId in el.childNodes) {
+					let child = el.childNodes[childId];
+					BpmnImporter.parseRecursive(child, thisParent, bpmnGraph);
+				}
+			}
+			else if (el.tagName.endsWith("process")) {
+				for (let childId in el.childNodes) {
+					let child = el.childNodes[childId];
+					BpmnImporter.parseRecursive(child, thisParent, bpmnGraph);
+				}
+			}
+			else if (el.tagName.endsWith("BPMNPlane")) {
+				for (let childId in el.childNodes) {
+					let child = el.childNodes[childId];
+					BpmnImporter.parseRecursive(child, thisParent, bpmnGraph);
+				}
+			}
+			else if (el.tagName.endsWith("BPMNShape")) {
+				let nodeId = null;
+				for (let attrId in el.attributes) {
+					let attr = el.attributes[attrId];
+					if (attr.name == "bpmnElement") {
+						nodeId = attr.value;
+					}
+				}
+				let bpmnNode = bpmnGraph.addNode(nodeId);
+				for (let childId in el.childNodes) {
+					let child = el.childNodes[childId];
+					BpmnImporter.parseRecursive(child, bpmnNode, bpmnGraph);
+				}
+			}
+			else if (el.tagName.endsWith("Bounds")) {
+				for (let attrId in el.attributes) {
+					let attr = el.attributes[attrId];
+					if (attr.value != null) {
+						thisParent.bounds[attr.name] = attr.value;
+					}
+				}
+			}
+			else if (el.tagName.endsWith("BPMNEdge")) {
+				let edgeId = null;
+				for (let attrId in el.attributes) {
+					let attr = el.attributes[attrId];
+					if (attr.name == "bpmnElement") {
+						edgeId = attr.value;
+					}
+				}
+				let bpmnEdge = bpmnGraph.addEdge(edgeId);
+				for (let childId in el.childNodes) {
+					let child = el.childNodes[childId];
+					BpmnImporter.parseRecursive(child, bpmnEdge, bpmnGraph);
+				}
+			}
+			else if (el.tagName.endsWith("waypoint")) {
+				let this_X = "0";
+				let this_Y = "0";
+				for (let attrId in el.attributes) {
+					let attr = el.attributes[attrId];
+					if (attr.name == "x") {
+						this_X = attr.value;
+					}
+					else if (attr.name == "y") {
+						this_Y = attr.value;
+					}
+				}
+				this_X = parseInt(this_X);
+				this_Y = parseInt(this_Y);
+				thisParent.waypoints.push([this_X, this_Y]);
+			}
+			else if (el.tagName.toLowerCase().endsWith("flow")) {
+				let flowId = null;
+				let flowName = "";
+				let flowSourceRef = null;
+				let flowTargetRef = null;
+				for (let attrId in el.attributes) {
+					let attr = el.attributes[attrId];
+					if (attr.name == "id") {
+						flowId = attr.value;
+					}
+					else if (attr.name == "name") {
+						flowName = attr.value;
+					}
+					else if (attr.name == "sourceRef") {
+						flowSourceRef = attr.value;
+					}
+					else if (attr.name == "targetRef") {
+						flowTargetRef = attr.value;
+					}
+				}
+				let bpmnEdge = bpmnGraph.addEdge(flowId);
+				bpmnEdge.name = flowName;
+				bpmnEdge.setSource(flowSourceRef);
+				bpmnEdge.setTarget(flowTargetRef);
+			}
+			else if (thisParent != null && thisParent.constructor.name == "BpmnNode") {
+				if (el.tagName == "incoming") {
+					thisParent.addIncoming(el.textContent);					
+				}
+				else if (el.tagName == "outgoing") {
+					thisParent.addOutgoing(el.textContent);
+				}
+			}
+			else {
+				let nodeId = null;
+				let nodeName = "";
+				let nodeType = el.tagName;
+				for (let attrId in el.attributes) {
+					let attr = el.attributes[attrId];
+					if (attr.name == "id") {
+						nodeId = attr.value;
+					}
+					else if (attr.name == "name") {
+						nodeName = attr.value;
+					}
+				}
+				let bpmnNode = bpmnGraph.addNode(nodeId);
+				bpmnNode.name = nodeName;
+				bpmnNode.type = nodeType.split(":");
+				bpmnNode.type = bpmnNode.type[bpmnNode.type.length - 1];
+				for (let attrId in el.attributes) {
+					let attr = el.attributes[attrId];
+					if (attr.value != null) {
+						if (attr.name != "id" && attr.name != "name") {
+							bpmnNode.properties[attr.name] = attr.value;
+						}
+					}
+				}
+				for (let childId in el.childNodes) {
+					let child = el.childNodes[childId];
+					BpmnImporter.parseRecursive(child, bpmnNode, bpmnGraph);
+				}
+			}
+		}
+	}
+}
+
+try {
+	require('../../../pm4js.js');
+	require('../bpmn_graph.js');
+	module.exports = {BpmnImporter: BpmnImporter};
+	global.BpmnImporter = BpmnImporter;
+	global.DOMParser = require('xmldom').DOMParser;
+}
+catch (err) {
+	// not in Node
+	//console.log(err);
+}
+
+Pm4JS.registerImporter("BpmnImporter", "apply", ["bpmn"], "BPMN Importer", "Alessandro Berti");
+
+
+class BpmnExporter {
+		static uuidv4() {
+		  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+			var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+			return v.toString(16);
+		  });
+		}
+		
+		static nodeUuid() {
+			let uuid = BpmnExporter.uuidv4();
+			return "id"+uuid.replace(/-/g, "");
+		}
+	
+	static apply(bpmnGraph) {
+		let definitions = document.createElementNS("", "definitions");
+		let processId = BpmnExporter.nodeUuid();
+		definitions.setAttribute("xmlns", "http://www.omg.org/spec/BPMN/20100524/MODEL");
+		definitions.setAttribute("xmlns:bpmndi", "http://www.omg.org/spec/BPMN/20100524/DI");
+		definitions.setAttribute("xmlns:omgdc", "http://www.omg.org/spec/DD/20100524/DC");
+		definitions.setAttribute("xmlns:omgdi", "http://www.omg.org/spec/DD/20100524/DI");
+		definitions.setAttribute("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
+		definitions.setAttribute("xmlns:xsd", "http://www.w3.org/2001/XMLSchema");
+		definitions.setAttribute("targetNamespace", "http://www.signavio.com/bpmn20");
+		definitions.setAttribute("typeLanguage", "http://www.w3.org/2001/XMLSchema");
+		definitions.setAttribute("expressionLanguage", "http://www.w3.org/1999/XPath");
+		let bpmnDiagram = document.createElementNS("", "bpmndi"+BpmnExporter.DUMMY_SEP+"BPMNDiagram");
+		definitions.appendChild(bpmnDiagram);
+		bpmnDiagram.setAttribute("id", bpmnGraph.id);
+		bpmnDiagram.setAttribute("name", bpmnGraph.name);
+		let bpmnPlane = document.createElementNS("", "bpmndi"+BpmnExporter.DUMMY_SEP+"BPMNPlane");
+		bpmnDiagram.appendChild(bpmnPlane);
+		bpmnPlane.setAttribute("id", BpmnExporter.nodeUuid());
+		bpmnPlane.setAttribute("bpmnElement", processId);
+		for (let nodeId in bpmnGraph.nodes) {
+			let node = bpmnGraph.nodes[nodeId];
+			let shape = document.createElementNS("", "bpmndi"+BpmnExporter.DUMMY_SEP+"BPMNShape");
+			shape.setAttribute("bpmnElement", nodeId);
+			shape.setAttribute("id", nodeId+"_gui");
+			let bounds = document.createElementNS("", "omgdc"+BpmnExporter.DUMMY_SEP+"Bounds");
+			if (Object.keys(node.bounds).length > 0) {
+				for (let prop in node.bounds) {
+					bounds.setAttribute(prop, ""+node.bounds[prop]);
+				}
+			}
+			else {
+				// layouting has not been done. exports with default
+				bounds.setAttribute("width", 100);
+				bounds.setAttribute("height", 100);
+				bounds.setAttribute("x", 0);
+				bounds.setAttribute("y", 0);
+			}
+			shape.appendChild(bounds);
+			bpmnPlane.appendChild(shape);
+		}
+		for (let edgeId in bpmnGraph.edges) {
+			let edge = bpmnGraph.edges[edgeId];
+			let xmlEdge = document.createElementNS("", "bpmndi"+BpmnExporter.DUMMY_SEP+"BPMNEdge");
+			xmlEdge.setAttribute("bpmnElement", edgeId);
+			xmlEdge.setAttribute("id", edgeId+"_gui");
+			if (Object.keys(edge.waypoints).length > 0) {
+				for (let waypoint of edge.waypoints) {
+					let xmlWaypoint = document.createElementNS("", "omgdi"+BpmnExporter.DUMMY_SEP+"waypoint");
+					xmlWaypoint.setAttribute("x", ""+waypoint[0]);
+					xmlWaypoint.setAttribute("y", ""+waypoint[1]);
+					xmlEdge.appendChild(xmlWaypoint);
+				}
+			}
+			else {
+				// layouting has not been done. exports with default
+					let xmlWaypoint = document.createElementNS("", "omgdi"+BpmnExporter.DUMMY_SEP+"waypoint");
+					xmlWaypoint.setAttribute("x", 0);
+					xmlWaypoint.setAttribute("y", 0);
+					xmlEdge.appendChild(xmlWaypoint);
+			}
+			bpmnPlane.appendChild(xmlEdge);
+		}
+		//<process id="id071a1d8d-32e0-4b39-ae20-8ab8c71faec3" isClosed="false" isExecutable="false" processType="None">
+		let process = document.createElementNS("", "process");
+		process.setAttribute("id", processId);
+		process.setAttribute("isClosed", "false");
+		process.setAttribute("isExecutable", "false");
+		process.setAttribute("processType", "null");
+		definitions.appendChild(process);
+		for (let nodeId in bpmnGraph.nodes) {
+			let node = bpmnGraph.nodes[nodeId];
+			let xmlNode = document.createElementNS("", node.type);
+			xmlNode.setAttribute("id", nodeId);
+			xmlNode.setAttribute("name", node.name);
+			for (let prop in node.properties) {
+				xmlNode.setAttribute(prop, node.properties[prop]);
+			}
+			for (let inc in node.incoming) {
+				let xmlInc = document.createElementNS("", "incoming");
+				xmlInc.textContent = inc;
+				xmlNode.appendChild(xmlInc);
+			}
+			for (let out in node.outgoing) {
+				let xmlOut = document.createElementNS("", "outgoing");
+				xmlOut.textContent = out;
+				xmlNode.appendChild(xmlOut);
+			}
+			process.appendChild(xmlNode);
+		}
+		for (let edgeId in bpmnGraph.edges) {
+			let edge = bpmnGraph.edges[edgeId];
+			let xmlEdge = document.createElementNS("", "sequenceFlow");
+			xmlEdge.setAttribute("id", edgeId);
+			xmlEdge.setAttribute("name", edge.name);
+			xmlEdge.setAttribute("sourceRef", edge.source.id);
+			xmlEdge.setAttribute("targetRef", edge.target.id);
+			process.appendChild(xmlEdge);
+		}
+		let serializer = null;
+		try {
+			serializer = new XMLSerializer();
+		}
+		catch (err) {
+			serializer = require('xmlserializer');
+		}
+		let xmlStr = serializer.serializeToString(definitions);
+		xmlStr = xmlStr.replace(/AIOEWFRIUOERWQIO/g, ":");
+		return xmlStr;
+	}
+}
+
+// unlikely string, better look at other solutions ...
+BpmnExporter.DUMMY_SEP = "AIOEWFRIUOERWQIO";
+
+try {
+	const jsdom = require("jsdom");
+	const { JSDOM } = jsdom;
+	global.dom = new JSDOM('<!doctype html><html><body></body></html>');
+	global.window = dom.window;
+	global.document = dom.window.document;
+	global.navigator = global.window.navigator;
+	require('../../../pm4js.js');
+	require('../bpmn_graph.js');
+	module.exports = {BpmnExporter: BpmnExporter};
+	global.BpmnExporter = BpmnExporter;
+}
+catch (err) {
+	// not in node
+	//console.log(err);
+}
+
+Pm4JS.registerExporter("BpmnExporter", "apply", "BpmnGraph", "bpmn", "text/xml", "BPMN Exporter (.bpmn)", "Alessandro Berti");
+
+
+class BpmnToPetriNetConverter {
+	static uuidv4() {
+	  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+		var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+		return v.toString(16);
+	  });
+	}
+	
+	static nodeUuid() {
+		let uuid = BpmnToPetriNetConverter.uuidv4();
+		return "id"+uuid.replace(/-/g, "");
+	}
+		
+	static apply(bpmnGraph) {
+		let petriNet = new PetriNet("converted from BPMN");
+		let im = new Marking(petriNet);
+		let fm = new Marking(petriNet);
+		let sourcePlace = petriNet.addPlace("source");
+		let sinkPlace = petriNet.addPlace("sink");
+		im.setTokens(sourcePlace, 1);
+		fm.setTokens(sinkPlace, 1);
+		let inclusiveGatewayEntry = {};
+		let inclusiveGatewayExit = {};
+		let flowPlace = {};
+		let sourceCount = {};
+		let targetCount = {};
+		for (let flowId in bpmnGraph.edges) {
+			let flow = bpmnGraph.edges[flowId];
+			let source = flow.source;
+			let target = flow.target;
+			let place = petriNet.addPlace(flowId);
+			flowPlace[flow] = place;
+			if (!(source in sourceCount)) {
+				sourceCount[source] = 0;
+			}
+			if (!(target in targetCount)) {
+				targetCount[target] = 0;
+			}
+			sourceCount[source] = sourceCount[source] + 1;
+			targetCount[target] = targetCount[target] + 1;
+		}
+		for (let flowId in bpmnGraph.edges) {
+			let flow = bpmnGraph.edges[flowId];
+			let source = flow.source;
+			let target = flow.target;
+			if (source.type.endsWith("inclusiveGateway") && sourceCount[source] > 1) {
+				inclusiveGatewayExit[flowId] = 0;
+			}
+			if (target.type.endsWith("inclusiveGateway") && targetCount[target] > 1) {
+				inclusiveGatewayEntry[flowId] = 0;
+			}
+		}
+		let inclusivGatInters = {};
+		for (let el in inclusiveGatewayEntry) {
+			if (el in inclusiveGatewayExit) {
+				inclusivGatInters[el] = 0;
+			}
+		}
+		
+		let nodesEntering = {};
+		let nodesExiting = {};
+		for (let nodeId in bpmnGraph.nodes) {
+			let node = bpmnGraph.nodes[nodeId];
+			let entryPlace = petriNet.addPlace("ent_"+nodeId);
+			let exitingPlace = petriNet.addPlace("exi_"+nodeId);
+			let label = null;
+			if (node.type.toLowerCase().endsWith("task")) {
+				label = node.name;
+			}
+			let transition = petriNet.addTransition(nodeId, label);
+			petriNet.addArcFromTo(entryPlace, transition);
+			petriNet.addArcFromTo(transition, exitingPlace);
+			if (node.type.endsWith("parallelGateway") || node.type.endsWith("inclusiveGateway")) {
+				let exitingObject = null;
+				let enteringObject = null;
+				if (sourceCount[node] > 1) {
+					exitingObject = petriNet.addTransition(BpmnToPetriNetConverter.nodeUuid(), null);
+					petriNet.addArcFromTo(exitingPlace, exitingObject);
+				}
+				else {
+					exitingObject = exitingPlace;
+				}
+				
+				if (targetCount[node] > 1) {
+					enteringObject = petriNet.addTransition(BpmnToPetriNetConverter.nodeUuid(), null);
+					petriNet.addArcFromTo(enteringObject, entryPlace);
+				}
+				else {
+					enteringObject = entryPlace;
+				}
+				nodesEntering[node] = enteringObject;
+				nodesExiting[node] = exitingObject;
+			}
+			else {
+				nodesEntering[node] = entryPlace;
+				nodesExiting[node] = exitingPlace;
+			}
+			
+			if (node.type.toLowerCase().endsWith("startevent")) {
+				let startTransition = petriNet.addTransition(BpmnToPetriNetConverter.nodeUuid(), null);
+				petriNet.addArcFromTo(sourcePlace, startTransition);
+				petriNet.addArcFromTo(startTransition, entryPlace);
+			}
+			else if (node.type.toLowerCase().endsWith("endevent")) {
+				let endTransition = petriNet.addTransition(BpmnToPetriNetConverter.nodeUuid(), null);
+				petriNet.addArcFromTo(exitingPlace, endTransition);
+				petriNet.addArcFromTo(endTransition, sinkPlace);
+			}
+		}
+		
+		for (let flowId in bpmnGraph.edges) {
+			let flow = bpmnGraph.edges[flowId];
+			let sourceObject = nodesExiting[flow.source];
+			let targetObject = nodesEntering[flow.target];
+			if (sourceObject.constructor.name == "PetriNetPlace") {
+				let inv1 = petriNet.addTransition(BpmnToPetriNetConverter.nodeUuid(), null);
+				petriNet.addArcFromTo(sourceObject, inv1);
+				sourceObject = inv1;
+			}
+			if (targetObject.constructor.name == "PetriNetPlace") {
+				let inv2 = petriNet.addTransition(BpmnToPetriNetConverter.nodeUuid(), null);
+				petriNet.addArcFromTo(inv2, targetObject);
+				targetObject = inv2;
+			}
+			petriNet.addArcFromTo(sourceObject, flowPlace[flow]);
+			petriNet.addArcFromTo(flowPlace[flow], targetObject);
+		}
+		
+		// TODO: extra management of inclusiveGateways
+		
+		let acceptingPetriNet = new AcceptingPetriNet(petriNet, im, fm);
+		PetriNetReduction.apply(acceptingPetriNet, false);
+		
+		Pm4JS.registerObject(acceptingPetriNet, "Accepting Petri Net (converted from BPMN)");
+
+		return acceptingPetriNet;
+	}
+}
+
+try {
+	require('../../../pm4js.js');
+	require('../../bpmn/bpmn_graph.js');
+	require('../../petri_net/petri_net.js');
+	require('../../petri_net/util/reduction.js');
+	module.exports = {BpmnToPetriNetConverter: BpmnToPetriNetConverter};
+	global.BpmnToPetriNetConverter = BpmnToPetriNetConverter;
+}
+catch (err) {
+	//console.log(err);
+	// not in Node
+}
+
+Pm4JS.registerAlgorithm("BpmnToPetriNetConverter", "apply", ["BpmnGraph"], "AcceptingPetriNet", "Convert BPMN graph to an Accepting Petri Net", "Alessandro Berti");
+
+
+class WfNetToBpmnConverter {
+	static uuidv4() {
+	  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+		var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+		return v.toString(16);
+	  });
+	}
+	
+	static nodeUuid() {
+		let uuid = WfNetToBpmnConverter.uuidv4();
+		return "id"+uuid.replace(/-/g, "");
+	}
+	
+	static apply(acceptingPetriNet) {
+		let bpmnGraph = new BpmnGraph(WfNetToBpmnConverter.nodeUuid());
+		let enteringDictio = {};
+		let exitingDictio = {};
+		for (let placeId in acceptingPetriNet.net.places) {
+			let place = acceptingPetriNet.net.places[placeId];
+			let node = bpmnGraph.addNode(WfNetToBpmnConverter.nodeUuid());
+			node.type = "exclusiveGateway";
+			enteringDictio[place] = node;
+			exitingDictio[place] = node;
+		}
+		for (let transId in acceptingPetriNet.net.transitions) {
+			let trans = acceptingPetriNet.net.transitions[transId];
+			if (trans.label == null) {
+				let node = bpmnGraph.addNode(WfNetToBpmnConverter.nodeUuid());
+				if (Object.keys(trans.inArcs).length > 1 || Object.keys(trans.outArcs).length > 1) {
+					node.type = "parallelGateway";
+				}
+				else {
+					node.type = "exclusiveGateway";
+				}
+				enteringDictio[trans] = node;
+				exitingDictio[trans] = node;
+			}
+			else {
+				let enteringNode = bpmnGraph.addNode(WfNetToBpmnConverter.nodeUuid());
+				let exitingNode = bpmnGraph.addNode(WfNetToBpmnConverter.nodeUuid());
+				let task = bpmnGraph.addNode(WfNetToBpmnConverter.nodeUuid());
+				
+				if (Object.keys(trans.inArcs).length > 1) {
+					enteringNode.type = "parallelGateway";
+				}
+				else {
+					enteringNode.type = "exclusiveGateway";
+				}
+				
+				if (Object.keys(trans.outArcs).length > 1) {
+					exitingNode.type = "parallelGateway";
+				}
+				else {
+					exitingNode.type = "exclusiveGateway";
+				}
+				
+				task.type = "task";
+				task.name = trans.label;
+				
+				let edge = bpmnGraph.addEdge(WfNetToBpmnConverter.nodeUuid());
+				edge.setSource(enteringNode);
+				edge.setTarget(task);
+				
+				edge = bpmnGraph.addEdge(WfNetToBpmnConverter.nodeUuid());
+				edge.setSource(task);
+				edge.setTarget(exitingNode);
+				
+				enteringDictio[trans] = enteringNode;
+				exitingDictio[trans] = exitingNode;
+			}
+		}
+		for (let arcId in acceptingPetriNet.net.arcs) {
+			let arc = acceptingPetriNet.net.arcs[arcId];
+			let edge = bpmnGraph.addEdge(WfNetToBpmnConverter.nodeUuid());
+			edge.setSource(exitingDictio[arc.source]);
+			edge.setTarget(enteringDictio[arc.target]);
+		}
+		
+		let startNode = bpmnGraph.addNode(WfNetToBpmnConverter.nodeUuid());
+		let endNode = bpmnGraph.addNode(WfNetToBpmnConverter.nodeUuid());
+		startNode.type = "startEvent";
+		endNode.type = "endEvent";
+		for (let placeId in acceptingPetriNet.im.tokens) {
+			let place = acceptingPetriNet.net.places[placeId];
+			let edge = bpmnGraph.addEdge(WfNetToBpmnConverter.nodeUuid());
+			edge.setSource(startNode);
+			edge.setTarget(enteringDictio[place]);
+		}
+		for (let placeId in acceptingPetriNet.fm.tokens) {
+			let place = acceptingPetriNet.net.places[placeId];
+			let edge = bpmnGraph.addEdge(WfNetToBpmnConverter.nodeUuid());
+			edge.setSource(exitingDictio[place]);
+			edge.setTarget(endNode);
+		}
+		
+		// reduction
+		let changed = true;
+		while (changed) {
+			changed = false;
+			let nodes = Object.keys(bpmnGraph.nodes);
+			for (let nodeId of nodes) {
+				let node = bpmnGraph.nodes[nodeId];
+				if (node.type == "exclusiveGateway" && Object.keys(node.incoming).length == 1 && Object.keys(node.outgoing).length == 1) {
+					let leftNode = bpmnGraph.edges[Object.keys(node.incoming)[0]].source;
+					let rightNode = bpmnGraph.edges[Object.keys(node.outgoing)[0]].target;
+					bpmnGraph.removeNode(node.id);
+					let newEdge = bpmnGraph.addEdge(WfNetToBpmnConverter.nodeUuid());
+					newEdge.setSource(leftNode);
+					newEdge.setTarget(rightNode);
+					changed = true;
+				}
+			}
+		}
+
+		Pm4JS.registerObject(bpmnGraph, "BPMN graph (converted from accepting Petri net)");
+		
+		return bpmnGraph;
+	}
+}
+
+try {
+	require('../../../pm4js.js');
+	require('../../petri_net/petri_net.js');
+	require('../../bpmn/bpmn_graph.js');
+	module.exports = {WfNetToBpmnConverter: WfNetToBpmnConverter};
+	global.WfNetToBpmnConverter = WfNetToBpmnConverter;
+}
+catch (err) {
+	//console.log(err);
+	// not in Node
+}
+
+Pm4JS.registerAlgorithm("WfNetToBpmnConverter", "apply", ["AcceptingPetriNet"], "BpmnGraph", "Convert WF-NET to BPMN graph", "Alessandro Berti");
+
+
+class PtmlExporter {
+	static uuidv4() {
+	  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+		var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+		return v.toString(16);
+	  });
+	}
+	
+	static apply(processTree) {
+		let xmlDoc = document.createElement("ptml");
+		let xmlProcessTree = document.createElementNS(PtmlExporter.DUMMY_SEP, "processTree");
+		xmlDoc.appendChild(xmlProcessTree);
+		let ptId = PtmlExporter.uuidv4();
+		xmlProcessTree.setAttribute("id", ptId);
+		xmlProcessTree.setAttribute("name", ptId);
+		xmlProcessTree.setAttribute("root", processTree.id);
+		let descendants = {};
+		PtmlExporter.findAllDescendants(processTree, descendants);
+		for (let treeId in descendants) {
+			let tree = descendants[treeId];
+			let label = "";
+			let nodeType = "automaticTask";
+			if (tree.label != null) {
+				label = tree.label;
+				nodeType = "manualTask";
+			}
+			if (tree.operator == ProcessTreeOperator.SEQUENCE) {
+				nodeType = "sequence";
+			}
+			else if (tree.operator == ProcessTreeOperator.PARALLEL) {
+				nodeType = "and";
+			}
+			else if (tree.operator == ProcessTreeOperator.INCLUSIVE) {
+				nodeType = "or";
+			}
+			else if (tree.operator == ProcessTreeOperator.EXCLUSIVE) {
+				nodeType = "xor";
+			}
+			else if (tree.operator == ProcessTreeOperator.LOOP) {
+				nodeType = "xorLoop";
+			}
+			
+			let xmlNode = document.createElementNS(PtmlExporter.DUMMY_SEP, nodeType);
+			xmlNode.setAttribute("id", treeId);
+			xmlNode.setAttribute("name", label);
+			xmlProcessTree.appendChild(xmlNode);
+		}
+
+		for (let treeId in descendants) {
+			let tree = descendants[treeId];
+
+			if (tree.parentNode != null) {
+				let xmlParentsNode = document.createElementNS(PtmlExporter.DUMMY_SEP, "parentsNode");
+				xmlParentsNode.setAttribute("id", PtmlExporter.uuidv4());
+				xmlParentsNode.setAttribute("sourceId", tree.parentNode.id);
+				xmlParentsNode.setAttribute("targetId", tree.id);
+				xmlProcessTree.appendChild(xmlParentsNode);
+			}
+			
+		}
+		
+		let serializer = null;
+		try {
+			serializer = new XMLSerializer();
+		}
+		catch (err) {
+			serializer = require('xmlserializer');
+		}
+		
+		let xmlStr = serializer.serializeToString(xmlDoc);
+		xmlStr = xmlStr.replace(/AIOEWFRIUOERWQIO/g, "");
+
+		return xmlStr;
+	}
+
+	static findAllDescendants(processTree, descendants) {
+		descendants[processTree.id] = processTree;
+		if (processTree.operator == ProcessTreeOperator.LOOP) {
+			if (processTree.children.length < 3) {
+				let thirdChild = new ProcessTree();
+				thirdChild.parent = processTree;
+				processTree.children.push(thirdChild);
+			}
+		}
+		for (let child of processTree.children) {
+			PtmlExporter.findAllDescendants(child, descendants);
+		}
+	}
+}
+
+// unlikely string, better look at other solutions ...
+PtmlExporter.DUMMY_SEP = "AIOEWFRIUOERWQIO";
+
+try {
+	const jsdom = require("jsdom");
+	const { JSDOM } = jsdom;
+	global.dom = new JSDOM('<!doctype html><html><body></body></html>');
+	global.window = dom.window;
+	global.document = dom.window.document;
+	global.navigator = global.window.navigator;
+	require('../../../pm4js.js');
+	global.PtmlExporter = PtmlExporter;
+	module.exports = {PtmlExporter: PtmlExporter};
+}
+catch (err) {
+	// not in node
+	//console.log(err);
+}
+
+Pm4JS.registerExporter("PtmlExporter", "apply", "ProcessTree", "ptml", "text/xml", "Process tree Exporter (.ptml)", "Alessandro Berti");
+
+
+class FrequencyDfgExporter {
+	static apply(frequencyDfg) {
+		let ret = [];
+		let activities = Object.keys(frequencyDfg.activities);
+		ret.push(activities.length);
+		for (let act in frequencyDfg.activities) {
+			ret.push(act);
+		}
+		ret.push(Object.keys(frequencyDfg.startActivities).length);
+		for (let act in frequencyDfg.startActivities) {
+			ret.push(activities.indexOf(act)+"x"+frequencyDfg.startActivities[act]);
+		}
+		ret.push(Object.keys(frequencyDfg.endActivities).length);
+		for (let act in frequencyDfg.endActivities) {
+			ret.push(activities.indexOf(act)+"x"+frequencyDfg.endActivities[act]);
+		}
+		for (let path0 in frequencyDfg.pathsFrequency) {
+			let path = path0.split(",");
+			ret.push(activities.indexOf(path[0])+">"+activities.indexOf(path[1])+"x"+frequencyDfg.pathsFrequency[path0]);
+		}
+		return ret.join("\n");
+	}
+}
+
+try {
+	require('../../../pm4js.js');
+	global.FrequencyDfgExporter = FrequencyDfgExporter;
+	module.exports = {FrequencyDfgExporter: FrequencyDfgExporter};
+}
+catch (err) {
+	// not in node
+	//console.log(err);
+}
+
+Pm4JS.registerExporter("FrequencyDfgExporter", "apply", "FrequencyDfg", "dfg", "text/plain", "DFG Exporter (.dfg)", "Alessandro Berti");
+Pm4JS.registerExporter("FrequencyDfgExporter", "apply", "PerformanceDfg", "dfg", "text/plain", "DFG Exporter (.dfg)", "Alessandro Berti");
+
+
+class FrequencyDfgImporter {
+	static apply(txtStri) {
+		let stri = txtStri.split("\n");
+		let i = 0;
+		let numActivities = i + 1 + parseInt(stri[i]);
+		i++;
+		let activities = [];
+		let activitiesIngoing = {};
+		let startActivities = {};
+		let endActivities = {};
+		let pathsFrequency = {};
+		while (i < numActivities) {
+			activities.push(stri[i].trim());
+			i++;
+		}
+		let numStartActivities = i + 1 + parseInt(stri[i]);
+		i++;
+		while (i < numStartActivities) {
+			let stru = stri[i].trim().split("x");
+			let act = activities[parseInt(stru[0])]
+			startActivities[act] = parseInt(stru[1]);
+			if (!(act in activitiesIngoing)) {
+				activitiesIngoing[act] = 0;
+			}
+			activitiesIngoing[act] += parseInt(stru[1]);
+			i++;
+		}
+		let numEndActivities = i + 1 + parseInt(stri[i]);
+		i++;
+		while (i < numEndActivities) {
+			let stru = stri[i].trim().split("x");
+			let act = activities[parseInt(stru[0])];
+			endActivities[act] = parseInt(stru[1]);
+			i++;
+		}
+		while (i < stri.length) {
+			let stru = stri[i].trim();
+			if (stru.length > 0) {
+				let act1 = activities[parseInt(stru.split(">")[0])];
+				let act2 = activities[parseInt(stru.split("x")[0].split(">")[1])];
+				let count = parseInt(stru.split("x")[1]);
+				if (!(act2 in activitiesIngoing)) {
+					activitiesIngoing[act2] = 0;
+				}
+				activitiesIngoing[act2] += count;
+				pathsFrequency[[act1, act2]] = count;
+			}
+			i++;
+		}
+		let ret = new FrequencyDfg(activitiesIngoing, startActivities, endActivities, pathsFrequency);
+		Pm4JS.registerObject(ret, "Frequency DFG");
+		return ret;
+	}
+}
+
+try {
+	require('../../../pm4js.js');
+	global.FrequencyDfgImporter = FrequencyDfgImporter;
+	module.exports = {FrequencyDfgImporter: FrequencyDfgImporter};
+}
+catch (err) {
+	// not in Node
+	//console.log(err);
+}
+
+Pm4JS.registerImporter("FrequencyDfgImporter", "apply", ["dfg"], "Frequency DFG Importer", "Alessandro Berti");
 
 
