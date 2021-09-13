@@ -17,8 +17,12 @@
     * Process Trees
 	    * [Data Structure](#process-trees---data-structure)
 	    * [Importing](#process-trees---importing)
+		* [Exporting](#process-trees---exporting)
 	    * [Visualization (vanilla Graphviz)](#process-trees---visualization-vanilla-graphviz)
 	    * [Conversion to an accepting Petri net](#process-trees---conversion-to-an-accepting-petri-net)
+	* Directly-Follows Graphs
+		* [Frequency DFG] (#frequency-dfg)
+		* [Performance DFG] (#performance-dfg)
 * Algorithms 
 	* Process Discovery
 		* [Inductive Miner](#inductive-miner)
@@ -252,6 +256,7 @@ The children must be added to the children list of their parent node:
 **root.children.push(child1); root.children.push(child2); root.children.push(child3);**
 
 ### Process trees - Importing
+
 A process tree can be imported by a .ptml file by using the provided importer, as follows:
 **let processTree = PtmlImporter.apply(ptmlXmlString);**
 Practical example:
@@ -259,6 +264,11 @@ Practical example:
 let processTree = PnmlImporter.apply(ptmlStri);
 console.log(processTree);
 });**
+
+### Process trees - Exporting
+
+A process tree can be exported into an XML string, which can be then be stored in a .ptml file, by using the provided exporter, as follows:
+**let xmlStri = PtmlExporter.apply(processTree);**
 
 ### Process trees - Visualization vanilla Graphviz
 
@@ -270,6 +280,35 @@ The following code provides the visualization starting from a process tree objec
 A process tree object can be converted to an accepting Petri net, by using the included converter.
 The following code provides the conversion starting from a process tree object
 **let acceptingPetriNet = ProcessTreeToPetriNetConverter.apply(processTree);**
+
+## Directly-Follows Graphs
+
+### Frequency DFG
+
+A frequency directly-follows graph is a type of model where the nodes are the activities, and edges express the directly-follows relationship between activities.
+In PM4JS, it is implemented as an object with the following properties:
+* **activities**: a dictionary associating to each activity the number of occurrences in the log.
+* **startActivities**: a dictionary associating to each start activity the number of cases which started with the given activity. The activities must be elements of **activities**.
+* **endActivities**: a dictionary associating to each end activity the number of cases which ended with the given activity. The activities must be elements of **activities**.
+* **pathsFrequency**: a dictionary associating to each path between activities (expressed as a string separated by commas) the number of occurrences of the path.
+
+A frequency DFG object can be instantiated in PM4JS with the following command: **let freqDfg = new FrequencyDfg(activities, startActivities, endActivities, pathsFrequency)**.
+So having the four dictionaries permits to create the frequency DFG object.
+
+## Performance DFG
+
+A performance directly-follows graph is a type of model where the nodes are the activities, and edges contain an aggregation of the times between the different activities.
+In PM4JS, it is implemented as an object with the following properties:
+* **activities**: a dictionary associating to each activity the number of occurrences in the log.
+* **startActivities**: a dictionary associating to each start activity the number of cases which started with the given activity. The activities must be elements of **activities**.
+* **endActivities**: a dictionary associating to each end activity the number of cases which ended with the given activity. The activities must be elements of **activities**.
+* **pathsFrequency**: a dictionary associating to each path between activities (expressed as a string separated by commas) the number of occurrences of the path.
+* **pathsPerformance**: a dictionary associating to each path between activities (expressed as a string separated by commas) the number of occurrences of the path. All the keys of
+**pathsPerformance** shall also be keys of the **pathsFrequency** dictionary.
+* **sojournTimes**: a dictionary associating to each activity the sojourn time in the activity (which is a positive real number). All the activities of **activities** should be
+associated with their sojourn time.
+
+A performance DFG object can be instantiated in PM4JS with the following command: **let perfDfg = new PerformanceDfg(activities, startActivities, endActivities, pathsFrequency, pathsPerformance, sojournTimes)**
 
 # Algorithms
 
