@@ -51,3 +51,4 @@ require('./pm4js/objects/conversion/bpmn/to_petri_net.js');
 require('./pm4js/objects/conversion/wf_net/to_bpmn.js');
 require('./pm4js/objects/process_tree/exporter/exporter.js');
 require('./pm4js/objects/dfg/exporter/exporter.js');
+require('./pm4js/objects/dfg/importer/importer.js');
