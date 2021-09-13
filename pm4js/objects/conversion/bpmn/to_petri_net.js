@@ -131,7 +131,7 @@ class BpmnToPetriNetConverter {
 		let acceptingPetriNet = new AcceptingPetriNet(petriNet, im, fm);
 		PetriNetReduction.apply(acceptingPetriNet, false);
 		
-		Pm4JS.registerObject(acceptingPetriNet, "Accepting Petri Net");
+		Pm4JS.registerObject(acceptingPetriNet, "Accepting Petri Net (converted from BPMN)");
 
 		return acceptingPetriNet;
 	}

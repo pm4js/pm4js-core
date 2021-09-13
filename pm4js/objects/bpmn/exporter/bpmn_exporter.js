@@ -37,8 +37,17 @@ class BpmnExporter {
 			shape.setAttribute("bpmnElement", nodeId);
 			shape.setAttribute("id", nodeId+"_gui");
 			let bounds = document.createElementNS("", "omgdc"+BpmnExporter.DUMMY_SEP+"Bounds");
-			for (let prop in node.bounds) {
-				bounds.setAttribute(prop, ""+node.bounds[prop]);
+			if (Object.keys(node.bounds).length > 0) {
+				for (let prop in node.bounds) {
+					bounds.setAttribute(prop, ""+node.bounds[prop]);
+				}
+			}
+			else {
+				// layouting has not been done. exports with default
+				bounds.setAttribute("width", 100);
+				bounds.setAttribute("height", 100);
+				bounds.setAttribute("x", 0);
+				bounds.setAttribute("y", 0);
 			}
 			shape.appendChild(bounds);
 			bpmnPlane.appendChild(shape);
@@ -48,11 +57,20 @@ class BpmnExporter {
 			let xmlEdge = document.createElementNS("", "bpmndi"+BpmnExporter.DUMMY_SEP+"BPMNEdge");
 			xmlEdge.setAttribute("bpmnElement", edgeId);
 			xmlEdge.setAttribute("id", edgeId+"_gui");
-			for (let waypoint of edge.waypoints) {
-				let xmlWaypoint = document.createElementNS("", "omgdi"+BpmnExporter.DUMMY_SEP+"waypoint");
-				xmlWaypoint.setAttribute("x", ""+waypoint[0]);
-				xmlWaypoint.setAttribute("y", ""+waypoint[1]);
-				xmlEdge.appendChild(xmlWaypoint);
+			if (Object.keys(edge.waypoints).length > 0) {
+				for (let waypoint of edge.waypoints) {
+					let xmlWaypoint = document.createElementNS("", "omgdi"+BpmnExporter.DUMMY_SEP+"waypoint");
+					xmlWaypoint.setAttribute("x", ""+waypoint[0]);
+					xmlWaypoint.setAttribute("y", ""+waypoint[1]);
+					xmlEdge.appendChild(xmlWaypoint);
+				}
+			}
+			else {
+				// layouting has not been done. exports with default
+					let xmlWaypoint = document.createElementNS("", "omgdi"+BpmnExporter.DUMMY_SEP+"waypoint");
+					xmlWaypoint.setAttribute("x", 0);
+					xmlWaypoint.setAttribute("y", 0);
+					xmlEdge.appendChild(xmlWaypoint);
 			}
 			bpmnPlane.appendChild(xmlEdge);
 		}

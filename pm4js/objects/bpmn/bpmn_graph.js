@@ -8,6 +8,9 @@ class BpmnGraph {
 	}
 	
 	addNode(id) {
+		if (id == null) {
+			throw "addNode called with id=null";
+		}
 		if (id in this.nodes) {
 			return this.nodes[id];
 		}
@@ -16,6 +19,9 @@ class BpmnGraph {
 	}
 	
 	addEdge(id) {
+		if (id == null) {
+			throw "addEdge called with id=null";
+		}
 		if (id in this.edges) {
 			return this.edges[id];
 		}
@@ -25,6 +31,28 @@ class BpmnGraph {
 	
 	toString() {
 		return this.id;
+	}
+	
+	removeNode(id) {
+		if (id == null) {
+			throw "removeNode called with id=null";
+		}
+		if (id in this.nodes) {
+			let node = this.nodes[id];
+			for (let edgeId in node.incoming) {
+				let edge = node.incoming[edgeId];
+				let source = edge.source;
+				delete source.outgoing[edge];
+				delete this.edges[edge];
+			}
+			for (let edgeId in node.outgoing) {
+				let edge = node.outgoing[edgeId];
+				let target = edge.target;
+				delete target.incoming[edge];
+				delete this.edges[edge];
+			}
+			delete this.nodes[id];
+		}
 	}
 }
 
@@ -41,11 +69,17 @@ class BpmnNode {
 	}
 	
 	addIncoming(id) {
+		if (id == null) {
+			throw "addIncoming called with id=null";
+		}
 		let edge = this.graph.addEdge(id);
 		this.incoming[id] = edge;
 	}
 	
 	addOutgoing(id) {
+		if (id == null) {
+			throw "addOutgoing called with id=null";
+		}
 		let edge = this.graph.addEdge(id);
 		this.outgoing[id] = edge;
 	}
@@ -67,12 +101,24 @@ class BpmnEdge {
 	}
 	
 	setSource(id) {
+		if (id == null) {
+			throw "setSource called with id=null";
+		}
+		if (!(id in this.graph.nodes)) {
+			console.log("creating node with ID "+id+" before node instantiation");
+		}
 		let sourceNode = this.graph.addNode(id);
 		sourceNode.outgoing[this.id] = this;
 		this.source = sourceNode;
 	}
 	
 	setTarget(id) {
+		if (id == null) {
+			throw "setTarget called with id=null";
+		}
+		if (!(id in this.graph.nodes)) {
+			console.log("creating node with ID "+id+" before node instantiation");
+		}
 		let targetNode = this.graph.addNode(id);
 		targetNode.incoming[this.id] = this;
 		this.target = targetNode;

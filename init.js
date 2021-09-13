@@ -48,3 +48,4 @@ require('./pm4js/objects/bpmn/bpmn_graph.js');
 require('./pm4js/objects/bpmn/importer/bpmn_importer.js');
 require('./pm4js/objects/bpmn/exporter/bpmn_exporter.js');
 require('./pm4js/objects/conversion/bpmn/to_petri_net.js');
+require('./pm4js/objects/conversion/wf_net/to_bpmn.js');
