@@ -12,6 +12,8 @@ class BpmnImporter {
 		let bpmnGraph = new BpmnGraph();
 		BpmnImporter.parseRecursive(definitions, null, bpmnGraph);
 		
+		Pm4JS.registerObject(bpmnGraph, "BPMN graph imported from a .bpmn file");
+
 		return bpmnGraph;
 	}
 	
