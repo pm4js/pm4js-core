@@ -25,6 +25,7 @@
 		* [Performance DFG](#performance-dfg)
 		* [Importing a Frequency DFG](#importing-a-frequency-dfg)
 		* [Exporting a Frequency DFG](#exporting-a-frequency-dfg)
+		* [DFG capacity maximization](#dfg-capacity-maximization)
 * Algorithms 
 	* Process Discovery
 		* [Inductive Miner](#inductive-miner)
@@ -326,6 +327,16 @@ console.log(frequencyDfg);
 
 A frequency DFG can be exported into the contents of a **.dfg** file as follows:
 **let txtStri = FrequencyDfgExporter.apply(frequencyDfg);**
+
+## DFG capacity maximization
+
+Given the application of a DFG filtering operation, it might be that some arcs are lost and the sum of the ingoing/outgoing arcs is not matching exactly
+the one of the underlying activities. To reduce this unpleasant effect, a possibility to maximize the arcs of the DFG is offered.
+
+To apply the DFG maximization, the following command can be used:
+**let maximizedDfg = FilteredDfgMaximization.apply(frequencyDfg);**
+
+This requires the solution of a linear problem, in which the capacity of the arcs is maximized.
 
 # Algorithms
 

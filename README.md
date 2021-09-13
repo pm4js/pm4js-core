@@ -32,8 +32,15 @@ The library currently offers the following set of features:
     * Process Trees
 	    * [Data Structure](./DOCS.md#process-trees---data-structure)
 	    * [Importing](./DOCS.md#process-trees---importing)
+		* [Exporting](./DOCS.md#process-trees---exporting)
 	    * [Visualization (vanilla Graphviz)](./DOCS.md#process-trees---visualization-vanilla-graphviz)
 	    * [Conversion to an accepting Petri net](./DOCS.md#process-trees---conversion-to-an-accepting-petri-net)
+	* Directly-Follows Graphs
+		* [Frequency DFG](./DOCS.md#frequency-dfg)
+		* [Performance DFG](./DOCS.md#performance-dfg)
+		* [Importing a Frequency DFG](./DOCS.md#importing-a-frequency-dfg)
+		* [Exporting a Frequency DFG](./DOCS.md#exporting-a-frequency-dfg)
+		* [DFG capacity maximization](./DOCS.md#dfg-capacity-maximization)
 * Algorithms 
 	* Process Discovery
 		* [Inductive Miner](./DOCS.md#inductive-miner)
