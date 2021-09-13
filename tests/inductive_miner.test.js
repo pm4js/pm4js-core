@@ -57,4 +57,6 @@ test("Inductive Miner receipt (IM)", () => {
 	let acceptingPetriNet = ProcessTreeToPetriNetConverter.apply(processTree);
 	let xmlString = PnmlExporter.apply(acceptingPetriNet);
 	acceptingPetriNet = PnmlImporter.apply(xmlString);
+	xmlString = PtmlExporter.apply(processTree);
+	processTree = PtmlImporter.apply(xmlString);
 });

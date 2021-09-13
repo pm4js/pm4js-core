@@ -74,3 +74,9 @@ test("Performance DFG discovery", () => {
 	let performanceDfg = PerformanceDfgDiscovery.apply(eventLog, "@@classifier");
 	let filteredDfg = DfgSliders.filterDfgOnPercPaths(performanceDfg, 0.2);
 });
+
+test("DFG importing and exporting", () => {
+	let data = fs.readFileSync('examples/input_data/running-example.dfg', {encoding: 'utf-8'});
+	let frequencyDfg = FrequencyDfgImporter.apply(data);
+	let xmlStri = FrequencyDfgExporter.apply(frequencyDfg);
+});
