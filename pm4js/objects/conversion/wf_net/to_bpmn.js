@@ -58,7 +58,7 @@ class WfNetToBpmnConverter {
 				
 				let edge = bpmnGraph.addEdge(WfNetToBpmnConverter.nodeUuid());
 				edge.setSource(enteringNode);
-				edge.setTarget(exitingNode);
+				edge.setTarget(task);
 				
 				edge = bpmnGraph.addEdge(WfNetToBpmnConverter.nodeUuid());
 				edge.setSource(task);
@@ -93,13 +93,23 @@ class WfNetToBpmnConverter {
 		}
 		
 		// reduction
-		/*let nodes = Object.keys(bpmnGraph.nodes);
-		for (let nodeId of nodes) {
-			let node = bpmnGraph.nodes[nodeId];
-			if (node.type == "exclusiveGateway" && Object.keys(node.incoming).length == 1 && Object.keys(node.outgoing).length == 1) {
-				bpmnGraph.removeNode(node.id);
+		let changed = true;
+		while (changed) {
+			changed = false;
+			let nodes = Object.keys(bpmnGraph.nodes);
+			for (let nodeId of nodes) {
+				let node = bpmnGraph.nodes[nodeId];
+				if (node.type == "exclusiveGateway" && Object.keys(node.incoming).length == 1 && Object.keys(node.outgoing).length == 1) {
+					let leftNode = bpmnGraph.edges[Object.keys(node.incoming)[0]].source;
+					let rightNode = bpmnGraph.edges[Object.keys(node.outgoing)[0]].target;
+					bpmnGraph.removeNode(node.id);
+					let newEdge = bpmnGraph.addEdge(WfNetToBpmnConverter.nodeUuid());
+					newEdge.setSource(leftNode);
+					newEdge.setTarget(rightNode);
+					changed = true;
+				}
 			}
-		}*/
+		}
 
 		Pm4JS.registerObject(acceptingPetriNet, "BPMN graph (converted from accepting Petri net)");
 		
