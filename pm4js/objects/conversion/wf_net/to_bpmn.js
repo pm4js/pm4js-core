@@ -111,7 +111,7 @@ class WfNetToBpmnConverter {
 			}
 		}
 
-		Pm4JS.registerObject(acceptingPetriNet, "BPMN graph (converted from accepting Petri net)");
+		Pm4JS.registerObject(bpmnGraph, "BPMN graph (converted from accepting Petri net)");
 		
 		return bpmnGraph;
 	}
