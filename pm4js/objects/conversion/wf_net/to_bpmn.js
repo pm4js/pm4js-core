@@ -128,3 +128,5 @@ catch (err) {
 	//console.log(err);
 	// not in Node
 }
+
+Pm4JS.registerAlgorithm("WfNetToBpmnConverter", "apply", ["AcceptingPetriNet"], "BpmnGraph", "Convert WF-NET to BPMN graph", "Alessandro Berti");
