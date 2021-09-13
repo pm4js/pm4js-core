@@ -45,6 +45,8 @@
 	* Filtering
 		* [Filtering Event Logs](#filtering-event-logs)
 		* [Sliding Directly Follows Graphs](#sliding-directly-follows-graphs)
+	* Simulation
+		* [Playout of a DFG](#playout-of-a-dfg)
 * Statistics
 	* Log
 		* [General Statistics](#log---general-statistics)
@@ -598,6 +600,19 @@ where percentage can be a number between 0 and 1. On the other hand, to filter t
 
 where percentage can be a number between 0 and 1; the **keepAllActivities** parameter is boolean (true/false) and establishes whether the filter is allowed
 to remove activities (keepAllActivities=false) if the paths connecting them are infrequent, or is forced to keep the activities and at least one path entering/exiting them.
+
+## Simulation
+
+### Playout of a DFG
+
+A playout operation returns an event log with a set of traces that are allowed by the model (in this case, a directly-follows graph).
+
+To execute a playout of a DFG, and get the simulated log, the following command can be executed:
+**let simulatedLog = DfgPlayout.apply(frequencyDfg);**
+
+A more complete version of the aforementioned command is the following:
+**let simulatedLog = DfgPlayout.apply(frequencyDfg, $numDesideredTraces$, $activityKey$);**
+where **numDesideredTraces** is the desidered number of cases of the simulated log, and **activityKey** is the attribute at the event level that is used as activity.
 
 # Statistics
 

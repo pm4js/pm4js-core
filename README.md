@@ -60,6 +60,8 @@ The library currently offers the following set of features:
 	* Filtering
 		* [Filtering Event Logs](./DOCS.md#filtering-event-logs)
 		* [Sliding Directly Follows Graphs](./DOCS.md#sliding-directly-follows-graphs)
+	* Simulation
+		* [Playout of a DFG](./DOCS.md#playout-of-a-dfg)
 * Statistics
 	* Log
 		* [General Statistics](./DOCS.md#log---general-statistics)
