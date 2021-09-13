@@ -23,6 +23,8 @@
 	* Directly-Follows Graphs
 		* [Frequency DFG](#frequency-dfg)
 		* [Performance DFG](#performance-dfg)
+		* [Importing a Frequency DFG](#importing-a-frequency-dfg)
+		* [Exporting a Frequency DFG](#exporting-a-frequency-dfg)
 * Algorithms 
 	* Process Discovery
 		* [Inductive Miner](#inductive-miner)
@@ -309,6 +311,21 @@ In PM4JS, it is implemented as an object with the following properties:
 associated with their sojourn time.
 
 A performance DFG object can be instantiated in PM4JS with the following command: **let perfDfg = new PerformanceDfg(activities, startActivities, endActivities, pathsFrequency, pathsPerformance, sojournTimes)**
+
+## Importing a Frequency DFG
+
+A frequency DFG can be imported from the contents of a **.dfg** file as follows:
+**let frequencyDfg = FrequencyDfgImporter.apply(content);**
+Practical example:
+**$.get("trial.dfg", function(content) {
+let frequencyDfg = FrequencyDfgImporter.apply(content);
+console.log(frequencyDfg);
+});**
+
+## Exporting a Frequency DFG
+
+A frequency DFG can be exported into the contents of a **.dfg** file as follows:
+**let txtStri = FrequencyDfgExporter.apply(frequencyDfg);**
 
 # Algorithms
 
