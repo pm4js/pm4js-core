@@ -26,6 +26,12 @@
 		* [Importing a Frequency DFG](#importing-a-frequency-dfg)
 		* [Exporting a Frequency DFG](#exporting-a-frequency-dfg)
 		* [DFG capacity maximization](#dfg-capacity-maximization)
+	* BPMN
+		* BPMN objects(#bpmn-objects)
+		* Importing BPMN(#importing-bpmn)
+		* Exporting BPMN(#exporting-bpmn)
+		* Converting a BPMN to an accepting Petri net(#converting-a-bpmn-to-an-accepting-petri-net)
+		* Converting an accepting Petri net to BPMN(#converting-an-accepting-petri-net-to-bpmn)
 * Algorithms 
 	* Process Discovery
 		* [Inductive Miner](#inductive-miner)
@@ -394,6 +400,40 @@ The properties of the edge class are:
 The methods of this class are:
 * **setSource(id)**: sets the node with the given identifier as source of the current edge.
 * **setTarget(id)**: sets the node with the given identifier as target of the current edge.
+
+### Importing BPMN
+
+A BPMN diagram can be imported from the contents of a **.bpmn** file as follows:
+**let bpmnGraph = BpmnImporter.apply(content);**
+Practical example:
+**$.get("trial.bpmn", function(content) {
+let bpmnGraph = BpmnImporter.apply(content);
+console.log(bpmnGraph);
+});**
+
+### Exporting BPMN
+
+A BPMN diagram can be exported into the contents of a **.bpmn** file as follows:
+**let xmlStri = BpmnExporter.apply(bpmnGraph);**
+
+### Converting a BPMN to an accepting Petri net
+
+Petri nets are useful diagrams for conformance checking purposes, hence it might be necessary
+to convert the BPMN diagrams to Petri nets if conformance checking becomes necessary.
+This is actually implemented for diagrams containing tasks and exclusive/inclusive gateways.
+
+To convert a BPMN diagram to an accepting Petri net, the following method can be used:
+**let acceptingPetriNet = BpmnToPetriNetConverter.apply(bpmnGraph)**
+
+### Converting an accepting Petri net to BPMN
+
+While Petri nets are of high utility in process mining, BPMN diagrams are more interesting for a business.
+Hence, in some contexts the conversion of Petri net to BPMN diagrams may be useful.
+
+To convert a workflow net (a sub-class of Petri nets) to a BPMN diagram, the following method can be used:
+**let bpmnGraph = WfNetToBpmnConverter.apply(acceptingPetriNet)**
+
+As important point to mention, the automatic layouting of the BPMN diagrams is still missing from the library.
 
 # Algorithms
 
