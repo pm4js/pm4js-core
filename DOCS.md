@@ -300,7 +300,7 @@ In PM4JS, it is implemented as an object with the following properties:
 A frequency DFG object can be instantiated in PM4JS with the following command: **let freqDfg = new FrequencyDfg(activities, startActivities, endActivities, pathsFrequency)**.
 So having the four dictionaries permits to create the frequency DFG object.
 
-## Performance DFG
+### Performance DFG
 
 A performance directly-follows graph is a type of model where the nodes are the activities, and edges contain an aggregation of the times between the different activities.
 In PM4JS, it is implemented as an object with the following properties:
@@ -315,7 +315,7 @@ associated with their sojourn time.
 
 A performance DFG object can be instantiated in PM4JS with the following command: **let perfDfg = new PerformanceDfg(activities, startActivities, endActivities, pathsFrequency, pathsPerformance, sojournTimes)**
 
-## Importing a Frequency DFG
+### Importing a Frequency DFG
 
 A frequency DFG can be imported from the contents of a **.dfg** file as follows:
 **let frequencyDfg = FrequencyDfgImporter.apply(content);**
@@ -325,12 +325,12 @@ let frequencyDfg = FrequencyDfgImporter.apply(content);
 console.log(frequencyDfg);
 });**
 
-## Exporting a Frequency DFG
+### Exporting a Frequency DFG
 
 A frequency DFG can be exported into the contents of a **.dfg** file as follows:
 **let txtStri = FrequencyDfgExporter.apply(frequencyDfg);**
 
-## DFG capacity maximization
+### DFG capacity maximization
 
 Given the application of a DFG filtering operation, it might be that some arcs are lost and the sum of the ingoing/outgoing arcs is not matching exactly
 the one of the underlying activities. To reduce this unpleasant effect, a possibility to maximize the arcs of the DFG is offered.
@@ -339,6 +339,61 @@ To apply the DFG maximization, the following command can be used:
 **let maximizedDfg = FilteredDfgMaximization.apply(frequencyDfg);**
 
 This requires the solution of a linear problem, in which the capacity of the arcs is maximized.
+
+## BPMN
+
+BPMN is a process notation with widespread usage in the business language, since it is very expressive and simple to discuss.
+In PM4JS, we offer support for the management of BPMN diagrams.
+
+### BPMN objects
+
+The main class related to BPMN diagrams is **BpmnGraph**. An object of such class can be constructed by providing an identifier (with the **id** prefix and a combination of letters and numbers), so **new BpmnGraph(id)**.
+
+The properties of the graph class are:
+* **id**: a string uniquely identifying the diagram.
+* **name**: a string that describes the content of the diagram.
+* **nodes**: a dictionary associating to each node ID the corresponding node object (see later).
+* **edges**: a dictionary associating to each edge ID the corresponding edge object (see later).
+* **properties**: a dictionary hosting additional properties associated to the diagram.
+
+The methods of this class are:
+* **addNode(id)**: if a node with the given identifier is not contained in the diagram, adds and returns a new node object having the given identifier. Otherwise, returns the existing node.
+* **addEdge(id)**: if an edge with the given identifier is not contained in the diagram, adds and returns a new edge object having the given identifier. Otherwise, returns the existing edge.
+* **removeNode(id)**: removed the node with the given identifier in the diagram.
+
+The class related to the BPMN nodes is **BpmnNode**. An object of such class can be constructed by providing the BPMN graph object and an unique
+identifier (with the **id** prefix and a combination of letters and numbers), so **new BpmnNode(graph, id)**. Although, it is advised to use the method **addNode** of the graph object to add a new node in the BPMN diagram.
+
+The properties of the node class are:
+* **graph**: the BPMN graph the node belongs to.
+* **id**: a string uniquely identifying the node.
+* **name**: a string describing the meaning of the node.
+* **type**: a string describing the type of the node (task, gateway ...).
+* **incoming**: a dictionary of the incoming edges.
+* **outgoing**: a dictionary of the outgoing edges.
+* **bounds**: contains four properties (**x**, **y**, **width**, **height**) which describe
+the absolute position and the size of the node in the graph.
+* **properties**: a dictionary hosting additional properties associated to the node.
+
+The methods of this class are:
+* **addIncoming(id)**: adds an edge, with the given identifier, as incoming edge to the node (the edge enters the node).
+* **addOutgoing(id)**: adds an edge, with the given identifier, as outgoing edge to the node (the edge exits the node).
+
+The class related to the BPMN edges is **BpmnEdge**. An object of such class can be constructed by providing the BPMN graph object
+and an unique identifier (with the **id** prefix and a combination of letters and numbers), so **new BpmnEdge(graph, id)**. Although, it is advised to use the method **addEdge** of the graph object to add a new edge in the BPMN diagram.
+
+The properties of the edge class are:
+* **graph**: the BPMN graph the node belongs to.
+* **id**: a string uniquely identifying the edge.
+* **name**: a string describing the meaning of the edge.
+* **source**: a property containing the reference to the source node of the edge.
+* **target**: a property containing the reference to the target node of the edge.
+* **waypoints**: a list of points that are traversed by the edge to go from the source node to the target node.
+* **properties**: a dictionary hosting additional properties associated to the edge.
+
+The methods of this class are:
+* **setSource(id)**: sets the node with the given identifier as source of the current edge.
+* **setTarget(id)**: sets the node with the given identifier as target of the current edge.
 
 # Algorithms
 
