@@ -53,6 +53,7 @@
 		* [Sliding Directly Follows Graphs](#sliding-directly-follows-graphs)
 	* Simulation
 		* [Playout of a DFG](#playout-of-a-dfg)
+	* [Feature Extraction](#feature-extraction)
 * Statistics
 	* Log
 		* [General Statistics](#log---general-statistics)
@@ -708,6 +709,37 @@ To execute a playout of a DFG, and get the simulated log, the following command 
 A more complete version of the aforementioned command is the following:
 **let simulatedLog = DfgPlayout.apply(frequencyDfg, $numDesideredTraces$, $activityKey$);**
 where **numDesideredTraces** is the desidered number of cases of the simulated log, and **activityKey** is the attribute at the event level that is used as activity.
+
+## Feature Extraction
+
+The conversion of a log to a matrix of numerical features is essential for machine learning purposes. Here, we describe the current implementation in PM4JS, that
+accepts an event log and returns the matrix of the features (where each row is a different case).
+
+The steps of the implemented feature selection are two:
+* The features are selected from the log, or provided by the user.
+* The matrix of the features is extracted.
+
+The command:
+**let featuresOutput = CaseFeatures.apply(eventLog);**
+extracts the features from the log performing an automated feature selection.
+
+The resulting **featuresOutput** variable is of type **CaseFeaturesOutput**, which has two fundamental properties:
+* **data**: the matrix of features.
+* **features**: the name of the features.
+
+The **featuresOutput.data** can be provided to the available Javascript machine learning libraries to train any sort of model (e.g., clustering, classification, regression, ...).
+
+To extract the matrix by providing manually the features to be used, the following command can be provided:
+**let featuresOutput = CaseFeatures.apply(eventLog, $activityAttribute$, $caseIdAttribute$, $evStrAttr$, $evNumAttr$, $trStrAttr$, $trNumAttr$, $evSuccAttr$);**
+
+Where:
+* **activityAttribute** is the attribute at the event level that should be used as activity.
+* **caseIdAttribute** is the attribute at the case level that should be used as case identifier.
+* **evStrAttr** (if provided) is the list of string attributes at the event level that should be used for the feature extraction (one-hot encoding). If not provided, the default feature selection is performed for these attributes.
+* **evNumAttr** (if provided) is the list of numeric attributes at the event level that should be used for the feature extraction. If not provided, the default feature selection is performed for these attributes.
+* **trStrAttr** (if provided) is the list of string attributes at the case level that should be used  for the feature extraction (one-hot encoding). If not provided, the default feature selection is performed for these attributes.
+* **trNumAttr** (if provided) is the list of numeric attributes at the case level that should be used for the feature extraction. If not provided, the default feature selection is performed for these attributes.
+* **evSuccAttr** (if provided) use the paths between the attributes provided in the list as features.
 
 # Statistics
 

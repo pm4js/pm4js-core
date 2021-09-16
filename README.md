@@ -68,6 +68,7 @@ The library currently offers the following set of features:
 		* [Sliding Directly Follows Graphs](./DOCS.md#sliding-directly-follows-graphs)
 	* Simulation
 		* [Playout of a DFG](./DOCS.md#playout-of-a-dfg)
+		* [Feature Extraction](./DOCS.md#feature-extraction)
 * Statistics
 	* Log
 		* [General Statistics](./DOCS.md#log---general-statistics)
