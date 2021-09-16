@@ -41,6 +41,12 @@ The library currently offers the following set of features:
 		* [Importing a Frequency DFG](./DOCS.md#importing-a-frequency-dfg)
 		* [Exporting a Frequency DFG](./DOCS.md#exporting-a-frequency-dfg)
 		* [DFG capacity maximization](./DOCS.md#dfg-capacity-maximization)
+	* BPMN
+		* [BPMN objects](./DOCS.md#bpmn-objects)
+		* [Importing BPMN](./DOCS.md#importing-bpmn)
+		* [Exporting BPMN](./DOCS.md#exporting-bpmn)
+		* [Converting a BPMN to an accepting Petri net](./DOCS.md#converting-a-bpmn-to-an-accepting-petri-net)
+		* [Converting an accepting Petri net to BPMN](./DOCS.md#converting-an-accepting-petri-net-to-bpmn)
 * Algorithms 
 	* Process Discovery
 		* [Inductive Miner](./DOCS.md#inductive-miner)
