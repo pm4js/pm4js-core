@@ -27,11 +27,11 @@
 		* [Exporting a Frequency DFG](#exporting-a-frequency-dfg)
 		* [DFG capacity maximization](#dfg-capacity-maximization)
 	* BPMN
-		* BPMN objects(#bpmn-objects)
-		* Importing BPMN(#importing-bpmn)
-		* Exporting BPMN(#exporting-bpmn)
-		* Converting a BPMN to an accepting Petri net(#converting-a-bpmn-to-an-accepting-petri-net)
-		* Converting an accepting Petri net to BPMN(#converting-an-accepting-petri-net-to-bpmn)
+		* [BPMN objects](#bpmn-objects)
+		* [Importing BPMN](#importing-bpmn)
+		* [Exporting BPMN](#exporting-bpmn)
+		* [Converting a BPMN to an accepting Petri net](#converting-a-bpmn-to-an-accepting-petri-net)
+		* [Converting an accepting Petri net to BPMN](#converting-an-accepting-petri-net-to-bpmn)
 * Algorithms 
 	* Process Discovery
 		* [Inductive Miner](#inductive-miner)
