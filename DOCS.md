@@ -753,5 +753,8 @@ PM4JS offers some general log [statistics](./pm4js/statistics/log/general.js). T
 * Retrieval of the count of the occurrences of the values of an attribute (as dictionary): **GeneralLogStatistics.getAttributeValues(eventLog, attributeKey)**
 * Retrieval of the variants of an event log. A dictionary associating to each variant the number of occurrences for the given variant is returned: **GeneralLogStatistics.getVariants(eventLog)**. As optional parameter, an activity key can be provided.
 * Retrieval of the set of attributes at the event level starting from an event log: **GeneralLogStatistics.getEventAttributesList(eventLog)**
+* Retrieval of the typed dictionary of attributes at the event level starting from an event log: **GeneralLogStatistics.getEventAttributesWithType(eventLog)**
 * Retrieval of the set of attributes at the trace level starting from an event log: **GeneralLogStatistics.getCaseAttributesList(eventLog)**
-* Retrieval of the average sojourn time for each activity of the event log: **GeneralLogStatistics.getAverageSojournTime(eventLog, "concept:name", "time:timestamp", "time:timestamp")** (the arguments are the event log, the activity key, the timestamp key, the start timestamp key.
+* Retrieval of the typed dictionary of attributes at the trace level starting from an event log: **GeneralLogStatistics.getTraceAttributesWithType(eventLog)**
+* Retrieval of the average sojourn time for each activity of the event log: **GeneralLogStatistics.getAverageSojournTime(eventLog, "concept:name", "time:timestamp", "time:timestamp")** (the arguments are the event log, the activity key, the timestamp key, the start timestamp key).
+* Retrieval of the number of events the log: **GeneralLogStatistics.numEvents(eventLog)**.
