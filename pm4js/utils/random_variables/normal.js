@@ -41,6 +41,20 @@ class NormalRandomVariable {
 		}
 		return ret;
 	}
+	
+	static estimateParameters(arrayValues) {
+		let sum = 0.0;
+		for (let v of arrayValues) {
+			sum += v;
+		}
+		let avg = sum / arrayValues.length;
+		sum = 0.0;
+		for (let v of arrayValues) {
+			sum += (v - avg) * (v-avg);
+		}
+		let std = Math.sqrt(sum / arrayValues.length);
+		return [avg, std];
+	}
 }
 
 NormalRandomVariable.G = 536870911;

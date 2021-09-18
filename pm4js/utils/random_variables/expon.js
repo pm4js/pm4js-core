@@ -13,7 +13,7 @@ class ExponentialRandomVariable {
 	}
 	
 	static getv(lam) {
-		return -1.0 / (lam * Math.log(1.0 - ExponentialRandomVariable.gen()));
+		return (-1.0 / lam) * Math.log(1.0 - ExponentialRandomVariable.gen());
 	}
 	
 	static logLikelihood(arrayValues, lam) {
@@ -22,6 +22,14 @@ class ExponentialRandomVariable {
 			ret += Math.log(ExponentialRandomVariable.pdf(v, lam));
 		}
 		return ret;
+	}
+	
+	static estimateParameters(arrayValues) {
+		let sum = 0.0;
+		for (let v of arrayValues) {
+			sum += v;
+		}
+		return [1.0 / (sum / arrayValues.length)];
 	}
 }
 
