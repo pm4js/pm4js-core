@@ -15,6 +15,14 @@ class ExponentialRandomVariable {
 	static getv(lam) {
 		return -1.0 / (lam * Math.log(1.0 - ExponentialRandomVariable.gen()));
 	}
+	
+	static logLikelihood(arrayValues, lam) {
+		let ret = 0.0;
+		for (let v of arrayValues) {
+			ret += Math.log(ExponentialRandomVariable.pdf(v, lam));
+		}
+		return ret;
+	}
 }
 
 ExponentialRandomVariable.G = 536870911;

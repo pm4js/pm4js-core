@@ -33,6 +33,14 @@ class NormalRandomVariable {
 		let v2 = NormalRandomVariable.gen();
 		return mu + sig * Math.cos(2*Math.PI*v2) * Math.sqrt(-2.0 * Math.log(v1));
 	}
+	
+	static logLikelihood(arrayValues, mu, sig) {
+		let ret = 0.0;
+		for (let v of arrayValues) {
+			ret += Math.log(NormalRandomVariable.pdf(v, mu, sig));
+		}
+		return ret;
+	}
 }
 
 NormalRandomVariable.G = 536870911;
