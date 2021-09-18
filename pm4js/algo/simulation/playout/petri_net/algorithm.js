@@ -41,3 +41,5 @@ catch (err) {
 	// not in Node
 	//console.log(err);
 }
+
+Pm4JS.registerAlgorithm("PetriNetPlayout", "apply", ["AcceptingPetriNet"], "EventLog", "Perform Playout on a Petri net", "Alessandro Berti");
