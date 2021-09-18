@@ -1,5 +1,5 @@
 class DfgPlayout {
-	static apply(freqDfg, numDesideredTraces=1000, activityKey="concept:name") {
+	static apply(freqDfg, numDesideredTraces=1000, activityKey="concept:name", timestampKey="time:timestamp") {
 		let vect = freqDfg.getArtificialDfg();
 		let outgoing = {};
 		for (let act in vect[0]) {
@@ -16,6 +16,7 @@ class DfgPlayout {
 		let start = [["▶"], 0];
 		queue.push(start);
 		let count = 0;
+		let minTimestamp = 10000000;
 		let eventLog = new EventLog();
 		while (true) {
 			if (count >= numDesideredTraces) {
@@ -35,6 +36,7 @@ class DfgPlayout {
 					let newEve = new Event();
 					trace.events.push(newEve);
 					newEve.attributes[activityKey] = new Attribute(activities[i]);
+					newEve.attributes[timestampKey] = new Attribute(new Date((minTimestamp + count)*1000));
 					i++;
 				}
 				count++;
