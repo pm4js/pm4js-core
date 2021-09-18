@@ -55,6 +55,14 @@ class NormalRandomVariable {
 		let std = Math.sqrt(sum / arrayValues.length);
 		return [avg, std];
 	}
+	
+	static getMean(mu, sig) {
+		return mu;
+	}
+	
+	static getVariance(mu, sig) {
+		return sig * sig;
+	}
 }
 
 NormalRandomVariable.G = 536870911;

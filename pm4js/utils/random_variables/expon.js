@@ -31,6 +31,14 @@ class ExponentialRandomVariable {
 		}
 		return [1.0 / (sum / arrayValues.length)];
 	}
+	
+	static getMean(lam) {
+		return 1.0 / lam;
+	}
+	
+	static getVariance(lam) {
+		return 1.0 / (lam * lam);
+	}
 }
 
 ExponentialRandomVariable.G = 536870911;
