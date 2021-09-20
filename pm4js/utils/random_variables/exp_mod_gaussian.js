@@ -45,6 +45,14 @@ class ExponentiallyModifiedGaussian {
 		let tauDist = std * Math.pow((Math.abs(skew) / 2), 1.0 / 3.0);
 		return new ExponentiallyModifiedGaussian(muDist, stdDist, 1.0 / tauDist);
 	}
+	
+	getMean() {
+		return this.mu + 1.0 / this.lam;
+	}
+	
+	getVariance() {
+		return this.sig * this.sig + 1.0 / (this.lam * this.lam);
+	}
 }
 
 try {
