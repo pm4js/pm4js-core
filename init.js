@@ -56,3 +56,4 @@ require('./pm4js/algo/simulation/playout/petri_net/algorithm.js');
 require('./pm4js/utils/random_variables/expon.js');
 require('./pm4js/utils/random_variables/normal.js');
 require('./pm4js/utils/random_variables/lognormal.js');
+require('./pm4js/utils/random_variables/gamma.js');
