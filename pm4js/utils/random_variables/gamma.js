@@ -26,6 +26,26 @@ class GammaRandomVariable {
 		return new GammaRandomVariable(k, theta);
 	}
 	
+	static eulerGamma(x) {
+		x = x - 1;
+		let ret1 = Math.sqrt(2 * Math.PI * x) * Math.pow((x / Math.E), x);
+		let ret2 = (1 + 1 / (12 * x * x * x + 24.0 / 7.0 * x - 0.5));
+		ret2 = Math.pow(ret2, x * x + 53.0 / 210.0);
+		return ret1 * ret2;
+	}
+	
+	pdf(x) {
+		return (Math.pow(x, this.k - 1) * Math.exp(-x / this.theta)) / (Math.pow(this.theta, this.k) * GammaRandomVariable.eulerGamma(this.k));
+	}
+	
+	logLikelihood(arrayValues) {
+		let ret = 0.0;
+		for (let v of arrayValues) {
+			ret += Math.log(this.pdf(v));
+		}
+		return ret;
+	}
+	
 	getMean() {
 		return this.k * this.theta;
 	}
