@@ -64,23 +64,29 @@ class GammaRandomVariable {
 	}
 	
 	getValue() {
-		if (this.k <= 1) {
-			let umax = Math.pow((this.k / Math.E), this.k / 2.0);
-			let vmin = -2 / Math.E;
-			let vmax = 2*this.k / (Math.E * (Math.E - this.k));
-			while (true) {
-				let v1 = GammaRandomVariable.gen();
-				let v2 = GammaRandomVariable.gen();
-				let u = umax * v1;
-				let v = (vmax - vmin) * v2 + vmin;
-				let t = v / u;
-				let x = Math.exp(t / this.k);
-				if (2*Math.log(u) <= t - x) {
-					return x * this.theta;
-				}
+		let k = 0 + this.k;
+		let exp = new ExponentialRandomVariable(1.0 / this.theta);
+		let ret = 0;
+		while (k > 1) {
+			ret += exp.getValue();
+			k = k - 1;
+		}
+		let umax = Math.pow((k / Math.E), k / 2.0);
+		let vmin = -2 / Math.E;
+		let vmax = 2*k / (Math.E * (Math.E - k));
+		while (true) {
+			let v1 = GammaRandomVariable.gen();
+			let v2 = GammaRandomVariable.gen();
+			let u = umax * v1;
+			let v = (vmax - vmin) * v2 + vmin;
+			let t = v / u;
+			let x = Math.exp(t / k);
+			if (2*Math.log(u) <= t - x) {
+				ret += x * this.theta;
+				break;
 			}
 		}
-		throw "not implemented for k > 1";
+		return ret;
 	}
 }
 
