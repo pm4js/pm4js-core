@@ -60,7 +60,10 @@ class GammaRandomVariable {
 	}
 	
 	getMode() {
-		return (this.k - 1)*this.theta;
+		if (this.k > 1) {
+			return (this.k - 1)*this.theta;
+		}
+		return 0;
 	}
 	
 	getValue() {
