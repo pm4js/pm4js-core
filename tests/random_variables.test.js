@@ -46,3 +46,12 @@ test("log-normal random variable", () => {
 	let quantile9 = rv.getQuantile(0.9);
 	let simValue = 	rv.getValue();
 });
+
+test("gamma random variable", () => {
+	let rv = GammaRandomVariable.estimateParameters([1.9, 2, 2.1]);
+	let rvMean = rv.getMean();
+	let rvVariance = rv.getVariance();
+	let rvMode = rv.getMode();
+	let pdfMean = rv.pdf(rv.getMean());
+	let simValue = 	rv.getValue();
+});
