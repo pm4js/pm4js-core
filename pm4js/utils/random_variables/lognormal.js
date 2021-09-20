@@ -25,6 +25,19 @@ class LogNormalRandomVariable {
 		return v;
 	}
 	
+	static erfinv(x) {
+		let sgn = 1;
+		if (x < 0) {
+			sgn = -1;
+			x = -x;
+		}
+		x = (1 - x)*(1 + x);
+		let lnx = Math.log(x);
+		let tt1 = 2/(Math.PI * 0.147) + 0.5 * lnx;
+		let tt2 = 1/0.147 * lnx;
+		return sgn * Math.sqrt(-tt1 + Math.sqrt(tt1 * tt1 - tt2));
+	}
+	
 	pdf(x) {
 		return 1.0 / (x * this.sig * Math.sqrt(2 * Math.PI)) * Math.exp(-(Math.log(x) - this.mu)*(Math.log(x) - this.mu)/(2 * this.sig * this.sig));
 	}
@@ -77,6 +90,10 @@ class LogNormalRandomVariable {
 	
 	getMode() {
 		return Math.exp(this.mu - this.sig * this.sig);
+	}
+	
+	getQuantile(p) {
+		return Math.exp(this.mu + Math.sqrt(2 * this.sig * this.sig) * LogNormalRandomVariable.erfinv(2 * p - 1));
 	}
 }
 
