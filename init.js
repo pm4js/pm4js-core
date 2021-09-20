@@ -57,3 +57,4 @@ require('./pm4js/utils/random_variables/expon.js');
 require('./pm4js/utils/random_variables/normal.js');
 require('./pm4js/utils/random_variables/lognormal.js');
 require('./pm4js/utils/random_variables/gamma.js');
+require('./pm4js/utils/random_variables/exp_mod_gaussian.js');
