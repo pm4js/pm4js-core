@@ -34,6 +34,9 @@ class LogNormalRandomVariable {
 	}
 	
 	getValue() {
+		let v1 = NormalRandomVariable.gen();
+		let v2 = NormalRandomVariable.gen();
+		return Math.exp(this.mu + this.sig * Math.cos(2*Math.PI*v2) * Math.sqrt(-2.0 * Math.log(v1)));
 	}
 	
 	logLikelihood(arrayValues) {
