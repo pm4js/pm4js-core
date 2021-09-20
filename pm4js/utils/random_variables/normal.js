@@ -1,4 +1,9 @@
 class NormalRandomVariable {
+	constructor(mu, sig) {
+		this.mu = mu;
+		this.sig = sig;
+	}
+	
 	static gen() {
 		NormalRandomVariable.C = (NormalRandomVariable.C*NormalRandomVariable.G) % NormalRandomVariable.P;
 		return NormalRandomVariable.C / NormalRandomVariable.P;
@@ -20,24 +25,24 @@ class NormalRandomVariable {
 		return v;
 	}
 	
-	static pdf(x, mu, sig) {
-		return 1.0/(sig*Math.sqrt(2*Math.PI)) * Math.exp(-0.5*((x-mu)/sig)*((x-mu)/sig));
+	pdf(x) {
+		return 1.0/(this.sig*Math.sqrt(2*Math.PI)) * Math.exp(-0.5*((x-this.mu)/this.sig)*((x-this.mu)/this.sig));
 	}
 	
-	static cdf(x, mu, sig) {
-		return 0.5*(1.0 + NormalRandomVariable.erf((x - mu)/(sig * Math.sqrt(2))));
+	cdf(x) {
+		return 0.5*(1.0 + NormalRandomVariable.erf((x - this.mu)/(this.sig * Math.sqrt(2))));
 	}
 	
-	static getv(mu, sig) {
+	getValue() {
 		let v1 = NormalRandomVariable.gen();
 		let v2 = NormalRandomVariable.gen();
-		return mu + sig * Math.cos(2*Math.PI*v2) * Math.sqrt(-2.0 * Math.log(v1));
+		return this.mu + this.sig * Math.cos(2*Math.PI*v2) * Math.sqrt(-2.0 * Math.log(v1));
 	}
 	
-	static logLikelihood(arrayValues, mu, sig) {
+	logLikelihood(arrayValues) {
 		let ret = 0.0;
 		for (let v of arrayValues) {
-			ret += Math.log(NormalRandomVariable.pdf(v, mu, sig));
+			ret += Math.log(this.pdf(v));
 		}
 		return ret;
 	}
@@ -53,15 +58,23 @@ class NormalRandomVariable {
 			sum += (v - avg) * (v-avg);
 		}
 		let std = Math.sqrt(sum / arrayValues.length);
-		return [avg, std];
+		return new NormalRandomVariable(avg, std);
 	}
 	
-	static getMean(mu, sig) {
-		return mu;
+	getMean() {
+		return this.mu;
 	}
 	
-	static getVariance(mu, sig) {
-		return sig * sig;
+	getVariance() {
+		return this.sig * this.sig;
+	}
+	
+	getMedian() {
+		return this.mu;
+	}
+	
+	getMode() {
+		return this.mu;
 	}
 }
 

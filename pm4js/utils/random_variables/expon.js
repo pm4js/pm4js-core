@@ -1,25 +1,29 @@
 class ExponentialRandomVariable {
+	constructor(lam) {
+		this.lam = lam;
+	}
+	
 	static gen() {
 		ExponentialRandomVariable.C = (ExponentialRandomVariable.C*ExponentialRandomVariable.G) % ExponentialRandomVariable.P;
 		return ExponentialRandomVariable.C / ExponentialRandomVariable.P;
 	}
 	
-	static pdf(x, lam) {
-		return lam * Math.exp(-lam*x);
+	pdf(x) {
+		return this.lam * Math.exp(-this.lam * x);
 	}
 	
-	static cdf(x, lam) {
-		return 1 - Math.exp(-lam*x);
+	cdf(x) {
+		return 1 - Math.exp(-this.lam * x);
 	}
 	
-	static getv(lam) {
-		return (-1.0 / lam) * Math.log(1.0 - ExponentialRandomVariable.gen());
+	getValue() {
+		return (-1.0 / this.lam) * Math.log(1.0 - ExponentialRandomVariable.gen());
 	}
 	
-	static logLikelihood(arrayValues, lam) {
+	logLikelihood(arrayValues) {
 		let ret = 0.0;
 		for (let v of arrayValues) {
-			ret += Math.log(ExponentialRandomVariable.pdf(v, lam));
+			ret += Math.log(this.pdf(v));
 		}
 		return ret;
 	}
@@ -29,15 +33,27 @@ class ExponentialRandomVariable {
 		for (let v of arrayValues) {
 			sum += v;
 		}
-		return [1.0 / (sum / arrayValues.length)];
+		return new ExponentialRandomVariable(1.0 / (sum / arrayValues.length));
 	}
 	
-	static getMean(lam) {
-		return 1.0 / lam;
+	getMean() {
+		return 1.0 / this.lam;
 	}
 	
-	static getVariance(lam) {
-		return 1.0 / (lam * lam);
+	getVariance() {
+		return 1.0 / (this.lam * this.lam);
+	}
+	
+	getMedian() {
+		return Math.log(2) / this.lam;
+	}
+	
+	getMode() {
+		return 0;
+	}
+	
+	getQuantile(p) {
+		return - Math.log(1 - p) / this.lam;
 	}
 }
 
