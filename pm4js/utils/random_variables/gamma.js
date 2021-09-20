@@ -22,12 +22,20 @@ class GammaRandomVariable {
 		kd1 = kd1 * n;
 		let kd = (n+2)*(kd1 - kd2 * kd3);
 		let k = kn / kd;
-		let theta = n * n * (n-1) / kd;
+		let theta = kd / (n * n * (n-1));
 		return new GammaRandomVariable(k, theta);
 	}
 	
 	getMean() {
 		return this.k * this.theta;
+	}
+	
+	getVariance() {
+		return this.k * this.theta * this.theta;
+	}
+	
+	getMode() {
+		return (this.k - 1)*this.theta;
 	}
 }
 
