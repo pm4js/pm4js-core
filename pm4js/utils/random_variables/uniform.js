@@ -32,7 +32,7 @@ class UniformRandomVariable {
 	
 	static estimateParameters(arrayValues) {
 		let minValue = Number.MAX_VALUE;
-		let maxValue = Number.MIN_VALUE;
+		let maxValue = -Number.MAX_VALUE;
 		for (let v of arrayValues) {
 			if (v < minValue) {
 				minValue = v;
