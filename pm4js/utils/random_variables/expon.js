@@ -9,10 +9,16 @@ class ExponentialRandomVariable {
 	}
 	
 	pdf(x) {
+		if (x < 0) {
+			throw "Exponential not defined for x < 0";
+		}
 		return this.lam * Math.exp(-this.lam * x);
 	}
 	
 	cdf(x) {
+		if (x < 0) {
+			throw "Exponential not defined for x < 0";
+		}
 		return 1 - Math.exp(-this.lam * x);
 	}
 	
@@ -31,6 +37,9 @@ class ExponentialRandomVariable {
 	static estimateParameters(arrayValues) {
 		let sum = 0.0;
 		for (let v of arrayValues) {
+			if (v < 0) {
+				throw "Exponential not defined for x < 0";
+			}
 			sum += v;
 		}
 		return new ExponentialRandomVariable(1.0 / (sum / arrayValues.length));

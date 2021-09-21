@@ -43,10 +43,16 @@ class LogNormalRandomVariable {
 	}
 	
 	pdf(x) {
+		if (x < 0) {
+			throw "Lognormal not defined for x < 0";
+		}
 		return 1.0 / (x * this.sig * Math.sqrt(2 * Math.PI)) * Math.exp(-(Math.log(x) - this.mu)*(Math.log(x) - this.mu)/(2 * this.sig * this.sig));
 	}
 	
 	cdf(x) {
+		if (x < 0) {
+			throw "Lognormal not defined for x < 0";
+		}
 		return 0.5*(1.0 + LogNormalRandomVariable.erf((Math.log(x) - this.mu)/(this.sig * Math.sqrt(2))));
 	}
 	
@@ -67,6 +73,9 @@ class LogNormalRandomVariable {
 	static estimateParameters(arrayValues) {
 		let sum = 0.0;
 		for (let v of arrayValues) {
+			if (v < 0) {
+				throw "Lognormal not defined for x < 0";
+			}
 			sum += v;
 		}
 		let avg = sum / arrayValues.length;
