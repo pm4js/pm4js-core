@@ -4,6 +4,10 @@ class LogNormalRandomVariable {
 		this.sig = sig;
 	}
 	
+	toString() {
+		return "LogNormalRandomVariable mu="+this.mu+" sig="+this.sig;
+	}
+	
 	static gen() {
 		LogNormalRandomVariable.C = (LogNormalRandomVariable.C*LogNormalRandomVariable.G) % LogNormalRandomVariable.P;
 		return LogNormalRandomVariable.C / LogNormalRandomVariable.P;

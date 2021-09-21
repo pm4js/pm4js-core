@@ -4,6 +4,10 @@ class GammaRandomVariable {
 		this.theta = theta;
 	}
 	
+	toString() {
+		return "GammaRandomVariable k="+this.k+" theta="+this.theta;
+	}
+	
 	static gen() {
 		GammaRandomVariable.C = (GammaRandomVariable.C*GammaRandomVariable.G) % GammaRandomVariable.P;
 		return GammaRandomVariable.C / GammaRandomVariable.P;
@@ -13,6 +17,9 @@ class GammaRandomVariable {
 		let n = arrayValues.length;
 		let kn = 0;
 		for (let v of arrayValues) {
+			if (v < 0) {
+				throw "Gamma not defined for x < 0";
+			}
 			kn += v;
 		}
 		kn = kn * n * (n-1);
@@ -33,13 +40,13 @@ class GammaRandomVariable {
 	
 	static eulerGamma(x) {
 		x = x - 1;
-		let ret1 = Math.sqrt(2 * Math.PI * x) * Math.pow((x / Math.E), x);
-		let ret2 = (1 + 1 / (12 * x * x * x + 24.0 / 7.0 * x - 0.5));
-		ret2 = Math.pow(ret2, x * x + 53.0 / 210.0);
-		return ret1 * ret2;
+		return Math.sqrt(Math.PI) * Math.pow(Math.abs(x) / Math.E, x) * Math.pow(8 * x * x *x + 4 *x *x + x + 1.0 / 3.0, 1.0 / 6.0);
 	}
 	
 	pdf(x) {
+		if (x < 0) {
+			throw "Gamma not defined for x < 0";
+		}
 		return (Math.pow(x, this.k - 1) * Math.exp(-x / this.theta)) / (Math.pow(this.theta, this.k) * GammaRandomVariable.eulerGamma(this.k));
 	}
 	

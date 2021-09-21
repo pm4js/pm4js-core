@@ -5,6 +5,10 @@ class ExponentiallyModifiedGaussian {
 		this.lam = lam;
 	}
 	
+	toString() {
+		return "ExponentiallyModifiedGaussian mu="+this.mu+" sig="+this.sig+" lam="+this.lam;
+	}
+	
 	static erf(x) {
 		let v = 1;
 		v = v + 0.278393*x;

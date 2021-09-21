@@ -4,6 +4,10 @@ class NormalRandomVariable {
 		this.sig = sig;
 	}
 	
+	toString() {
+		return "NormalRandomVariable mu="+this.mu+" sig="+this.sig;
+	}
+	
 	static gen() {
 		NormalRandomVariable.C = (NormalRandomVariable.C*NormalRandomVariable.G) % NormalRandomVariable.P;
 		return NormalRandomVariable.C / NormalRandomVariable.P;
