@@ -71,12 +71,16 @@ class InductiveMiner {
 		if (detectedCut != null) {
 			return detectedCut;
 		}
-		if (log != null) {
-			if (!(removeNoise)) {
-				let detectedFallthrough = InductiveMiner.detectFallthroughs(log, freqDfg, treeParent, activityKey, threshold);
-				if (detectedFallthrough != null) {
-					return detectedFallthrough;
-				}
+		if (!(removeNoise)) {
+			let detectedFallthrough = null;
+			if (log != null) {
+				detectedFallthrough = InductiveMiner.detectFallthroughs(log, freqDfg, treeParent, activityKey, threshold);
+			}
+			else {
+				detectedFallthrough = InductiveMiner.detectFallthroughsDfg(freqDfg, treeParent, threshold);
+			}
+			if (detectedFallthrough != null) {
+				return detectedFallthrough;
 			}
 		}
 		if (!(removeNoise) && threshold > 0) {
@@ -202,6 +206,18 @@ class InductiveMiner {
 			return loopNode;
 		}
 		return null;
+	}
+	
+	static detectFallthroughsDfg(freqDfg, treeParent, threshold) {
+		let activityConcurrentCut = InductiveMinerActivityConcurrentFallthroughDFG.detect(freqDfg, threshold);
+		if (activityConcurrentCut != null) {
+			let parNode = new ProcessTree(treeParent, ProcessTreeOperator.PARALLEL, null);
+			let actNode = new ProcessTree(parNode, null, activityConcurrentCut[0]);
+			activityConcurrentCut[1].parentNode = parNode;
+			parNode.children.push(actNode);
+			parNode.children.push(activityConcurrentCut[1]);
+			return parNode;
+		}
 	}
 	
 	static detectFallthroughs(log, freqDfg, treeParent, activityKey, threshold) {
@@ -1007,6 +1023,52 @@ class InductiveMinerActivityConcurrentFallthrough {
 	
 	static project(log, act, activityKey) {
 		return LogGeneralFiltering.filterEventsHavingEventAttributeValues(log, [act], true, false, activityKey);
+	}
+}
+
+class InductiveMinerActivityConcurrentFallthroughDFG {
+	static removeActFromDFG(freqDfg, activity) {
+		let activities = {};
+		let startActivities = {};
+		let endActivities = {};
+		let pathsFrequency = {};
+		for (let act in freqDfg.activities) {
+			if (act != activity) {
+				activities[act] = freqDfg.activities[act];
+			}
+		}
+		for (let act in freqDfg.startActivities) {
+			if (act != activity) {
+				startActivities[act] = freqDfg.startActivities[act];
+			}
+		}
+		for (let act in freqDfg.endActivities) {
+			if (act != activity) {
+				endActivities[act] = freqDfg.endActivities[act];
+			}
+		}
+		for (let path0 in freqDfg.pathsFrequency) {
+			let path = path0.split(",");
+			if (path[0] != activity && path[1] != activity) {
+				pathsFrequency[path0] = freqDfg.pathsFrequency[path0];
+			}
+		}
+		return new FrequencyDfg(activities, startActivities, endActivities, pathsFrequency);
+	}
+	
+	static detect(freqDfg, threshold) {
+		for (let act in freqDfg.activities) {
+			let subdfg = InductiveMinerActivityConcurrentFallthroughDFG.removeActFromDFG(freqDfg, act);
+			let detectedCut = InductiveMiner.detectCut(null, subdfg, null, null, threshold);
+			if (detectedCut != null) {
+				return [act, detectedCut];
+			}
+		}
+		return null;
+	}
+	
+	static projectDfg(frequencyDfg, act) {
+		return InductiveMinerActivityConcurrentFallthroughDFG.removeActFromDFG(freqDfg, act);
 	}
 }
 
