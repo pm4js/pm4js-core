@@ -7,6 +7,10 @@ class InductiveMiner {
 		return InductiveMiner.apply(null, activityKey, threshold, frequencyDfg, removeNoise);
 	}
 	
+	static applyDfg(frequencyDfg, threshold=0.0, removeNoise=false) {
+		return InductiveMiner.apply(null, null, threshold, frequencyDfg, removeNoise);
+	}
+	
 	static apply(eventLog, activityKey="concept:name", threshold=0.0, freqDfg=null, removeNoise=false) {
 		let tree = InductiveMiner.inductiveMiner(eventLog, null, activityKey, removeNoise, threshold, freqDfg);
 		if (eventLog == null) {
@@ -224,6 +228,7 @@ class InductiveMiner {
 			xorWithSkipsNode2.children.push(skipNode2);
 			activityConcurrentCut[1].parentNode = xorWithSkipsNode2;
 			parNode.children.push(xorWithSkipsNode2);
+			parNode.properties["concurrentActivity"] = activityConcurrentCut[0];
 			return parNode;
 		}
 	}
@@ -247,6 +252,7 @@ class InductiveMiner {
 			parNode.children.push(InductiveMiner.inductiveMiner(filteredLog, parNode, activityKey, false, threshold));
 			activityConcurrentCut[1].parentNode = parNode;
 			parNode.children.push(activityConcurrentCut[1]);
+			parNode.properties["concurrentActivity"] = activityConcurrentCut[0];
 			return parNode;
 		}
 		let strictTauLoop = InductiveMinerStrictTauLoopFallthrough.detect(log, freqDfg, activityKey);

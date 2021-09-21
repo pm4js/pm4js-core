@@ -21,6 +21,7 @@ class ProcessTree {
 		this.label = label;
 		this.id = ProcessTree.uuidv4();
 		this.children = [];
+		this.properties = {};
 	}
 	
 	toString() {
