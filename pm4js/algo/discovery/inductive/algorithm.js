@@ -212,10 +212,18 @@ class InductiveMiner {
 		let activityConcurrentCut = InductiveMinerActivityConcurrentFallthroughDFG.detect(freqDfg, threshold);
 		if (activityConcurrentCut != null) {
 			let parNode = new ProcessTree(treeParent, ProcessTreeOperator.PARALLEL, null);
-			let actNode = new ProcessTree(parNode, null, activityConcurrentCut[0]);
-			activityConcurrentCut[1].parentNode = parNode;
-			parNode.children.push(actNode);
-			parNode.children.push(activityConcurrentCut[1]);
+			let xorWithSkipsNode = new ProcessTree(treeParent, ProcessTreeOperator.EXCLUSIVE, null);
+			parNode.children.push(xorWithSkipsNode);
+			let actNode = new ProcessTree(xorWithSkipsNode, null, activityConcurrentCut[0]);
+			let skipNode = new ProcessTree(xorWithSkipsNode, null, null);
+			xorWithSkipsNode.children.push(actNode);
+			xorWithSkipsNode.children.push(skipNode);
+			let xorWithSkipsNode2 = new ProcessTree(parNode, ProcessTreeOperator.EXCLUSIVE, null);
+			let skipNode2 = new ProcessTree(xorWithSkipsNode2, null, null);
+			xorWithSkipsNode2.children.push(activityConcurrentCut[1]);
+			xorWithSkipsNode2.children.push(skipNode2);
+			activityConcurrentCut[1].parentNode = xorWithSkipsNode2;
+			parNode.children.push(xorWithSkipsNode2);
 			return parNode;
 		}
 	}
