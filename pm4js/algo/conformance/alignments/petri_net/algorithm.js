@@ -10,20 +10,22 @@ class PetriNetAlignmentsResults {
 		this.totalBwc = 0;
 		this.averageTraceFitness = 0;
 		for (let alTrace of this.overallResult) {
-			for (let move of alTrace["alignment"].split(",")) {
-				if (!(move in this.movesUsage)) {
-					this.movesUsage[move] = 1;
+			if (alTrace != null) {
+				for (let move of alTrace["alignment"].split(",")) {
+					if (!(move in this.movesUsage)) {
+						this.movesUsage[move] = 1;
+					}
+					else {
+						this.movesUsage[move] += 1;
+					}
 				}
-				else {
-					this.movesUsage[move] += 1;
+				if (alTrace["cost"] < 1) {
+					this.fitTraces += 1;
 				}
+				this.totalBwc += alTrace["bwc"];
+				this.totalCost += alTrace["cost"];
+				this.averageTraceFitness += alTrace["fitness"];
 			}
-			if (alTrace["cost"] < 1) {
-				this.fitTraces += 1;
-			}
-			this.totalBwc += alTrace["bwc"];
-			this.totalCost += alTrace["cost"];
-			this.averageTraceFitness += alTrace["fitness"];
 		}
 		this.averageTraceFitness = this.averageTraceFitness / this.overallResult.length;
 		this.logFitness = 1.0 - (this.totalCost)/(this.totalBwc);
@@ -32,7 +34,7 @@ class PetriNetAlignmentsResults {
 }
 
 class PetriNetAlignments {
-	static apply(log, acceptingPetriNet, activityKey="concept:name", syncCosts=null, modelMoveCosts=null, logMoveCosts=null) {
+	static apply(log, acceptingPetriNet, activityKey="concept:name", maxExecutionTime=Number.MAX_VALUE, syncCosts=null, modelMoveCosts=null, logMoveCosts=null) {
 		let logActivities = GeneralLogStatistics.getAttributeValues(log, activityKey);
 		if (syncCosts == null) {
 			syncCosts = {};
@@ -104,7 +106,12 @@ class PetriNetAlignments {
 		let alignedTraces = {};
 		let res = [];
 		let count = 0;
-		let minPathInModelCost = Math.floor(PetriNetAlignments.applyTrace([], acceptingPetriNet.net, acceptingPetriNet.im, acceptingPetriNet.fm, syncCosts, modelMoveCosts, logMoveCosts, comparator)["cost"] / 10000);
+		let minPathInModelCost = 0;
+		try {
+			minPathInModelCost = Math.floor(PetriNetAlignments.applyTrace([], acceptingPetriNet.net, acceptingPetriNet.im, acceptingPetriNet.fm, syncCosts, modelMoveCosts, logMoveCosts, comparator, maxExecutionTime)["cost"] / 10000);
+		}
+		catch (err) {
+		}
 		for (let trace of log.traces) {
 			let bwc = trace.events.length + minPathInModelCost;
 			let listAct = [];
@@ -112,15 +119,17 @@ class PetriNetAlignments {
 				listAct.push(eve.attributes[activityKey].value);
 			}
 			if (!(listAct in alignedTraces)) {
-				let ali = PetriNetAlignments.applyTrace(listAct, acceptingPetriNet.net, acceptingPetriNet.im, acceptingPetriNet.fm, syncCosts, modelMoveCosts, logMoveCosts, comparator);
+				let ali = PetriNetAlignments.applyTrace(listAct, acceptingPetriNet.net, acceptingPetriNet.im, acceptingPetriNet.fm, syncCosts, modelMoveCosts, logMoveCosts, comparator, maxExecutionTime);
 				let fitness = 1.0;
-				let dividedCost = Math.floor(ali["cost"] / 10000);
-				if (bwc > 0) {
-					fitness = 1.0 - dividedCost / bwc;
+				if (ali != null) {
+					let dividedCost = Math.floor(ali["cost"] / 10000);
+					if (bwc > 0) {
+						fitness = 1.0 - dividedCost / bwc;
+					}
+					ali["cost"] = dividedCost;
+					ali["fitness"] = fitness;
+					ali["bwc"] = bwc;
 				}
-				ali["cost"] = dividedCost;
-				ali["fitness"] = fitness;
-				ali["bwc"] = bwc;
 				alignedTraces[listAct] = ali;
 			}
 			res.push(alignedTraces[listAct]);
@@ -144,11 +153,12 @@ class PetriNetAlignments {
 		closedSet[tup[3]] = tup[1];
 	}
 	
-	static applyTrace(listAct, net, im, fm, syncCosts, modelMoveCosts, logMoveCosts, comparator) {
+	static applyTrace(listAct, net, im, fm, syncCosts, modelMoveCosts, logMoveCosts, comparator, maxExecutionTime) {
 		let queue = new PriorityQueue(comparator);
 		queue.push([0, 0, 0, im, false, null, null]);
 		let count = 0;
 		let closedSet = {};
+		let startTime = (new Date()).getTime();
 		while (true) {
 			count++;
 			let tup = queue.pop();
@@ -162,6 +172,10 @@ class PetriNetAlignments {
 				continue;
 			}
 			else {
+				let thisTime = (new Date()).getTime();
+				if ((thisTime - startTime)/1000.0 > maxExecutionTime) {
+					return null;
+				}
 				PetriNetAlignments.closeTuple(closedSet, tup);
 				if (!(tup[3].equals(fm))) {
 					let enabledTransitions = tup[3].getEnabledTransitions();
