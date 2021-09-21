@@ -41,8 +41,6 @@ class UniformRandomVariable {
 				maxValue = v;
 			}
 		}
-		console.log(minValue);
-		console.log(maxValue);
 		return new UniformRandomVariable(minValue, maxValue);
 	}
 	
@@ -78,6 +76,10 @@ class UniformRandomVariable {
 	getValue() {
 		let val = UniformRandomVariable.gen();
 		return this.a + (this.b - this.a) * val;
+	}
+	
+	getQuantile(p) {
+		return this.a + p * (this.b - this.a);
 	}
 }
 
