@@ -1,12 +1,15 @@
 class RandomVariableFitter {
-	static apply(arrayValues, debug=true) {
+	static apply(arrayValues, debug=false) {
 		let rv = null;
 		let likelihood = -Number.MAX_VALUE;
+		if (debug) {
+			console.log("----- debug -----");
+		}
 		try {
 			let un = UniformRandomVariable.estimateParameters(arrayValues);
 			let unLikelihood = un.logLikelihood(arrayValues);
 			if (debug) {
-				console.log("unLikelihood = "+unLikelihood);
+				console.log(un.toString() + " unLikelihood = "+unLikelihood);
 			}
 			if (unLikelihood > likelihood) {
 				rv = un;
@@ -14,13 +17,12 @@ class RandomVariableFitter {
 			}
 		}
 		catch (err) {
-			console.log(err);
 		}
 		try {
 			let nv = NormalRandomVariable.estimateParameters(arrayValues);
 			let nvLikelihood = nv.logLikelihood(arrayValues);
 			if (debug) {
-				console.log("nvLikelihood = "+nvLikelihood);
+				console.log(nv.toString() + " nvLikelihood = "+nvLikelihood);
 			}
 			if (nvLikelihood > likelihood) {
 				rv = nv;
@@ -28,13 +30,12 @@ class RandomVariableFitter {
 			}
 		}
 		catch (err) {
-			console.log(err);
 		}
 		try {
 			let lnv = LogNormalRandomVariable.estimateParameters(arrayValues);
 			let lnvLikelihood = lnv.logLikelihood(arrayValues);
 			if (debug) {
-				console.log("lnvLikelihood = "+lnvLikelihood);
+				console.log(lnv.toString() + " lnvLikelihood = "+lnvLikelihood);
 			}
 			if (lnvLikelihood > likelihood) {
 				rv = lnv;
@@ -42,13 +43,12 @@ class RandomVariableFitter {
 			}
 		}
 		catch (err) {
-			console.log(err);
 		}
 		try {
 			let ev = ExponentialRandomVariable.estimateParameters(arrayValues);
 			let evLikelihood = ev.logLikelihood(arrayValues);
 			if (debug) {
-				console.log("evLikelihood = "+evLikelihood);
+				console.log(ev.toString() + "evLikelihood = "+evLikelihood);
 			}
 			if (evLikelihood > likelihood) {
 				rv = ev;
@@ -56,13 +56,12 @@ class RandomVariableFitter {
 			}
 		}
 		catch (err) {
-			console.log(err);
 		}
 		try {
 			let gv = GammaRandomVariable.estimateParameters(arrayValues);
 			let gvLikelihood = gv.logLikelihood(arrayValues);
 			if (debug) {
-				console.log("gvLikelihood = "+gvLikelihood);
+				console.log(gv.toString() + " gvLikelihood = "+gvLikelihood);
 			}
 			if (gvLikelihood > likelihood) {
 				rv = gv;
@@ -70,13 +69,12 @@ class RandomVariableFitter {
 			}
 		}
 		catch (err) {
-			console.log(err);
 		}
 		try {
 			let emn = ExponentiallyModifiedGaussian.estimateParameters(arrayValues);
 			let emnLikelihood = emn.logLikelihood(arrayValues);
 			if (debug) {
-				console.log("emnLikelihood = "+emnLikelihood);
+				console.log(emn.toString() + " emnLikelihood = "+emnLikelihood);
 			}
 			if (emnLikelihood > likelihood) {
 				rv = emn;
@@ -84,7 +82,9 @@ class RandomVariableFitter {
 			}
 		}
 		catch (err) {
-			console.log(err);
+		}
+		if (debug) {
+			console.log("----- /debug -----");
 		}
 		return rv;
 	}
