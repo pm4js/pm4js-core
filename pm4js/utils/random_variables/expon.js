@@ -3,6 +3,10 @@ class ExponentialRandomVariable {
 		this.lam = lam;
 	}
 	
+	toString() {
+		return "ExponentialRandomVariable lam="+this.lam;
+	}
+	
 	static gen() {
 		ExponentialRandomVariable.C = (ExponentialRandomVariable.C*ExponentialRandomVariable.G) % ExponentialRandomVariable.P;
 		return ExponentialRandomVariable.C / ExponentialRandomVariable.P;
