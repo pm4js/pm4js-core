@@ -80,6 +80,9 @@ class PerformanceDfgDiscovery {
 			else if (aggregationMeasure == "sum") {
 				paths[path] = PerformanceDfgDiscovery.calculateSum(paths[path]);
 			}
+			else if (aggregationMeasure == "raw_values") {
+				// returns the raw values
+			}
 			else {
 				paths[path] = PerformanceDfgDiscovery.calculateMean(paths[path]);
 			}
