@@ -60,3 +60,4 @@ require('./pm4js/utils/random_variables/gamma.js');
 require('./pm4js/utils/random_variables/exp_mod_gaussian.js');
 require('./pm4js/utils/random_variables/uniform.js');
 require('./pm4js/utils/random_variables/fitter.js');
+require('./pm4js/algo/simulation/playout/dfg/performance.js');
