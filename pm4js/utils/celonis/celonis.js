@@ -3,8 +3,12 @@ class CelonisMapper {
 		this.baseUrl = baseUrl;
 		this.apiKey = apiKey;
 		this.dataPools = null;
+		this.dataModels = null;
+		this.dataPoolsDataModels = null;
+		this.dataModelsForeignKeys = null;
 		this.getDataPools();
-		console.log(this.dataPools);
+		this.getDataModels();
+		this.getDataModelsForeignKeys();
 	}
 	
 	getDataPools() {
@@ -13,6 +17,32 @@ class CelonisMapper {
 		let resp = this.performGet(this.baseUrl+"/integration/api/pools");
 		for (let obj of resp) {
 			this.dataPools[obj["id"]] = obj;
+		}
+	}
+	
+	getDataModels() {
+		this.dataModels = null;
+		this.dataPoolsDataModels = null;
+		this.dataModels = {};
+		this.dataPoolsDataModels = {};
+		for (let objId in this.dataPools) {
+			this.dataPoolsDataModels[objId] = {};
+			let resp = this.performGet(this.baseUrl+"/integration/api/pools/"+objId+"/data-models");
+			for (let model of resp) {
+				this.dataPoolsDataModels[objId][model["id"]] = model;
+				this.dataModels[model["id"]] = model;
+			}
+		}
+	}
+	
+	getDataModelsForeignKeys() {
+		this.dataModelsForeignKeys = null;
+		this.dataModelsForeignKeys = {};
+		for (let objId in this.dataPoolsDataModels) {
+			this.dataModelsForeignKeys[objId] = {};
+			for (let modelId in this.dataPoolsDataModels[objId]) {
+				this.dataModelsForeignKeys[objId][modelId] = this.performGet(this.baseUrl+"/integration/api/pools/"+objId+"/data-models/"+modelId+"/foreign-keys");
+			}
 		}
 	}
 	
