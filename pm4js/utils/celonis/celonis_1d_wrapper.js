@@ -127,7 +127,7 @@ class Celonis1DWrapper {
 		return pathsFrequency;
 	}
 	
-	downloadDfg(analysisId, processConfigurationId=null) {
+	downloadFrequencyDfg(analysisId, processConfigurationId=null) {
 		let activities = this.downloadActivities(analysisId, processConfigurationId);
 		let startActivities = this.downloadStartActivities(analysisId, processConfigurationId);
 		let endActivities = this.downloadEndActivities(analysisId, processConfigurationId);

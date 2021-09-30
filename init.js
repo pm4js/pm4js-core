@@ -63,3 +63,4 @@ require('./pm4js/utils/random_variables/fitter.js');
 require('./pm4js/algo/simulation/playout/dfg/performance.js');
 require('./pm4js/utils/celonis/celonis.js');
 require('./pm4js/utils/celonis/celonis_1d_wrapper.js');
+require('./pm4js/utils/celonis/celonis_nd_wrapper.js');
