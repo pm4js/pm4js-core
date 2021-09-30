@@ -4,7 +4,19 @@ class Celonis1DWrapper {
 	}
 	
 	getProcessConfiguration(dataModel, processConfigurationId=null) {
-		return dataModel.processConfigurations[0];
+		if (processConfigurationId == null) {
+			let ret = dataModel.processConfigurations[0];
+			return ret;
+		}
+		else {
+			let i = 0;
+			while (i < dataModel.processConfigurations.length) {
+				if (dataModel.processConfigurations[i].id == processConfigurationId) {
+					return dataModel.processConfigurations[i];
+				}
+				i++;
+			}
+		}
 	}
 	
 	downloadBaseEventLog(analysisId, processConfigurationId=null) {
