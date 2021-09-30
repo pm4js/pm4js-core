@@ -1,0 +1,23 @@
+<html>
+	<head>
+		<script type="text/javascript" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+		<script src="http://viz-js.com/bower_components/viz.js/viz.js"></script>
+		<script type="text/javascript" src="../../dist/pm4js_latest.js"></script>
+	</head>
+	<body>
+		<div id="container">
+		</div>
+		<script type="text/javascript">
+			let CELONIS_URL = "CELONIS_URL_ID";
+			let CELONIS_API = "CELONIS_API_ID";
+			let celonisMapper = new CelonisMapper(CELONIS_URL, CELONIS_API);
+			console.log(celonisMapper.analysisNames);
+			let CELONIS_ANALYSIS = "CELONIS_ANALYSIS_ID";
+			let celonisNDwrapper = new CelonisNDWrapper(celonisMapper);
+			let mvpModel = celonisNDwrapper.getMVPmodel(CELONIS_ANALYSIS);
+			let gv = CelonisNDWrapper.visualizationMVP(mvpModel);
+			let svgXml = Viz(gv, { format: "svg"});
+			document.getElementById("container").innerHTML = svgXml;
+		</script>
+	</body>
+</html>
