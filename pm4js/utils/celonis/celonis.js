@@ -114,11 +114,45 @@ class CelonisMapper {
 			}
 			return ret;
 		}
+		else {
+			let ret = null;
+			let ajaxDict = {
+				url: CelonisMapper.PROXY_URL_GET,
+				data: {"access_token": this.apiKey, "url": url},
+				async: false,
+				success: function(data) {
+					ret = data;
+				}
+			}
+			$.ajax(ajaxDict);
+			if (isRequestJson) {
+				ret = JSON.parse(ret);
+			}
+			return ret;
+		}
 	}
 	
 	performPostJson(url, jsonContent) {
 		if (CelonisMapper.IS_NODE) {
 			return retus(url, {method: "post", headers: {"authorization": "Bearer "+this.apiKey}, json: jsonContent}).body;
+		}
+		else {
+			let ret = null;
+			jsonContent["access_token"] = this.apiKey;
+			jsonContent["url"] = url;
+			let ajaxDict = {
+				url: CelonisMapper.PROXY_URL_POST,
+				dataType: 'json',
+				type: 'post',
+				contentType: 'application/json',
+				data: JSON.stringify(jsonContent),
+				async: false,
+				success: function(data) {
+					ret = data;
+				}
+			}
+			$.ajax(ajaxDict);
+			return ret;
 		}
 	}
 }
@@ -134,4 +168,6 @@ catch (err) {
 	// not in Node
 	console.log(err);
 	CelonisMapper.IS_NODE = false;
+	CelonisMapper.PROXY_URL_GET = "http://localhost:5004/getWrapper";
+	CelonisMapper.PROXY_URL_POST = "http://localhost:5004/postWrapper";
 }
