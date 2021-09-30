@@ -141,14 +141,14 @@ class Celonis1DWrapper {
 		return variants;
 	}
 	
-	downloadPathsPerformance(analysisId, processConfigurationId=null) {
+	downloadPathsPerformance(analysisId, processConfigurationId=null, relationship="ANY_OCCURRENCE [ ] TO ANY_OCCURRENCE [ ]") {
 		let dataModel = this.celonisMapper.dataModels[this.celonisMapper.analysisDataModel[analysisId]];
 		let dataModelTables = this.celonisMapper.dataModelsTables[dataModel["id"]];
 		let processConfiguration = this.getProcessConfiguration(dataModel, processConfigurationId);
 		let activityTable = dataModelTables[processConfiguration["activityTableId"]];
 		let query = [];
 		query.push("TABLE(");
-		query.push("SOURCE ( \""+activityTable+"\".\""+processConfiguration.activityColumn+"\" ), ");
+		query.push("SOURCE ( \""+activityTable+"\".\""+processConfiguration.activityColumn+"\", "+relationship+" ), ");
 		query.push("TARGET ( \""+activityTable+"\".\""+processConfiguration.activityColumn+"\" ), ");
 		query.push("AVG ( SECONDS_BETWEEN ( SOURCE ( \""+activityTable+"\".\""+processConfiguration.timestampColumn+"\" ) , TARGET ( \""+activityTable+"\".\""+processConfiguration.timestampColumn+"\" ) ) )");
 		query.push(") NOLIMIT;");
