@@ -59,7 +59,7 @@ class Pm4JS {
 	}
 }
 
-Pm4JS.VERSION = "0.0.10";
+Pm4JS.VERSION = "0.0.11";
 Pm4JS.registrationEnabled = false;
 Pm4JS.objects = [];
 Pm4JS.algorithms = [];
@@ -8830,6 +8830,7 @@ class ProcessTree {
 		this.label = label;
 		this.id = ProcessTree.uuidv4();
 		this.children = [];
+		this.properties = {};
 	}
 	
 	toString() {
@@ -10374,6 +10375,9 @@ class PerformanceDfgDiscovery {
 			else if (aggregationMeasure == "sum") {
 				paths[path] = PerformanceDfgDiscovery.calculateSum(paths[path]);
 			}
+			else if (aggregationMeasure == "raw_values") {
+				// returns the raw values
+			}
 			else {
 				paths[path] = PerformanceDfgDiscovery.calculateMean(paths[path]);
 			}
@@ -10459,6 +10463,10 @@ class InductiveMiner {
 		return InductiveMiner.apply(null, activityKey, threshold, frequencyDfg, removeNoise);
 	}
 	
+	static applyDfg(frequencyDfg, threshold=0.0, removeNoise=false) {
+		return InductiveMiner.apply(null, null, threshold, frequencyDfg, removeNoise);
+	}
+	
 	static apply(eventLog, activityKey="concept:name", threshold=0.0, freqDfg=null, removeNoise=false) {
 		let tree = InductiveMiner.inductiveMiner(eventLog, null, activityKey, removeNoise, threshold, freqDfg);
 		if (eventLog == null) {
@@ -10523,12 +10531,16 @@ class InductiveMiner {
 		if (detectedCut != null) {
 			return detectedCut;
 		}
-		if (log != null) {
-			if (!(removeNoise)) {
-				let detectedFallthrough = InductiveMiner.detectFallthroughs(log, freqDfg, treeParent, activityKey, threshold);
-				if (detectedFallthrough != null) {
-					return detectedFallthrough;
-				}
+		if (!(removeNoise)) {
+			let detectedFallthrough = null;
+			if (log != null) {
+				detectedFallthrough = InductiveMiner.detectFallthroughs(log, freqDfg, treeParent, activityKey, threshold);
+			}
+			else {
+				detectedFallthrough = InductiveMiner.detectFallthroughsDfg(freqDfg, treeParent, threshold);
+			}
+			if (detectedFallthrough != null) {
+				return detectedFallthrough;
 			}
 		}
 		if (!(removeNoise) && threshold > 0) {
@@ -10656,6 +10668,27 @@ class InductiveMiner {
 		return null;
 	}
 	
+	static detectFallthroughsDfg(freqDfg, treeParent, threshold) {
+		let activityConcurrentCut = InductiveMinerActivityConcurrentFallthroughDFG.detect(freqDfg, threshold);
+		if (activityConcurrentCut != null) {
+			let parNode = new ProcessTree(treeParent, ProcessTreeOperator.PARALLEL, null);
+			let xorWithSkipsNode = new ProcessTree(treeParent, ProcessTreeOperator.EXCLUSIVE, null);
+			parNode.children.push(xorWithSkipsNode);
+			let actNode = new ProcessTree(xorWithSkipsNode, null, activityConcurrentCut[0]);
+			let skipNode = new ProcessTree(xorWithSkipsNode, null, null);
+			xorWithSkipsNode.children.push(actNode);
+			xorWithSkipsNode.children.push(skipNode);
+			let xorWithSkipsNode2 = new ProcessTree(parNode, ProcessTreeOperator.EXCLUSIVE, null);
+			let skipNode2 = new ProcessTree(xorWithSkipsNode2, null, null);
+			xorWithSkipsNode2.children.push(activityConcurrentCut[1]);
+			xorWithSkipsNode2.children.push(skipNode2);
+			activityConcurrentCut[1].parentNode = xorWithSkipsNode2;
+			parNode.children.push(xorWithSkipsNode2);
+			parNode.properties["concurrentActivity"] = activityConcurrentCut[0];
+			return parNode;
+		}
+	}
+	
 	static detectFallthroughs(log, freqDfg, treeParent, activityKey, threshold) {
 		let activityOncePerTraceCandidate = InductiveMinerActivityOncePerTraceFallthrough.detect(log, freqDfg, activityKey);
 		if (activityOncePerTraceCandidate != null) {
@@ -10675,6 +10708,7 @@ class InductiveMiner {
 			parNode.children.push(InductiveMiner.inductiveMiner(filteredLog, parNode, activityKey, false, threshold));
 			activityConcurrentCut[1].parentNode = parNode;
 			parNode.children.push(activityConcurrentCut[1]);
+			parNode.properties["concurrentActivity"] = activityConcurrentCut[0];
 			return parNode;
 		}
 		let strictTauLoop = InductiveMinerStrictTauLoopFallthrough.detect(log, freqDfg, activityKey);
@@ -11459,6 +11493,52 @@ class InductiveMinerActivityConcurrentFallthrough {
 	
 	static project(log, act, activityKey) {
 		return LogGeneralFiltering.filterEventsHavingEventAttributeValues(log, [act], true, false, activityKey);
+	}
+}
+
+class InductiveMinerActivityConcurrentFallthroughDFG {
+	static removeActFromDFG(freqDfg, activity) {
+		let activities = {};
+		let startActivities = {};
+		let endActivities = {};
+		let pathsFrequency = {};
+		for (let act in freqDfg.activities) {
+			if (act != activity) {
+				activities[act] = freqDfg.activities[act];
+			}
+		}
+		for (let act in freqDfg.startActivities) {
+			if (act != activity) {
+				startActivities[act] = freqDfg.startActivities[act];
+			}
+		}
+		for (let act in freqDfg.endActivities) {
+			if (act != activity) {
+				endActivities[act] = freqDfg.endActivities[act];
+			}
+		}
+		for (let path0 in freqDfg.pathsFrequency) {
+			let path = path0.split(",");
+			if (path[0] != activity && path[1] != activity) {
+				pathsFrequency[path0] = freqDfg.pathsFrequency[path0];
+			}
+		}
+		return new FrequencyDfg(activities, startActivities, endActivities, pathsFrequency);
+	}
+	
+	static detect(freqDfg, threshold) {
+		for (let act in freqDfg.activities) {
+			let subdfg = InductiveMinerActivityConcurrentFallthroughDFG.removeActFromDFG(freqDfg, act);
+			let detectedCut = InductiveMiner.detectCut(null, subdfg, null, null, threshold);
+			if (detectedCut != null) {
+				return [act, detectedCut];
+			}
+		}
+		return null;
+	}
+	
+	static projectDfg(frequencyDfg, act) {
+		return InductiveMinerActivityConcurrentFallthroughDFG.removeActFromDFG(freqDfg, act);
 	}
 }
 
@@ -12568,20 +12648,22 @@ class PetriNetAlignmentsResults {
 		this.totalBwc = 0;
 		this.averageTraceFitness = 0;
 		for (let alTrace of this.overallResult) {
-			for (let move of alTrace["alignment"].split(",")) {
-				if (!(move in this.movesUsage)) {
-					this.movesUsage[move] = 1;
+			if (alTrace != null) {
+				for (let move of alTrace["alignment"].split(",")) {
+					if (!(move in this.movesUsage)) {
+						this.movesUsage[move] = 1;
+					}
+					else {
+						this.movesUsage[move] += 1;
+					}
 				}
-				else {
-					this.movesUsage[move] += 1;
+				if (alTrace["cost"] < 1) {
+					this.fitTraces += 1;
 				}
+				this.totalBwc += alTrace["bwc"];
+				this.totalCost += alTrace["cost"];
+				this.averageTraceFitness += alTrace["fitness"];
 			}
-			if (alTrace["cost"] < 1) {
-				this.fitTraces += 1;
-			}
-			this.totalBwc += alTrace["bwc"];
-			this.totalCost += alTrace["cost"];
-			this.averageTraceFitness += alTrace["fitness"];
 		}
 		this.averageTraceFitness = this.averageTraceFitness / this.overallResult.length;
 		this.logFitness = 1.0 - (this.totalCost)/(this.totalBwc);
@@ -12590,7 +12672,7 @@ class PetriNetAlignmentsResults {
 }
 
 class PetriNetAlignments {
-	static apply(log, acceptingPetriNet, activityKey="concept:name", syncCosts=null, modelMoveCosts=null, logMoveCosts=null) {
+	static apply(log, acceptingPetriNet, activityKey="concept:name", maxExecutionTime=Number.MAX_VALUE, syncCosts=null, modelMoveCosts=null, logMoveCosts=null) {
 		let logActivities = GeneralLogStatistics.getAttributeValues(log, activityKey);
 		if (syncCosts == null) {
 			syncCosts = {};
@@ -12662,7 +12744,12 @@ class PetriNetAlignments {
 		let alignedTraces = {};
 		let res = [];
 		let count = 0;
-		let minPathInModelCost = Math.floor(PetriNetAlignments.applyTrace([], acceptingPetriNet.net, acceptingPetriNet.im, acceptingPetriNet.fm, syncCosts, modelMoveCosts, logMoveCosts, comparator)["cost"] / 10000);
+		let minPathInModelCost = 0;
+		try {
+			minPathInModelCost = Math.floor(PetriNetAlignments.applyTrace([], acceptingPetriNet.net, acceptingPetriNet.im, acceptingPetriNet.fm, syncCosts, modelMoveCosts, logMoveCosts, comparator, maxExecutionTime)["cost"] / 10000);
+		}
+		catch (err) {
+		}
 		for (let trace of log.traces) {
 			let bwc = trace.events.length + minPathInModelCost;
 			let listAct = [];
@@ -12670,15 +12757,17 @@ class PetriNetAlignments {
 				listAct.push(eve.attributes[activityKey].value);
 			}
 			if (!(listAct in alignedTraces)) {
-				let ali = PetriNetAlignments.applyTrace(listAct, acceptingPetriNet.net, acceptingPetriNet.im, acceptingPetriNet.fm, syncCosts, modelMoveCosts, logMoveCosts, comparator);
+				let ali = PetriNetAlignments.applyTrace(listAct, acceptingPetriNet.net, acceptingPetriNet.im, acceptingPetriNet.fm, syncCosts, modelMoveCosts, logMoveCosts, comparator, maxExecutionTime);
 				let fitness = 1.0;
-				let dividedCost = Math.floor(ali["cost"] / 10000);
-				if (bwc > 0) {
-					fitness = 1.0 - dividedCost / bwc;
+				if (ali != null) {
+					let dividedCost = Math.floor(ali["cost"] / 10000);
+					if (bwc > 0) {
+						fitness = 1.0 - dividedCost / bwc;
+					}
+					ali["cost"] = dividedCost;
+					ali["fitness"] = fitness;
+					ali["bwc"] = bwc;
 				}
-				ali["cost"] = dividedCost;
-				ali["fitness"] = fitness;
-				ali["bwc"] = bwc;
 				alignedTraces[listAct] = ali;
 			}
 			res.push(alignedTraces[listAct]);
@@ -12702,11 +12791,12 @@ class PetriNetAlignments {
 		closedSet[tup[3]] = tup[1];
 	}
 	
-	static applyTrace(listAct, net, im, fm, syncCosts, modelMoveCosts, logMoveCosts, comparator) {
+	static applyTrace(listAct, net, im, fm, syncCosts, modelMoveCosts, logMoveCosts, comparator, maxExecutionTime) {
 		let queue = new PriorityQueue(comparator);
 		queue.push([0, 0, 0, im, false, null, null]);
 		let count = 0;
 		let closedSet = {};
+		let startTime = (new Date()).getTime();
 		while (true) {
 			count++;
 			let tup = queue.pop();
@@ -12720,6 +12810,10 @@ class PetriNetAlignments {
 				continue;
 			}
 			else {
+				let thisTime = (new Date()).getTime();
+				if ((thisTime - startTime)/1000.0 > maxExecutionTime) {
+					return null;
+				}
 				PetriNetAlignments.closeTuple(closedSet, tup);
 				if (!(tup[3].equals(fm))) {
 					let enabledTransitions = tup[3].getEnabledTransitions();
@@ -13023,7 +13117,7 @@ Pm4JS.registerAlgorithm("DfgAlignments", "apply", ["EventLog", "PerformanceDfg"]
 
 
 class DfgPlayout {
-	static apply(freqDfg, numDesideredTraces=1000, activityKey="concept:name") {
+	static apply(freqDfg, numDesideredTraces=1000, activityKey="concept:name", timestampKey="time:timestamp") {
 		let vect = freqDfg.getArtificialDfg();
 		let outgoing = {};
 		for (let act in vect[0]) {
@@ -13040,6 +13134,7 @@ class DfgPlayout {
 		let start = [["▶"], 0];
 		queue.push(start);
 		let count = 0;
+		let minTimestamp = 10000000;
 		let eventLog = new EventLog();
 		while (true) {
 			if (count >= numDesideredTraces) {
@@ -13059,6 +13154,7 @@ class DfgPlayout {
 					let newEve = new Event();
 					trace.events.push(newEve);
 					newEve.attributes[activityKey] = new Attribute(activities[i]);
+					newEve.attributes[timestampKey] = new Attribute(new Date((minTimestamp + count)*1000));
 					i++;
 				}
 				count++;
@@ -14351,5 +14447,1299 @@ catch (err) {
 }
 
 Pm4JS.registerImporter("FrequencyDfgImporter", "apply", ["dfg"], "Frequency DFG Importer", "Alessandro Berti");
+
+
+class PetriNetPlayout {
+	static apply(acceptingPetriNet, numDesideredTraces=1000, activityKey="concept:name", timestampKey="time:timestamp") {
+		let petriNet = acceptingPetriNet.net;
+		let initialMarking = acceptingPetriNet.im;
+		let finalMarking = acceptingPetriNet.fm;
+		let count = 0;
+		let minTimestamp = 10000000;
+		let eventLog = new EventLog();
+		while (true) {
+			if (count >= numDesideredTraces) {
+				break;
+			}
+			let trace = new Trace();
+			let marking = initialMarking.copy();
+			while (!(finalMarking.equals(marking))) {
+				let enabledTransitions = marking.getEnabledTransitions();
+				let pickedTransition = enabledTransitions[Math.floor(Math.random() * enabledTransitions.length)];
+				if (pickedTransition.label != null) {
+					let eve = new Event();
+					eve.attributes[activityKey] = new Attribute(pickedTransition.label);
+					eve.attributes[timestampKey] = new Attribute(new Date(minTimestamp*1000));
+					trace.events.push(eve);
+				}
+				marking = marking.execute(pickedTransition);
+				minTimestamp++;
+			}
+			eventLog.traces.push(trace);
+			count++;
+		}
+		Pm4JS.registerObject(eventLog, "Simulated Event log (from Petri net)");
+		return eventLog;
+	}
+}
+
+try {
+	require('../../../../pm4js.js');
+	global.PetriNetPlayout = PetriNetPlayout;
+	module.exports = {PetriNetPlayout: PetriNetPlayout};
+}
+catch (err) {
+	// not in Node
+	//console.log(err);
+}
+
+Pm4JS.registerAlgorithm("PetriNetPlayout", "apply", ["AcceptingPetriNet"], "EventLog", "Perform Playout on a Petri net", "Alessandro Berti");
+
+
+class ExponentialRandomVariable {
+	constructor(lam) {
+		this.lam = lam;
+	}
+	
+	toString() {
+		return "ExponentialRandomVariable lam="+this.lam;
+	}
+	
+	static gen() {
+		ExponentialRandomVariable.C = (ExponentialRandomVariable.C*ExponentialRandomVariable.G) % ExponentialRandomVariable.P;
+		return ExponentialRandomVariable.C / ExponentialRandomVariable.P;
+	}
+	
+	pdf(x) {
+		if (x < 0) {
+			throw "Exponential not defined for x < 0";
+		}
+		return this.lam * Math.exp(-this.lam * x);
+	}
+	
+	cdf(x) {
+		if (x < 0) {
+			throw "Exponential not defined for x < 0";
+		}
+		return 1 - Math.exp(-this.lam * x);
+	}
+	
+	getValue() {
+		return (-1.0 / this.lam) * Math.log(1.0 - ExponentialRandomVariable.gen());
+	}
+	
+	logLikelihood(arrayValues) {
+		let ret = 0.0;
+		for (let v of arrayValues) {
+			ret += Math.log(this.pdf(v));
+		}
+		return ret;
+	}
+	
+	static estimateParameters(arrayValues) {
+		let sum = 0.0;
+		for (let v of arrayValues) {
+			if (v < 0) {
+				throw "Exponential not defined for x < 0";
+			}
+			sum += v;
+		}
+		return new ExponentialRandomVariable(1.0 / (sum / arrayValues.length));
+	}
+	
+	getMean() {
+		return 1.0 / this.lam;
+	}
+	
+	getVariance() {
+		return 1.0 / (this.lam * this.lam);
+	}
+	
+	getMedian() {
+		return Math.log(2) / this.lam;
+	}
+	
+	getMode() {
+		return 0;
+	}
+	
+	getQuantile(p) {
+		return - Math.log(1 - p) / this.lam;
+	}
+}
+
+ExponentialRandomVariable.G = 536870911;
+ExponentialRandomVariable.P = 2147483647;
+ExponentialRandomVariable.C = 1;
+
+
+try {
+	require('../../pm4js.js');
+	global.ExponentialRandomVariable = ExponentialRandomVariable;
+	module.exports = {ExponentialRandomVariable: ExponentialRandomVariable};
+}
+catch (err) {
+	// not in Node
+	//console.log(err);
+}
+
+
+class NormalRandomVariable {
+	constructor(mu, sig) {
+		this.mu = mu;
+		this.sig = sig;
+	}
+	
+	toString() {
+		return "NormalRandomVariable mu="+this.mu+" sig="+this.sig;
+	}
+	
+	static gen() {
+		NormalRandomVariable.C = (NormalRandomVariable.C*NormalRandomVariable.G) % NormalRandomVariable.P;
+		return NormalRandomVariable.C / NormalRandomVariable.P;
+	}
+	
+	static erf(x) {
+		let v = 1;
+		v = v + 0.278393*x;
+		let y = x * x;
+		v = v + 0.230389*y;
+		y = y * x;
+		v = v + 0.000972*y;
+		y = y * x;
+		v = v + 0.078108*y;
+		v = v * v;
+		v = v * v;
+		v = 1.0 / v;
+		v = 1.0 - v;
+		return v;
+	}
+	
+	static erfinv(x) {
+		let sgn = 1;
+		if (x < 0) {
+			sgn = -1;
+			x = -x;
+		}
+		x = (1 - x)*(1 + x);
+		let lnx = Math.log(x);
+		let tt1 = 2/(Math.PI * 0.147) + 0.5 * lnx;
+		let tt2 = 1/0.147 * lnx;
+		return sgn * Math.sqrt(-tt1 + Math.sqrt(tt1 * tt1 - tt2));
+	}
+	
+	pdf(x) {
+		return 1.0/(this.sig*Math.sqrt(2*Math.PI)) * Math.exp(-0.5*((x-this.mu)/this.sig)*((x-this.mu)/this.sig));
+	}
+	
+	cdf(x) {
+		return 0.5*(1.0 + NormalRandomVariable.erf((x - this.mu)/(this.sig * Math.sqrt(2))));
+	}
+	
+	getValue() {
+		let v1 = NormalRandomVariable.gen();
+		let v2 = NormalRandomVariable.gen();
+		return this.mu + this.sig * Math.cos(2*Math.PI*v2) * Math.sqrt(-2.0 * Math.log(v1));
+	}
+	
+	logLikelihood(arrayValues) {
+		let ret = 0.0;
+		for (let v of arrayValues) {
+			ret += Math.log(this.pdf(v));
+		}
+		return ret;
+	}
+	
+	static estimateParameters(arrayValues) {
+		let sum = 0.0;
+		for (let v of arrayValues) {
+			sum += v;
+		}
+		let avg = sum / arrayValues.length;
+		sum = 0.0;
+		for (let v of arrayValues) {
+			sum += (v - avg) * (v-avg);
+		}
+		let std = Math.sqrt(sum / arrayValues.length);
+		return new NormalRandomVariable(avg, std);
+	}
+	
+	getMean() {
+		return this.mu;
+	}
+	
+	getVariance() {
+		return this.sig * this.sig;
+	}
+	
+	getMedian() {
+		return this.mu;
+	}
+	
+	getMode() {
+		return this.mu;
+	}
+	
+	getQuantile(p) {
+		return this.mu + this.sig * Math.sqrt(2) * NormalRandomVariable.erfinv(2*p - 1);
+	}
+}
+
+NormalRandomVariable.G = 536870911;
+NormalRandomVariable.P = 2147483647;
+NormalRandomVariable.C = 1;
+
+
+try {
+	require('../../pm4js.js');
+	global.NormalRandomVariable = NormalRandomVariable;
+	module.exports = {NormalRandomVariable: NormalRandomVariable};
+}
+catch (err) {
+	// not in Node
+	//console.log(err);
+}
+
+
+class LogNormalRandomVariable {
+	constructor(mu, sig) {
+		this.mu = mu;
+		this.sig = sig;
+	}
+	
+	toString() {
+		return "LogNormalRandomVariable mu="+this.mu+" sig="+this.sig;
+	}
+	
+	static gen() {
+		LogNormalRandomVariable.C = (LogNormalRandomVariable.C*LogNormalRandomVariable.G) % LogNormalRandomVariable.P;
+		return LogNormalRandomVariable.C / LogNormalRandomVariable.P;
+	}
+	
+	static erf(x) {
+		let v = 1;
+		v = v + 0.278393*x;
+		let y = x * x;
+		v = v + 0.230389*y;
+		y = y * x;
+		v = v + 0.000972*y;
+		y = y * x;
+		v = v + 0.078108*y;
+		v = v * v;
+		v = v * v;
+		v = 1.0 / v;
+		v = 1.0 - v;
+		return v;
+	}
+	
+	static erfinv(x) {
+		let sgn = 1;
+		if (x < 0) {
+			sgn = -1;
+			x = -x;
+		}
+		x = (1 - x)*(1 + x);
+		let lnx = Math.log(x);
+		let tt1 = 2/(Math.PI * 0.147) + 0.5 * lnx;
+		let tt2 = 1/0.147 * lnx;
+		return sgn * Math.sqrt(-tt1 + Math.sqrt(tt1 * tt1 - tt2));
+	}
+	
+	pdf(x) {
+		if (x < 0) {
+			throw "Lognormal not defined for x < 0";
+		}
+		return 1.0 / (x * this.sig * Math.sqrt(2 * Math.PI)) * Math.exp(-(Math.log(x) - this.mu)*(Math.log(x) - this.mu)/(2 * this.sig * this.sig));
+	}
+	
+	cdf(x) {
+		if (x < 0) {
+			throw "Lognormal not defined for x < 0";
+		}
+		return 0.5*(1.0 + LogNormalRandomVariable.erf((Math.log(x) - this.mu)/(this.sig * Math.sqrt(2))));
+	}
+	
+	getValue() {
+		let v1 = NormalRandomVariable.gen();
+		let v2 = NormalRandomVariable.gen();
+		return Math.exp(this.mu + this.sig * Math.cos(2*Math.PI*v2) * Math.sqrt(-2.0 * Math.log(v1)));
+	}
+	
+	logLikelihood(arrayValues) {
+		let ret = 0.0;
+		for (let v of arrayValues) {
+			ret += Math.log(this.pdf(v));
+		}
+		return ret;
+	}
+	
+	static estimateParameters(arrayValues) {
+		let sum = 0.0;
+		for (let v of arrayValues) {
+			if (v < 0) {
+				throw "Lognormal not defined for x < 0";
+			}
+			sum += v;
+		}
+		let avg = sum / arrayValues.length;
+		sum = 0.0;
+		for (let v of arrayValues) {
+			sum += (v - avg) * (v-avg);
+		}
+		let std = Math.sqrt(sum / arrayValues.length);
+		let mu = Math.log((avg * avg)/(Math.sqrt(avg*avg + std*std)));
+		let s = Math.sqrt(Math.log(1 + (std*std)/(avg*avg)))
+		return new LogNormalRandomVariable(mu, s);
+	}
+	
+	getMean() {
+		return Math.exp(this.mu + this.sig * this.sig / 2.0);
+	}
+	
+	getVariance() {
+		return (Math.exp(this.sig * this.sig) - 1) * Math.exp(2*this.mu + this.sig * this.sig);
+	}
+	
+	getMedian() {
+		return Math.exp(this.mu);
+	}
+	
+	getMode() {
+		return Math.exp(this.mu - this.sig * this.sig);
+	}
+	
+	getQuantile(p) {
+		return Math.exp(this.mu + Math.sqrt(2 * this.sig * this.sig) * LogNormalRandomVariable.erfinv(2 * p - 1));
+	}
+}
+
+LogNormalRandomVariable.G = 536870911;
+LogNormalRandomVariable.P = 2147483647;
+LogNormalRandomVariable.C = 1;
+
+
+try {
+	require('../../pm4js.js');
+	global.LogNormalRandomVariable = LogNormalRandomVariable;
+	module.exports = {LogNormalRandomVariable: LogNormalRandomVariable};
+}
+catch (err) {
+	// not in Node
+	//console.log(err);
+}
+
+
+class GammaRandomVariable {
+	constructor(k, theta) {
+		this.k = k;
+		this.theta = theta;
+	}
+	
+	toString() {
+		return "GammaRandomVariable k="+this.k+" theta="+this.theta;
+	}
+	
+	static gen() {
+		GammaRandomVariable.C = (GammaRandomVariable.C*GammaRandomVariable.G) % GammaRandomVariable.P;
+		return GammaRandomVariable.C / GammaRandomVariable.P;
+	}
+	
+	static estimateParameters(arrayValues) {
+		let n = arrayValues.length;
+		let kn = 0;
+		for (let v of arrayValues) {
+			if (v < 0) {
+				throw "Gamma not defined for x < 0";
+			}
+			kn += v;
+		}
+		kn = kn * n * (n-1);
+		let kd1 = 0;
+		let kd2 = 0;
+		let kd3 = 0;
+		for (let v of arrayValues) {
+			kd1 += v * Math.log(v);
+			kd2 += Math.log(v);
+			kd3 += v;
+		}
+		kd1 = kd1 * n;
+		let kd = (n+2)*(kd1 - kd2 * kd3);
+		let k = kn / kd;
+		let theta = kd / (n * n * (n-1));
+		return new GammaRandomVariable(k, theta);
+	}
+	
+	static eulerGamma(x) {
+		x = x - 1;
+		return Math.sqrt(Math.PI) * Math.pow(Math.abs(x) / Math.E, x) * Math.pow(8 * x * x *x + 4 *x *x + x + 1.0 / 3.0, 1.0 / 6.0);
+	}
+	
+	pdf(x) {
+		if (x < 0) {
+			throw "Gamma not defined for x < 0";
+		}
+		return (Math.pow(x, this.k - 1) * Math.exp(-x / this.theta)) / (Math.pow(this.theta, this.k) * GammaRandomVariable.eulerGamma(this.k));
+	}
+	
+	logLikelihood(arrayValues) {
+		let ret = 0.0;
+		for (let v of arrayValues) {
+			ret += Math.log(this.pdf(v));
+		}
+		return ret;
+	}
+	
+	getMean() {
+		return this.k * this.theta;
+	}
+	
+	getVariance() {
+		return this.k * this.theta * this.theta;
+	}
+	
+	getMode() {
+		if (this.k > 1) {
+			return (this.k - 1)*this.theta;
+		}
+		return 0;
+	}
+	
+	getValue() {
+		let k = 0 + this.k;
+		let exp = new ExponentialRandomVariable(1.0 / this.theta);
+		let ret = 0;
+		while (k > 1) {
+			ret += exp.getValue();
+			k = k - 1;
+		}
+		let umax = Math.pow((k / Math.E), k / 2.0);
+		let vmin = -2 / Math.E;
+		let vmax = 2*k / (Math.E * (Math.E - k));
+		while (true) {
+			let v1 = GammaRandomVariable.gen();
+			let v2 = GammaRandomVariable.gen();
+			let u = umax * v1;
+			let v = (vmax - vmin) * v2 + vmin;
+			let t = v / u;
+			let x = Math.exp(t / k);
+			if (2*Math.log(u) <= t - x) {
+				ret += x * this.theta;
+				break;
+			}
+		}
+		return ret;
+	}
+}
+
+GammaRandomVariable.G = 536870911;
+GammaRandomVariable.P = 2147483647;
+GammaRandomVariable.C = 1;
+
+try {
+	require('../../pm4js.js');
+	global.GammaRandomVariable = GammaRandomVariable;
+	module.exports = {GammaRandomVariable: GammaRandomVariable};
+}
+catch (err) {
+	// not in Node
+	//console.log(err);
+}
+
+
+class ExponentiallyModifiedGaussian {
+	constructor(mu, sig, lam) {
+		this.mu = mu;
+		this.sig = sig;
+		this.lam = lam;
+	}
+	
+	toString() {
+		return "ExponentiallyModifiedGaussian mu="+this.mu+" sig="+this.sig+" lam="+this.lam;
+	}
+	
+	static erf(x) {
+		let v = 1;
+		v = v + 0.278393*x;
+		let y = x * x;
+		v = v + 0.230389*y;
+		y = y * x;
+		v = v + 0.000972*y;
+		y = y * x;
+		v = v + 0.078108*y;
+		v = v * v;
+		v = v * v;
+		v = 1.0 / v;
+		v = 1.0 - v;
+		return v;
+	}
+	
+	static estimateParameters(arrayValues) {
+		let n = arrayValues.length;
+		let mu = 0.0;
+		for (let v of arrayValues) {
+			mu += v;
+		}
+		mu = mu / n;
+		let std = 0.0;
+		for (let v of arrayValues) {
+			std += (v - mu) * (v - mu);
+		}
+		std = std / n;
+		std = Math.sqrt(std);
+		let skew = 0.0;
+		for (let v of arrayValues) {
+			skew += v * v * v;
+		}
+		skew = skew / n;
+		skew = (skew - 3 * mu * std * std - mu * mu * mu) / (std * std * std);
+		let muDist = mu - std * Math.pow(Math.abs(skew) / 2.0, 2.0 / 3.0);
+		let stdDist = Math.sqrt(std * std * (1 - Math.pow((Math.abs(skew) / 2.0), 2.0 / 3.0)));
+		let tauDist = std * Math.pow((Math.abs(skew) / 2), 1.0 / 3.0);
+		return new ExponentiallyModifiedGaussian(muDist, stdDist, 1.0 / tauDist);
+	}
+	
+	getMean() {
+		return this.mu + 1.0 / this.lam;
+	}
+	
+	getVariance() {
+		return this.sig * this.sig + 1.0 / (this.lam * this.lam);
+	}
+	
+	pdf(x) {
+		return this.lam / 2.0 * Math.exp(this.lam / 2.0 * (2 * this.mu + this.lam * this.sig * this.sig - 2*x)) * (1 - ExponentiallyModifiedGaussian.erf((this.mu + this.lam * this.sig * this.sig - x)/(Math.sqrt(2) * this.sig)));
+	}
+	
+	cdf(x) {
+		let u = this.lam * (x - this.mu);
+		let v = this.lam * this.sig;
+		let rv1 = new NormalRandomVariable(0, v);
+		let rv2 = new NormalRandomVariable(v*v, v);
+		return rv1.cdf(u) - Math.exp(-(u + v*v)/(2 + Math.log(rv2.cdf(u))));
+	}
+	
+	logLikelihood(arrayValues) {
+		let ret = 0.0;
+		for (let v of arrayValues) {
+			ret += Math.log(this.pdf(v));
+		}
+		return ret;
+	}
+	
+	getValue() {
+		let rv1 = new NormalRandomVariable(this.mu, this.sig);
+		let rv2 = new ExponentialRandomVariable(this.lam);
+		return rv1.getValue() + rv2.getValue();
+	}
+}
+
+try {
+	require('../../pm4js.js');
+	global.ExponentiallyModifiedGaussian = ExponentiallyModifiedGaussian;
+	module.exports = {ExponentiallyModifiedGaussian: ExponentiallyModifiedGaussian};
+}
+catch (err) {
+	// not in Node
+	//console.log(err);
+}
+
+
+
+class UniformRandomVariable {
+	constructor(a, b) {
+		if (a >= b) {
+			throw "a must be lower than b";
+		}
+		this.a = a;
+		this.b = b;
+	}
+	
+	toString() {
+		return "UniformRandomVariable a="+this.a+" b="+this.b;
+	}
+	
+	pdf(x) {
+		if (x >= this.a && x <= this.b) {
+			return 1.0 / (this.b - this.a);
+		}
+		return 0.0;
+	}
+	
+	cdf(x) {
+		if (x <= this.a) {
+			return 0.0;
+		}
+		else if (x > this.a && x < this.b) {
+			return (x - this.a)/(this.b - this.a);
+		}
+		else {
+			return 1.0;
+		}
+	}
+	
+	static estimateParameters(arrayValues) {
+		let minValue = Number.MAX_VALUE;
+		let maxValue = -Number.MAX_VALUE;
+		for (let v of arrayValues) {
+			if (v < minValue) {
+				minValue = v;
+			}
+			if (v > maxValue) {
+				maxValue = v;
+			}
+		}
+		return new UniformRandomVariable(minValue, maxValue);
+	}
+	
+	getMean() {
+		return 0.5 * (this.a + this.b);
+	}
+	
+	getMedian() {
+		return 0.5 * (this.a + this.b);
+	}
+	
+	getMode() {
+		return 0.5 * (this.a + this.b);
+	}
+	
+	getVariance() {
+		return 1.0 / 12.0 * (this.b - this.a) * (this.b - this.a);
+	}
+	
+	logLikelihood(arrayValues) {
+		let ret = 0.0;
+		for (let v of arrayValues) {
+			ret += Math.log(this.pdf(v));
+		}
+		return ret;
+	}
+	
+	static gen() {
+		UniformRandomVariable.C = (UniformRandomVariable.C*UniformRandomVariable.G) % UniformRandomVariable.P;
+		return UniformRandomVariable.C / UniformRandomVariable.P;
+	}
+	
+	getValue() {
+		let val = UniformRandomVariable.gen();
+		return this.a + (this.b - this.a) * val;
+	}
+	
+	getQuantile(p) {
+		return this.a + p * (this.b - this.a);
+	}
+}
+
+UniformRandomVariable.G = 536870911;
+UniformRandomVariable.P = 2147483647;
+UniformRandomVariable.C = 1;
+
+try {
+	require('../../pm4js.js');
+	global.UniformRandomVariable = UniformRandomVariable;
+	module.exports = {UniformRandomVariable: UniformRandomVariable};
+}
+catch (err) {
+	// not in Node
+	//console.log(err);
+}
+
+
+
+class RandomVariableFitter {
+	static apply(arrayValues, debug=false) {
+		let rv = null;
+		let likelihood = -Number.MAX_VALUE;
+		if (debug) {
+			console.log("----- debug -----");
+		}
+		try {
+			let un = UniformRandomVariable.estimateParameters(arrayValues);
+			let unLikelihood = un.logLikelihood(arrayValues);
+			if (debug) {
+				console.log(un.toString() + " unLikelihood = "+unLikelihood);
+			}
+			if (unLikelihood > likelihood) {
+				rv = un;
+				likelihood = unLikelihood;
+			}
+		}
+		catch (err) {
+		}
+		try {
+			let nv = NormalRandomVariable.estimateParameters(arrayValues);
+			let nvLikelihood = nv.logLikelihood(arrayValues);
+			if (debug) {
+				console.log(nv.toString() + " nvLikelihood = "+nvLikelihood);
+			}
+			if (nvLikelihood > likelihood) {
+				rv = nv;
+				likelihood = nvLikelihood;
+			}
+		}
+		catch (err) {
+		}
+		try {
+			let lnv = LogNormalRandomVariable.estimateParameters(arrayValues);
+			let lnvLikelihood = lnv.logLikelihood(arrayValues);
+			if (debug) {
+				console.log(lnv.toString() + " lnvLikelihood = "+lnvLikelihood);
+			}
+			if (lnvLikelihood > likelihood) {
+				rv = lnv;
+				likelihood = lnvLikelihood;
+			}
+		}
+		catch (err) {
+		}
+		try {
+			let ev = ExponentialRandomVariable.estimateParameters(arrayValues);
+			let evLikelihood = ev.logLikelihood(arrayValues);
+			if (debug) {
+				console.log(ev.toString() + "evLikelihood = "+evLikelihood);
+			}
+			if (evLikelihood > likelihood) {
+				rv = ev;
+				likelihood = evLikelihood;
+			}
+		}
+		catch (err) {
+		}
+		try {
+			let gv = GammaRandomVariable.estimateParameters(arrayValues);
+			let gvLikelihood = gv.logLikelihood(arrayValues);
+			if (debug) {
+				console.log(gv.toString() + " gvLikelihood = "+gvLikelihood);
+			}
+			if (gvLikelihood > likelihood) {
+				rv = gv;
+				likelihood = gvLikelihood;
+			}
+		}
+		catch (err) {
+		}
+		try {
+			let emn = ExponentiallyModifiedGaussian.estimateParameters(arrayValues);
+			let emnLikelihood = emn.logLikelihood(arrayValues);
+			if (debug) {
+				console.log(emn.toString() + " emnLikelihood = "+emnLikelihood);
+			}
+			if (emnLikelihood > likelihood) {
+				rv = emn;
+				likelihood = emnLikelihood;
+			}
+		}
+		catch (err) {
+		}
+		if (debug) {
+			console.log("----- /debug -----");
+		}
+		return rv;
+	}
+}
+
+try {
+	require('../../pm4js.js');
+	global.RandomVariableFitter = RandomVariableFitter;
+	module.exports = {RandomVariableFitter: RandomVariableFitter};
+}
+catch (err) {
+	// not in Node
+	//console.log(err);
+}
+
+
+
+class PerformanceDfgSimulation {
+	static choiceFromProbDct(dct) {
+		let choices = [];
+		let prob = [];
+		let cumprob = 0.0;
+		for (let k in dct) {
+			choices.push(k);
+			cumprob += dct[k];
+			prob.push(cumprob);
+		}
+		let rr = Math.random();
+		let i = 0;
+		while (i < choices.length) {
+			if (prob[i] > rr) {
+				return choices[i];
+			}
+			i++;
+		}
+	}
+	
+	static apply(performanceDfg, numDesideredTraces=1000, activityKey="concept:name", timestampKey="time:timestamp", caseArrivalRate=1) {
+		let artificialDfg = performanceDfg.getArtificialDfg();
+		let outgoing = {};
+		for (let path0 in artificialDfg[1]) {
+			let path = path0.split(",");
+			if (!(path[0] in outgoing)) {
+				outgoing[path[0]] = {};
+			}
+			outgoing[path[0]][path[1]] = artificialDfg[1][path0] / artificialDfg[0][path[0]];
+		}
+		let eventLog = new EventLog();
+		let timestamp = 10000000;
+		let i = 0;
+		while (i < numDesideredTraces) {
+			timestamp += 1;
+			let currTraceTimestampTrace = 0 + timestamp;
+			let trace = new Trace();
+			eventLog.traces.push(trace);
+			let currActivity = "▶";
+			while (currActivity != "■") {
+				let nextActivity = PerformanceDfgSimulation.choiceFromProbDct(outgoing[currActivity]);
+				if (currActivity != "▶" && nextActivity != "■") {
+					let path = [currActivity, nextActivity];
+					let pathPerformance = performanceDfg.pathsPerformance[path];
+					if (pathPerformance > 0) {
+						let exp = new ExponentialRandomVariable(1.0 / pathPerformance);
+						currTraceTimestampTrace += exp.getValue();
+					}
+				}
+				if (nextActivity != "■") {
+					let eve = new Event();
+					eve.attributes[activityKey] = new Attribute(nextActivity);
+					eve.attributes[timestampKey] = new Attribute(new Date(currTraceTimestampTrace*1000));
+					trace.events.push(eve);
+				}
+				currActivity = nextActivity;
+			}
+			i++;
+		}
+		Pm4JS.registerObject(eventLog, "Simulated Event log (performance simulation from DFG)");
+		return eventLog;
+	}
+}
+
+try {
+	require("../../../../pm4js.js");
+	module.exports = {PerformanceDfgSimulation: PerformanceDfgSimulation};
+	global.PerformanceDfgSimulation = PerformanceDfgSimulation;
+}
+catch (err) {
+	// not in Node
+}
+
+Pm4JS.registerAlgorithm("PerformanceDfgSimulation", "apply", ["PerformanceDfg"], "EventLog", "Perform Playout on a Performance DFG (performance simulation)", "Alessandro Berti");
+
+
+class CelonisMapper {
+	constructor(baseUrl, apiKey) {
+		this.baseUrl = baseUrl;
+		this.apiKey = apiKey;
+		this.dataPools = null;
+		this.dataPoolsNames = null;
+		this.dataModels = null;
+		this.dataModelsNames = null;
+		this.dataPoolsDataModels = null;
+		this.dataModelsDataPools = null;
+		this.dataModelsTables = null;
+		this.analysis = null;
+		this.analysisNames = null;
+		this.analysisDataModel = null;
+		this.getDataPools();
+		this.getDataModels();
+		this.getAnalyses();
+		this.getAnalysesDataModel();
+	}
+	
+	getDataPools() {
+		this.dataPools = null;
+		this.dataPoolsNames = null;
+		this.dataPools = {};
+		this.dataPoolsNames = {};
+		let resp = this.performGet(this.baseUrl+"/integration/api/pools");
+		for (let obj of resp) {
+			this.dataPoolsNames[obj["name"]] = obj["id"];
+			this.dataPools[obj["id"]] = obj;
+		}
+	}
+	
+	getDataModels() {
+		this.dataModels = null;
+		this.dataPoolsDataModels = null;
+		this.dataModelsDataPools = null;
+		this.dataModelsNames = null;
+		this.dataModelsTables = null;
+		this.dataModels = {};
+		this.dataPoolsDataModels = {};
+		this.dataModelsDataPools = {};
+		this.dataModelsNames = {};
+		this.dataModelsTables = {};
+		for (let objId in this.dataPools) {
+			this.dataPoolsDataModels[objId] = {};
+			let resp = this.performGet(this.baseUrl+"/integration/api/pools/"+objId+"/data-models");
+			for (let model of resp) {
+				this.dataPoolsDataModels[objId][model["id"]] = model;
+				this.dataModels[model["id"]] = model;
+				this.dataModelsDataPools[model["id"]] = objId;
+				this.dataModelsNames[model["name"]] = model["id"];
+				this.dataModelsTables[model["id"]] = {};
+				for (let table of model.tables) {
+					this.dataModelsTables[model["id"]][table["id"]] = table["name"];
+				}
+			}
+		}
+	}
+	
+	getAnalyses() {
+		this.analysis = null;
+		this.analysisNames = null;
+		this.analysis = {};
+		this.analysisNames = {};
+		let resp = this.performGet(this.baseUrl+"/process-mining/api/analysis");
+		for (let ana of resp) {
+			this.analysis[ana["id"]] = ana;
+			this.analysisNames[ana["name"]] = ana["id"];
+		}
+	}
+	
+	getAnalysesDataModel() {
+		this.analysisDataModel = null;
+		this.analysisDataModel = {};
+		for (let anaId in this.analysis) {
+			let resp = this.performGet(this.baseUrl+"/process-mining/analysis/v1.2/api/analysis/"+anaId+"/data_model");
+			this.analysisDataModel[anaId] = resp["id"];
+		}
+	}
+	
+	pausecomp(millis)
+	{
+		var date = new Date();
+		var curDate = null;
+		do { curDate = new Date(); }
+		while(curDate-date < millis);
+	}
+	
+	performQueryAnalysis(analysisId, pqlQuery, waitingTime1=250, waitingTime2=750) {
+		let dataModel = this.dataModels[this.analysisDataModel[analysisId]];
+		let payload = {'dataCommandRequest': {'variables': [], 'request': {'commands': [{'queries': [pqlQuery], 'computationId': 0, 'isTransient': false}], 'cubeId': dataModel["id"]}}, 'exportType': 'CSV'};
+		let resp1 = this.performPostJson(this.baseUrl+"/process-mining/analysis/v1.2/api/analysis/"+analysisId+"/exporting/query", payload);
+		if (resp1["exportStatus"] != "FAILED") {
+			let downloadId = resp1["id"];
+			while (true) {
+				this.pausecomp(waitingTime1);
+				let resp2 = this.performGet(this.baseUrl+"/process-mining/analysis/v1.2/api/analysis/"+analysisId+"/exporting/query/"+downloadId+"/status");
+				if (resp2.exportStatus == "DONE") {
+					break;
+				}
+				this.pausecomp(waitingTime2);
+			}
+			let resp3 = this.performGet(this.baseUrl+"/process-mining/analysis/v1.2/api/analysis/"+analysisId+"/exporting/query/"+downloadId+"/download", false);
+			return resp3;
+		}
+		return resp1;
+	}
+	
+	performGet(url, isRequestJson=true) {
+		if (CelonisMapper.IS_NODE) {
+			let ret = retus(url, {headers: {"authorization": "Bearer "+this.apiKey}}).body;
+			if (isRequestJson) {
+				return JSON.parse(ret);
+			}
+			return ret;
+		}
+		else {
+			let ret = null;
+			let ajaxDict = {
+				url: CelonisMapper.PROXY_URL_GET,
+				data: {"access_token": this.apiKey, "url": url},
+				async: false,
+				success: function(data) {
+					ret = data;
+				}
+			}
+			$.ajax(ajaxDict);
+			if (isRequestJson) {
+				ret = JSON.parse(ret);
+			}
+			return ret;
+		}
+	}
+	
+	performPostJson(url, jsonContent) {
+		if (CelonisMapper.IS_NODE) {
+			return retus(url, {method: "post", headers: {"authorization": "Bearer "+this.apiKey}, json: jsonContent}).body;
+		}
+		else {
+			let ret = null;
+			jsonContent["access_token"] = this.apiKey;
+			jsonContent["url"] = url;
+			let ajaxDict = {
+				url: CelonisMapper.PROXY_URL_POST,
+				dataType: 'json',
+				type: 'post',
+				contentType: 'application/json',
+				data: JSON.stringify(jsonContent),
+				async: false,
+				success: function(data) {
+					ret = data;
+				}
+			}
+			$.ajax(ajaxDict);
+			return ret;
+		}
+	}
+}
+
+try {
+	global.retus = require("retus");
+	require('../../pm4js.js');
+	global.CelonisMapper = CelonisMapper;
+	module.exports = {CelonisMapper: CelonisMapper};
+	CelonisMapper.IS_NODE = true;
+}
+catch (err) {
+	// not in Node
+	console.log(err);
+	CelonisMapper.IS_NODE = false;
+	CelonisMapper.PROXY_URL_GET = "http://localhost:5004/getWrapper";
+	CelonisMapper.PROXY_URL_POST = "http://localhost:5004/postWrapper";
+}
+
+class Celonis1DWrapper {
+	constructor(celonisMapper) {
+		this.celonisMapper = celonisMapper;
+	}
+	
+	getProcessConfiguration(dataModel, processConfigurationId=null) {
+		if (processConfigurationId == null) {
+			let ret = dataModel.processConfigurations[0];
+			return ret;
+		}
+		else {
+			let i = 0;
+			while (i < dataModel.processConfigurations.length) {
+				if (dataModel.processConfigurations[i].id == processConfigurationId) {
+					return dataModel.processConfigurations[i];
+				}
+				i++;
+			}
+		}
+	}
+	
+	downloadBaseEventLog(analysisId, processConfigurationId=null) {
+		let dataModel = this.celonisMapper.dataModels[this.celonisMapper.analysisDataModel[analysisId]];
+		let dataModelTables = this.celonisMapper.dataModelsTables[dataModel["id"]];
+		let processConfiguration = this.getProcessConfiguration(dataModel, processConfigurationId);
+		let activityTable = dataModelTables[processConfiguration["activityTableId"]];
+		let query = [];
+		query.push("TABLE(");
+		query.push("\""+activityTable+"\".\""+processConfiguration.caseIdColumn+"\" AS \"case:concept:name\", ");
+		query.push("\""+activityTable+"\".\""+processConfiguration.activityColumn+"\" AS \"concept:name\", ");
+		query.push("\""+activityTable+"\".\""+processConfiguration.timestampColumn+"\" AS \"time:timestamp\") NOLIMIT;");
+		query = query.join("");
+		return CsvImporter.apply(this.celonisMapper.performQueryAnalysis(analysisId, query));
+	}
+	
+	downloadStartActivities(analysisId, processConfigurationId=null) {
+		let dataModel = this.celonisMapper.dataModels[this.celonisMapper.analysisDataModel[analysisId]];
+		let dataModelTables = this.celonisMapper.dataModelsTables[dataModel["id"]];
+		let processConfiguration = this.getProcessConfiguration(dataModel, processConfigurationId);
+		let activityTable = dataModelTables[processConfiguration["activityTableId"]];
+		let query = [];
+		query.push("TABLE(");
+		query.push("ACTIVITY_LAG ( \""+activityTable+"\".\""+processConfiguration.activityColumn+"\", 1) AS \"PREV_ACTIVITY\", ");
+		query.push("\""+activityTable+"\".\""+processConfiguration.activityColumn+"\" AS \"CURR_ACTIVITY\" ) NOLIMIT;");
+		query = query.join("");
+		let ret = CsvImporter.parseCSV(this.celonisMapper.performQueryAnalysis(analysisId, query));
+		let sa_dict = {};
+		for (let el of ret) {
+			if (el[0].length == 0) {
+				if (!(el[1] in sa_dict)) {
+					sa_dict[el[1]] = 1;
+				}
+				else {
+					sa_dict[el[1]] += 1;
+				}
+			}
+		}
+		return sa_dict;
+	}
+	
+	downloadEndActivities(analysisId, processConfigurationId=null) {
+		let dataModel = this.celonisMapper.dataModels[this.celonisMapper.analysisDataModel[analysisId]];
+		let dataModelTables = this.celonisMapper.dataModelsTables[dataModel["id"]];
+		let processConfiguration = this.getProcessConfiguration(dataModel, processConfigurationId);
+		let activityTable = dataModelTables[processConfiguration["activityTableId"]];
+		let query = [];
+		query.push("TABLE(");
+		query.push("ACTIVITY_LEAD ( \""+activityTable+"\".\""+processConfiguration.activityColumn+"\", 1) AS \"NEXT_ACTIVITY\", ");
+		query.push("\""+activityTable+"\".\""+processConfiguration.activityColumn+"\" AS \"CURR_ACTIVITY\" ) NOLIMIT;");
+		query = query.join("");
+		let ret = CsvImporter.parseCSV(this.celonisMapper.performQueryAnalysis(analysisId, query));
+		let ea_dict = {};
+		for (let el of ret) {
+			if (el[0].length == 0) {
+				if (!(el[1] in ea_dict)) {
+					ea_dict[el[1]] = 1;
+				}
+				else {
+					ea_dict[el[1]] += 1;
+				}
+			}
+		}
+		return ea_dict;
+	}
+	
+	downloadActivities(analysisId, processConfigurationId=null) {
+		let dataModel = this.celonisMapper.dataModels[this.celonisMapper.analysisDataModel[analysisId]];
+		let dataModelTables = this.celonisMapper.dataModelsTables[dataModel["id"]];
+		let processConfiguration = this.getProcessConfiguration(dataModel, processConfigurationId);
+		let activityTable = dataModelTables[processConfiguration["activityTableId"]];
+		let query = [];
+		query.push("TABLE(");
+		query.push("\""+activityTable+"\".\""+processConfiguration.activityColumn+"\", ");
+		query.push("COUNT(\""+activityTable+"\".\""+processConfiguration.caseIdColumn+"\") AS \"ACTIVITY\") NOLIMIT;");
+		query = query.join("");
+		let ret = CsvImporter.parseCSV(this.celonisMapper.performQueryAnalysis(analysisId, query));
+		let activities = {};
+		let i = 1;
+		while (i < ret.length) {
+			activities[ret[i][0]] = parseInt(ret[i][1]);
+			i++;
+		}
+		return activities;
+	}
+	
+	downloadPathsFrequency(analysisId, processConfigurationId=null) {
+		let dataModel = this.celonisMapper.dataModels[this.celonisMapper.analysisDataModel[analysisId]];
+		let dataModelTables = this.celonisMapper.dataModelsTables[dataModel["id"]];
+		let processConfiguration = this.getProcessConfiguration(dataModel, processConfigurationId);
+		let activityTable = dataModelTables[processConfiguration["activityTableId"]];
+		let query = [];
+		query.push("TABLE(");
+		query.push("ACTIVITY_LEAD ( \""+activityTable+"\".\""+processConfiguration.activityColumn+"\", 1) AS \"NEXT_ACTIVITY\", ");
+		query.push("\""+activityTable+"\".\""+processConfiguration.activityColumn+"\" AS \"CURR_ACTIVITY\", ");
+		query.push("COUNT(\""+activityTable+"\".\""+processConfiguration.caseIdColumn+"\") AS \"COUNT\") NOLIMIT;")
+		query = query.join("");
+		let res = this.celonisMapper.performQueryAnalysis(analysisId, query);
+		let ret = CsvImporter.parseCSV(res);
+		let i = 1;
+		let pathsFrequency = {};
+		while (i < ret.length) {
+			if (ret[i][0].length > 0) {
+				pathsFrequency[[ret[i][1], ret[i][0]]] = parseInt(ret[i][2]);
+			}
+			i++;
+		}
+		return pathsFrequency;
+	}
+	
+	downloadFrequencyDfg(analysisId, processConfigurationId=null) {
+		let activities = this.downloadActivities(analysisId, processConfigurationId);
+		let startActivities = this.downloadStartActivities(analysisId, processConfigurationId);
+		let endActivities = this.downloadEndActivities(analysisId, processConfigurationId);
+		let pathsFrequency = this.downloadPathsFrequency(analysisId, processConfigurationId);
+		return new FrequencyDfg(activities, startActivities, endActivities, pathsFrequency);
+	}
+}
+
+try {
+	require('../../pm4js.js');
+	global.Celonis1DWrapper = Celonis1DWrapper;
+	module.exports = {Celonis1DWrapper: Celonis1DWrapper};
+}
+catch (err) {
+	// not in Node
+	console.log(err);
+}
+
+
+class CelonisNDWrapper {
+	constructor(celonisMapper) {
+		this.celonisMapper = celonisMapper;
+		this.celonis1Dwrapper = new Celonis1DWrapper(this.celonisMapper);
+	}
+	
+	getMVPmodel(analysisId) {
+		let dataModel = this.celonisMapper.dataModels[this.celonisMapper.analysisDataModel[analysisId]];
+		let dataModelTables = this.celonisMapper.dataModelsTables[dataModel["id"]];
+		let mvp = {};
+		for (let configuration of dataModel.processConfigurations) {
+			let activityTable = dataModelTables[configuration["activityTableId"]];
+			mvp[activityTable] = this.celonis1Dwrapper.downloadFrequencyDfg(analysisId, configuration.id);
+		}
+		return mvp;
+	}
+	
+	static uuidv4() {
+	  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+		var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+		return v.toString(16);
+	  });
+	}
+	
+	static nodeUuid() {
+		let uuid = CelonisNDWrapper.uuidv4();
+		return "n"+uuid.replace(/-/g, "");
+	}
+	
+	static stringToColour(str) {
+	  var hash = 0;
+	  for (var i = 0; i < str.length; i++) {
+		hash = str.charCodeAt(i) + ((hash << 5) - hash);
+	  }
+	  var colour = '#';
+	  for (var i = 0; i < 3; i++) {
+		var value = (hash >> (i * 8)) & 0xFF;
+		colour += ('00' + value.toString(16)).substr(-2);
+	  }
+	  return colour;
+	}
+	
+	static visualizationMVP(mvp) {
+		let ret = [];
+		let activities = {};
+		let startNodes = {};
+		let endNodes = {};
+		ret.push("digraph G {");
+		for (let persp in mvp) {
+			let perspCol = CelonisNDWrapper.stringToColour(persp);
+			for (let act in mvp[persp].activities) {
+				if (!(act in activities)) {
+					let nodeUuid = CelonisNDWrapper.nodeUuid();
+					activities[act] = nodeUuid;
+					ret.push(nodeUuid+" [shape=box, label=\""+act+"\"]");
+				}
+			}
+			let startNodeUuid = CelonisNDWrapper.nodeUuid();
+			startNodes[persp] = startNodeUuid;
+			ret.push(startNodeUuid+" [shape=ellipse, label=\""+persp+"\", color=\""+perspCol+"\", style=filled, fillcolor=\""+perspCol+"\"]");
+			let endNodeUuid = CelonisNDWrapper.nodeUuid();
+			endNodes[persp] = endNodeUuid;
+			ret.push(endNodeUuid+" [shape=ellipse, label=\""+persp+"\", color=\""+perspCol+"\", style=filled, fillcolor=\""+perspCol+"\"]");
+		}
+
+		for (let persp in mvp) {
+			let perspCol = CelonisNDWrapper.stringToColour(persp);
+			for (let edge0 in mvp[persp].pathsFrequency) {
+				let edge = edge0.split(",");
+				ret.push(activities[edge[0]]+" -> "+activities[edge[1]]+" [color=\""+perspCol+"\", label=\"TO="+mvp[persp].pathsFrequency[edge0]+"\"]")
+			}
+			for (let act in mvp[persp].startActivities) {
+				ret.push(startNodes[persp]+" -> "+activities[act]+" [color=\""+perspCol+"\", label=\"TO="+mvp[persp].startActivities[act]+"\"]");
+			}
+			for (let act in mvp[persp].endActivities) {
+				ret.push(activities[act]+" -> "+endNodes[persp]+" [color=\""+perspCol+"\", label=\"TO="+mvp[persp].endActivities[act]+"\"]");
+			}
+		}
+		ret.push("}");
+		return ret.join("\n");
+	}
+}
+
+try {
+	require('../../pm4js.js');
+	global.CelonisNDWrapper = CelonisNDWrapper;
+	module.exports = {CelonisNDWrapper: CelonisNDWrapper};
+}
+catch (err) {
+	// not in Node
+	console.log(err);
+}
 
 
