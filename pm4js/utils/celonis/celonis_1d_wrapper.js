@@ -41,18 +41,14 @@ class Celonis1DWrapper {
 		let query = [];
 		query.push("TABLE(");
 		query.push("ACTIVITY_LAG ( \""+activityTable+"\".\""+processConfiguration.activityColumn+"\", 1) AS \"PREV_ACTIVITY\", ");
-		query.push("\""+activityTable+"\".\""+processConfiguration.activityColumn+"\" AS \"CURR_ACTIVITY\" ) NOLIMIT;");
+		query.push("\""+activityTable+"\".\""+processConfiguration.activityColumn+"\" AS \"CURR_ACTIVITY\",");
+		query.push("COUNT(\""+activityTable+"\".\""+processConfiguration.caseIdColumn+"\") AS \"COUNT\") NOLIMIT;");
 		query = query.join("");
 		let ret = CsvImporter.parseCSV(this.celonisMapper.performQueryAnalysis(analysisId, query));
 		let sa_dict = {};
 		for (let el of ret) {
 			if (el[0].length == 0) {
-				if (!(el[1] in sa_dict)) {
-					sa_dict[el[1]] = 1;
-				}
-				else {
-					sa_dict[el[1]] += 1;
-				}
+				sa_dict[el[1]] = parseInt(el[2]);
 			}
 		}
 		return sa_dict;
@@ -66,18 +62,14 @@ class Celonis1DWrapper {
 		let query = [];
 		query.push("TABLE(");
 		query.push("ACTIVITY_LEAD ( \""+activityTable+"\".\""+processConfiguration.activityColumn+"\", 1) AS \"NEXT_ACTIVITY\", ");
-		query.push("\""+activityTable+"\".\""+processConfiguration.activityColumn+"\" AS \"CURR_ACTIVITY\" ) NOLIMIT;");
+		query.push("\""+activityTable+"\".\""+processConfiguration.activityColumn+"\" AS \"CURR_ACTIVITY\",");
+		query.push("COUNT(\""+activityTable+"\".\""+processConfiguration.caseIdColumn+"\") AS \"COUNT\") NOLIMIT;");
 		query = query.join("");
 		let ret = CsvImporter.parseCSV(this.celonisMapper.performQueryAnalysis(analysisId, query));
 		let ea_dict = {};
 		for (let el of ret) {
 			if (el[0].length == 0) {
-				if (!(el[1] in ea_dict)) {
-					ea_dict[el[1]] = 1;
-				}
-				else {
-					ea_dict[el[1]] += 1;
-				}
+				ea_dict[el[1]] = parseInt(el[2]);
 			}
 		}
 		return ea_dict;
