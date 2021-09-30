@@ -183,7 +183,6 @@ class Celonis1DWrapper {
 		query.push("AVG(SECONDS_BETWEEN("+startTimestampColumn+", "+timestampColumn+")) ");
 		query.push(") NOLIMIT;");
 		query = query.join("");
-		console.log(query);
 		let res = this.celonisMapper.performQueryAnalysis(analysisId, query);
 		let ret = CsvImporter.parseCSV(res);
 		let sojournTime = {};
@@ -193,6 +192,33 @@ class Celonis1DWrapper {
 			i++;
 		}
 		return sojournTime;
+	}
+	
+	downloadAllCaseDurations(analysisId, processConfigurationId=null) {
+		let dataModel = this.celonisMapper.dataModels[this.celonisMapper.analysisDataModel[analysisId]];
+		let dataModelTables = this.celonisMapper.dataModelsTables[dataModel["id"]];
+		let processConfiguration = this.getProcessConfiguration(dataModel, processConfigurationId);
+		let activityTable = dataModelTables[processConfiguration["activityTableId"]];
+		let query = [];
+		query.push("TABLE(");
+		query.push("\""+activityTable+"\".\""+processConfiguration.caseIdColumn+"\", ");
+		query.push("MAX ( CALC_THROUGHPUT ( CASE_START TO CASE_END, REMAP_TIMESTAMPS ( \""+activityTable+"\".\""+processConfiguration.timestampColumn+"\" , SECONDS ) ) )");
+		query.push(") NOLIMIT;");
+		query = query.join("");
+		let res = this.celonisMapper.performQueryAnalysis(analysisId, query);
+		let ret = CsvImporter.parseCSV(res);
+		let caseDurations = [];
+		let i = 1;
+		while (i < ret.length) {
+			if (ret[i][1].length > 0) {
+				caseDurations.push(parseFloat(ret[i][1]));
+			}
+			else {
+				caseDurations.push(0);
+			}
+			i++;
+		}
+		return caseDurations;
 	}
 	
 	downloadFrequencyDfg(analysisId, processConfigurationId=null) {
