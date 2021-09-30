@@ -67,13 +67,13 @@ class CelonisNDWrapper {
 			let perspCol = CelonisNDWrapper.stringToColour(persp);
 			for (let edge0 in mvp[persp].pathsFrequency) {
 				let edge = edge0.split(",");
-				ret.push(activities[edge[0]]+" -> "+activities[edge[1]]+" [color=\""+perspCol+"\", label=\""+mvp[persp].pathsFrequency[edge0]+"\"]")
+				ret.push(activities[edge[0]]+" -> "+activities[edge[1]]+" [color=\""+perspCol+"\", label=\"TO="+mvp[persp].pathsFrequency[edge0]+"\"]")
 			}
 			for (let act in mvp[persp].startActivities) {
-				ret.push(startNodes[persp]+" -> "+activities[act]+" [color=\""+perspCol+"\", label=\""+mvp[persp].startActivities[act]+"\"]");
+				ret.push(startNodes[persp]+" -> "+activities[act]+" [color=\""+perspCol+"\", label=\"TO="+mvp[persp].startActivities[act]+"\"]");
 			}
 			for (let act in mvp[persp].endActivities) {
-				ret.push(activities[act]+" -> "+endNodes[persp]+" [color=\""+perspCol+"\", label=\""+mvp[persp].endActivities[act]+"\"]");
+				ret.push(activities[act]+" -> "+endNodes[persp]+" [color=\""+perspCol+"\", label=\"TO="+mvp[persp].endActivities[act]+"\"]");
 			}
 		}
 		ret.push("}");
