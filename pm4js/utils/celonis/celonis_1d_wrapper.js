@@ -119,12 +119,98 @@ class Celonis1DWrapper {
 		return pathsFrequency;
 	}
 	
+	downloadVariants(analysisId, processConfigurationId=null) {
+		let dataModel = this.celonisMapper.dataModels[this.celonisMapper.analysisDataModel[analysisId]];
+		let dataModelTables = this.celonisMapper.dataModelsTables[dataModel["id"]];
+		let processConfiguration = this.getProcessConfiguration(dataModel, processConfigurationId);
+		let activityTable = dataModelTables[processConfiguration["activityTableId"]];
+		let query = [];
+		query.push("TABLE(");
+		query.push("VARIANT(\""+activityTable+"\".\""+processConfiguration.activityColumn+"\")");
+		query.push(", COUNT(\""+activityTable+"\".\""+processConfiguration.caseIdColumn+"\")");
+		query.push(") NOLIMIT;");
+		query = query.join("");
+		let res = this.celonisMapper.performQueryAnalysis(analysisId, query);
+		let ret = CsvImporter.parseCSV(res);
+		let variants = {};
+		let i = 1;
+		while (i < ret.length) {
+			variants[ret[i][0]] = parseInt(ret[i][1]);
+			i++;
+		}
+		return variants;
+	}
+	
+	downloadPathsPerformance(analysisId, processConfigurationId=null) {
+		let dataModel = this.celonisMapper.dataModels[this.celonisMapper.analysisDataModel[analysisId]];
+		let dataModelTables = this.celonisMapper.dataModelsTables[dataModel["id"]];
+		let processConfiguration = this.getProcessConfiguration(dataModel, processConfigurationId);
+		let activityTable = dataModelTables[processConfiguration["activityTableId"]];
+		let query = [];
+		query.push("TABLE(");
+		query.push("SOURCE ( \""+activityTable+"\".\""+processConfiguration.activityColumn+"\" ), ");
+		query.push("TARGET ( \""+activityTable+"\".\""+processConfiguration.activityColumn+"\" ), ");
+		query.push("AVG ( SECONDS_BETWEEN ( SOURCE ( \""+activityTable+"\".\""+processConfiguration.timestampColumn+"\" ) , TARGET ( \""+activityTable+"\".\""+processConfiguration.timestampColumn+"\" ) ) )");
+		query.push(") NOLIMIT;");
+		query = query.join("");
+		let res = this.celonisMapper.performQueryAnalysis(analysisId, query);
+		let ret = CsvImporter.parseCSV(res);
+		let pathsPerformance = {};
+		let i = 1;
+		while (i < ret.length) {
+			pathsPerformance[[ret[i][0], ret[i][1]]] = parseFloat(ret[i][2]);
+			i++;
+		}
+		return pathsPerformance;
+	}
+	
+	downloadSojournTimes(analysisId, processConfigurationId=null, timestampColumn=null, startTimestampColumn=null) {
+		let dataModel = this.celonisMapper.dataModels[this.celonisMapper.analysisDataModel[analysisId]];
+		let dataModelTables = this.celonisMapper.dataModelsTables[dataModel["id"]];
+		let processConfiguration = this.getProcessConfiguration(dataModel, processConfigurationId);
+		let activityTable = dataModelTables[processConfiguration["activityTableId"]];
+		let query = [];
+		if (timestampColumn == null) {
+			timestampColumn = processConfiguration.timestampColumn;
+		}
+		if (startTimestampColumn == null) {
+			startTimestampColumn = processConfiguration.timestampColumn;
+		}
+		timestampColumn = "\""+activityTable+"\".\""+timestampColumn+"\"";
+		startTimestampColumn = "\""+activityTable+"\".\""+startTimestampColumn+"\"";
+		query.push("TABLE(");
+		query.push("\""+activityTable+"\".\""+processConfiguration.activityColumn+"\", ");
+		query.push("AVG(SECONDS_BETWEEN("+startTimestampColumn+", "+timestampColumn+")) ");
+		query.push(") NOLIMIT;");
+		query = query.join("");
+		console.log(query);
+		let res = this.celonisMapper.performQueryAnalysis(analysisId, query);
+		let ret = CsvImporter.parseCSV(res);
+		let sojournTime = {};
+		let i = 1;
+		while (i < ret.length) {
+			sojournTime[ret[i][0]] = parseFloat(ret[i][1]);
+			i++;
+		}
+		return sojournTime;
+	}
+	
 	downloadFrequencyDfg(analysisId, processConfigurationId=null) {
 		let activities = this.downloadActivities(analysisId, processConfigurationId);
 		let startActivities = this.downloadStartActivities(analysisId, processConfigurationId);
 		let endActivities = this.downloadEndActivities(analysisId, processConfigurationId);
 		let pathsFrequency = this.downloadPathsFrequency(analysisId, processConfigurationId);
 		return new FrequencyDfg(activities, startActivities, endActivities, pathsFrequency);
+	}
+	
+	downloadPerformanceDfg(analysisId, processConfigurationId=null, timestampColumn=null, startTimestampColumn=null) {
+		let activities = this.downloadActivities(analysisId, processConfigurationId);
+		let startActivities = this.downloadStartActivities(analysisId, processConfigurationId);
+		let endActivities = this.downloadEndActivities(analysisId, processConfigurationId);
+		let pathsFrequency = this.downloadPathsFrequency(analysisId, processConfigurationId);
+		let pathsPerformance = this.downloadPathsPerformance(analysisId, processConfigurationId);
+		let sojournTimes = this.downloadSojournTimes(analysisId, processConfigurationId);
+		return new PerformanceDfg(activities, startActivities, endActivities, pathsFrequency, pathsPerformance, sojournTimes);
 	}
 }
 
