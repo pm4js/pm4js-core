@@ -59,7 +59,7 @@ class Pm4JS {
 	}
 }
 
-Pm4JS.VERSION = "0.0.11";
+Pm4JS.VERSION = "0.0.12";
 Pm4JS.registrationEnabled = false;
 Pm4JS.objects = [];
 Pm4JS.algorithms = [];
@@ -15344,6 +15344,15 @@ class CelonisMapper {
 		this.getDataModels();
 		this.getAnalyses();
 		this.getAnalysesDataModel();
+		this.defaultAnalysis = null;
+	}
+	
+	getFirstAnalysis() {
+		if (this.defaultAnalysis != null) {
+			return this.defaultAnalysis;
+		}
+		let analysisIds = Object.keys(this.analysis).sort();
+		return analysisIds[0];
 	}
 	
 	getDataPools() {
@@ -15418,7 +15427,7 @@ class CelonisMapper {
 		let dataModel = this.dataModels[this.analysisDataModel[analysisId]];
 		let payload = {'dataCommandRequest': {'variables': [], 'request': {'commands': [{'queries': [pqlQuery], 'computationId': 0, 'isTransient': false}], 'cubeId': dataModel["id"]}}, 'exportType': 'CSV'};
 		let resp1 = this.performPostJson(this.baseUrl+"/process-mining/analysis/v1.2/api/analysis/"+analysisId+"/exporting/query", payload);
-		if (resp1["exportStatus"] != "FAILED") {
+		if (resp1["exportStatus"] == "WAITING" || resp1["exportStatus"] == "RUNNING" || resp1["exportStatus"] == "DONE") {
 			let downloadId = resp1["id"];
 			while (true) {
 				this.pausecomp(waitingTime1);
@@ -15483,6 +15492,22 @@ class CelonisMapper {
 			return ret;
 		}
 	}
+	
+	static autoConfiguration() {
+		const queryString = window.location.search;
+		const urlParams = new URLSearchParams(queryString);
+		let targetUrl = ""+document.referrer;
+		targetUrl = targetUrl.substring(0, targetUrl.length - 1);
+		let apiKey = urlParams.get("key");
+		let analysis = urlParams.get("analysis");
+		let celonisMapper = new CelonisMapper(targetUrl, apiKey);
+		celonisMapper.defaultAnalysis = analysis;
+		return celonisMapper;
+	}
+	
+	toString() {
+		return "CelonisMapper url="+this.baseUrl+" key="+this.apiKey+" defaultAnalysis="+this.defaultAnalysis;
+	}
 }
 
 try {
@@ -15494,7 +15519,6 @@ try {
 }
 catch (err) {
 	// not in Node
-	console.log(err);
 	CelonisMapper.IS_NODE = false;
 	CelonisMapper.PROXY_URL_GET = "http://localhost:5004/getWrapper";
 	CelonisMapper.PROXY_URL_POST = "http://localhost:5004/postWrapper";
@@ -15522,6 +15546,9 @@ class Celonis1DWrapper {
 	}
 	
 	downloadBaseEventLog(analysisId, processConfigurationId=null) {
+		if (analysisId == null) {
+			analysisId = this.celonisMapper.getFirstAnalysis();
+		}
 		let dataModel = this.celonisMapper.dataModels[this.celonisMapper.analysisDataModel[analysisId]];
 		let dataModelTables = this.celonisMapper.dataModelsTables[dataModel["id"]];
 		let processConfiguration = this.getProcessConfiguration(dataModel, processConfigurationId);
@@ -15536,6 +15563,9 @@ class Celonis1DWrapper {
 	}
 	
 	downloadStartActivities(analysisId, processConfigurationId=null) {
+		if (analysisId == null) {
+			analysisId = this.celonisMapper.getFirstAnalysis();
+		}
 		let dataModel = this.celonisMapper.dataModels[this.celonisMapper.analysisDataModel[analysisId]];
 		let dataModelTables = this.celonisMapper.dataModelsTables[dataModel["id"]];
 		let processConfiguration = this.getProcessConfiguration(dataModel, processConfigurationId);
@@ -15543,24 +15573,23 @@ class Celonis1DWrapper {
 		let query = [];
 		query.push("TABLE(");
 		query.push("ACTIVITY_LAG ( \""+activityTable+"\".\""+processConfiguration.activityColumn+"\", 1) AS \"PREV_ACTIVITY\", ");
-		query.push("\""+activityTable+"\".\""+processConfiguration.activityColumn+"\" AS \"CURR_ACTIVITY\" ) NOLIMIT;");
+		query.push("\""+activityTable+"\".\""+processConfiguration.activityColumn+"\" AS \"CURR_ACTIVITY\",");
+		query.push("COUNT(\""+activityTable+"\".\""+processConfiguration.caseIdColumn+"\") AS \"COUNT\") NOLIMIT;");
 		query = query.join("");
 		let ret = CsvImporter.parseCSV(this.celonisMapper.performQueryAnalysis(analysisId, query));
 		let sa_dict = {};
 		for (let el of ret) {
 			if (el[0].length == 0) {
-				if (!(el[1] in sa_dict)) {
-					sa_dict[el[1]] = 1;
-				}
-				else {
-					sa_dict[el[1]] += 1;
-				}
+				sa_dict[el[1]] = parseInt(el[2]);
 			}
 		}
 		return sa_dict;
 	}
 	
 	downloadEndActivities(analysisId, processConfigurationId=null) {
+		if (analysisId == null) {
+			analysisId = this.celonisMapper.getFirstAnalysis();
+		}
 		let dataModel = this.celonisMapper.dataModels[this.celonisMapper.analysisDataModel[analysisId]];
 		let dataModelTables = this.celonisMapper.dataModelsTables[dataModel["id"]];
 		let processConfiguration = this.getProcessConfiguration(dataModel, processConfigurationId);
@@ -15568,24 +15597,23 @@ class Celonis1DWrapper {
 		let query = [];
 		query.push("TABLE(");
 		query.push("ACTIVITY_LEAD ( \""+activityTable+"\".\""+processConfiguration.activityColumn+"\", 1) AS \"NEXT_ACTIVITY\", ");
-		query.push("\""+activityTable+"\".\""+processConfiguration.activityColumn+"\" AS \"CURR_ACTIVITY\" ) NOLIMIT;");
+		query.push("\""+activityTable+"\".\""+processConfiguration.activityColumn+"\" AS \"CURR_ACTIVITY\",");
+		query.push("COUNT(\""+activityTable+"\".\""+processConfiguration.caseIdColumn+"\") AS \"COUNT\") NOLIMIT;");
 		query = query.join("");
 		let ret = CsvImporter.parseCSV(this.celonisMapper.performQueryAnalysis(analysisId, query));
 		let ea_dict = {};
 		for (let el of ret) {
 			if (el[0].length == 0) {
-				if (!(el[1] in ea_dict)) {
-					ea_dict[el[1]] = 1;
-				}
-				else {
-					ea_dict[el[1]] += 1;
-				}
+				ea_dict[el[1]] = parseInt(el[2]);
 			}
 		}
 		return ea_dict;
 	}
 	
 	downloadActivities(analysisId, processConfigurationId=null) {
+		if (analysisId == null) {
+			analysisId = this.celonisMapper.getFirstAnalysis();
+		}
 		let dataModel = this.celonisMapper.dataModels[this.celonisMapper.analysisDataModel[analysisId]];
 		let dataModelTables = this.celonisMapper.dataModelsTables[dataModel["id"]];
 		let processConfiguration = this.getProcessConfiguration(dataModel, processConfigurationId);
@@ -15606,6 +15634,9 @@ class Celonis1DWrapper {
 	}
 	
 	downloadPathsFrequency(analysisId, processConfigurationId=null) {
+		if (analysisId == null) {
+			analysisId = this.celonisMapper.getFirstAnalysis();
+		}
 		let dataModel = this.celonisMapper.dataModels[this.celonisMapper.analysisDataModel[analysisId]];
 		let dataModelTables = this.celonisMapper.dataModelsTables[dataModel["id"]];
 		let processConfiguration = this.getProcessConfiguration(dataModel, processConfigurationId);
@@ -15629,12 +15660,142 @@ class Celonis1DWrapper {
 		return pathsFrequency;
 	}
 	
+	downloadVariants(analysisId, processConfigurationId=null) {
+		if (analysisId == null) {
+			analysisId = this.celonisMapper.getFirstAnalysis();
+		}
+		let dataModel = this.celonisMapper.dataModels[this.celonisMapper.analysisDataModel[analysisId]];
+		let dataModelTables = this.celonisMapper.dataModelsTables[dataModel["id"]];
+		let processConfiguration = this.getProcessConfiguration(dataModel, processConfigurationId);
+		let activityTable = dataModelTables[processConfiguration["activityTableId"]];
+		let query = [];
+		query.push("TABLE(");
+		query.push("VARIANT(\""+activityTable+"\".\""+processConfiguration.activityColumn+"\")");
+		query.push(", COUNT(\""+activityTable+"\".\""+processConfiguration.caseIdColumn+"\")");
+		query.push(") NOLIMIT;");
+		query = query.join("");
+		let res = this.celonisMapper.performQueryAnalysis(analysisId, query);
+		let ret = CsvImporter.parseCSV(res);
+		let variants = {};
+		let i = 1;
+		while (i < ret.length) {
+			variants[ret[i][0]] = parseInt(ret[i][1]);
+			i++;
+		}
+		return variants;
+	}
+	
+	downloadPathsPerformance(analysisId, processConfigurationId=null, relationship="ANY_OCCURRENCE [ ] TO ANY_OCCURRENCE [ ]") {
+		if (analysisId == null) {
+			analysisId = this.celonisMapper.getFirstAnalysis();
+		}
+		let dataModel = this.celonisMapper.dataModels[this.celonisMapper.analysisDataModel[analysisId]];
+		let dataModelTables = this.celonisMapper.dataModelsTables[dataModel["id"]];
+		let processConfiguration = this.getProcessConfiguration(dataModel, processConfigurationId);
+		let activityTable = dataModelTables[processConfiguration["activityTableId"]];
+		let query = [];
+		query.push("TABLE(");
+		query.push("SOURCE ( \""+activityTable+"\".\""+processConfiguration.activityColumn+"\", "+relationship+" ), ");
+		query.push("TARGET ( \""+activityTable+"\".\""+processConfiguration.activityColumn+"\" ), ");
+		query.push("AVG ( SECONDS_BETWEEN ( SOURCE ( \""+activityTable+"\".\""+processConfiguration.timestampColumn+"\" ) , TARGET ( \""+activityTable+"\".\""+processConfiguration.timestampColumn+"\" ) ) )");
+		query.push(") NOLIMIT;");
+		query = query.join("");
+		let res = this.celonisMapper.performQueryAnalysis(analysisId, query);
+		let ret = CsvImporter.parseCSV(res);
+		let pathsPerformance = {};
+		let i = 1;
+		while (i < ret.length) {
+			pathsPerformance[[ret[i][0], ret[i][1]]] = parseFloat(ret[i][2]);
+			i++;
+		}
+		return pathsPerformance;
+	}
+	
+	downloadSojournTimes(analysisId, processConfigurationId=null, timestampColumn=null, startTimestampColumn=null) {
+		if (analysisId == null) {
+			analysisId = this.celonisMapper.getFirstAnalysis();
+		}
+		let dataModel = this.celonisMapper.dataModels[this.celonisMapper.analysisDataModel[analysisId]];
+		let dataModelTables = this.celonisMapper.dataModelsTables[dataModel["id"]];
+		let processConfiguration = this.getProcessConfiguration(dataModel, processConfigurationId);
+		let activityTable = dataModelTables[processConfiguration["activityTableId"]];
+		let query = [];
+		if (timestampColumn == null) {
+			timestampColumn = processConfiguration.timestampColumn;
+		}
+		if (startTimestampColumn == null) {
+			startTimestampColumn = processConfiguration.timestampColumn;
+		}
+		timestampColumn = "\""+activityTable+"\".\""+timestampColumn+"\"";
+		startTimestampColumn = "\""+activityTable+"\".\""+startTimestampColumn+"\"";
+		query.push("TABLE(");
+		query.push("\""+activityTable+"\".\""+processConfiguration.activityColumn+"\", ");
+		query.push("AVG(SECONDS_BETWEEN("+startTimestampColumn+", "+timestampColumn+")) ");
+		query.push(") NOLIMIT;");
+		query = query.join("");
+		let res = this.celonisMapper.performQueryAnalysis(analysisId, query);
+		let ret = CsvImporter.parseCSV(res);
+		let sojournTime = {};
+		let i = 1;
+		while (i < ret.length) {
+			sojournTime[ret[i][0]] = parseFloat(ret[i][1]);
+			i++;
+		}
+		return sojournTime;
+	}
+	
+	downloadAllCaseDurations(analysisId, processConfigurationId=null) {
+		if (analysisId == null) {
+			analysisId = this.celonisMapper.getFirstAnalysis();
+		}
+		let dataModel = this.celonisMapper.dataModels[this.celonisMapper.analysisDataModel[analysisId]];
+		let dataModelTables = this.celonisMapper.dataModelsTables[dataModel["id"]];
+		let processConfiguration = this.getProcessConfiguration(dataModel, processConfigurationId);
+		let activityTable = dataModelTables[processConfiguration["activityTableId"]];
+		let query = [];
+		query.push("TABLE(");
+		query.push("\""+activityTable+"\".\""+processConfiguration.caseIdColumn+"\", ");
+		query.push("MAX ( CALC_THROUGHPUT ( CASE_START TO CASE_END, REMAP_TIMESTAMPS ( \""+activityTable+"\".\""+processConfiguration.timestampColumn+"\" , SECONDS ) ) )");
+		query.push(") NOLIMIT;");
+		query = query.join("");
+		let res = this.celonisMapper.performQueryAnalysis(analysisId, query);
+		let ret = CsvImporter.parseCSV(res);
+		let caseDurations = [];
+		let i = 1;
+		while (i < ret.length) {
+			if (ret[i][1].length > 0) {
+				caseDurations.push(parseFloat(ret[i][1]));
+			}
+			else {
+				caseDurations.push(0);
+			}
+			i++;
+		}
+		return caseDurations;
+	}
+	
 	downloadFrequencyDfg(analysisId, processConfigurationId=null) {
+		if (analysisId == null) {
+			analysisId = this.celonisMapper.getFirstAnalysis();
+		}
 		let activities = this.downloadActivities(analysisId, processConfigurationId);
 		let startActivities = this.downloadStartActivities(analysisId, processConfigurationId);
 		let endActivities = this.downloadEndActivities(analysisId, processConfigurationId);
 		let pathsFrequency = this.downloadPathsFrequency(analysisId, processConfigurationId);
 		return new FrequencyDfg(activities, startActivities, endActivities, pathsFrequency);
+	}
+	
+	downloadPerformanceDfg(analysisId, processConfigurationId=null, timestampColumn=null, startTimestampColumn=null) {
+		if (analysisId == null) {
+			analysisId = this.celonisMapper.getFirstAnalysis();
+		}
+		let activities = this.downloadActivities(analysisId, processConfigurationId);
+		let startActivities = this.downloadStartActivities(analysisId, processConfigurationId);
+		let endActivities = this.downloadEndActivities(analysisId, processConfigurationId);
+		let pathsFrequency = this.downloadPathsFrequency(analysisId, processConfigurationId);
+		let pathsPerformance = this.downloadPathsPerformance(analysisId, processConfigurationId);
+		let sojournTimes = this.downloadSojournTimes(analysisId, processConfigurationId);
+		return new PerformanceDfg(activities, startActivities, endActivities, pathsFrequency, pathsPerformance, sojournTimes);
 	}
 }
 
@@ -15645,7 +15806,6 @@ try {
 }
 catch (err) {
 	// not in Node
-	console.log(err);
 }
 
 
@@ -15656,6 +15816,9 @@ class CelonisNDWrapper {
 	}
 	
 	getMVPmodel(analysisId) {
+		if (analysisId == null) {
+			analysisId = this.celonisMapper.getFirstAnalysis();
+		}
 		let dataModel = this.celonisMapper.dataModels[this.celonisMapper.analysisDataModel[analysisId]];
 		let dataModelTables = this.celonisMapper.dataModelsTables[dataModel["id"]];
 		let mvp = {};
@@ -15739,7 +15902,87 @@ try {
 }
 catch (err) {
 	// not in Node
-	console.log(err);
 }
 
+
+class AlignmentsDfgGraphvizVisualizer {
+	static uuidv4() {
+	  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+		var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+		return v.toString(16);
+	  });
+	}
+	
+	static nodeUuid() {
+		let uuid = FrequencyDfgGraphvizVisualizer.uuidv4();
+		return "n"+uuid.replace(/-/g, "");
+	}
+	
+	static apply(frequencyDfg, alignedTraces) {
+		let smCount = {};
+		let mmCount = {};
+		let lmCount = {};
+		for (let act in frequencyDfg.activities) {
+			smCount[act] = 0;
+			mmCount[act] = 0;
+			lmCount[act] = 0;
+		}
+		for (let move0 in alignedTraces.movesUsage) {
+			let move = move0.split(";");
+			move[0] = move[0].substring(1, move[0].length);
+			move[1] = move[1].substring(0, move[1].length-1);
+			if (move[0] == move[1]) {
+				// sync
+				smCount[move[0]] = alignedTraces.movesUsage[move0];
+			}
+			else if (move[1] == ">>") {
+				lmCount[move[0]] = alignedTraces.movesUsage[move0];
+			}
+			else if (move[0] == ">>") {
+				mmCount[move[1]] = alignedTraces.movesUsage[move0];
+			}
+		}
+		let ret = [];
+		let uidMap = {};
+		ret.push("digraph G {");
+		for (let act in frequencyDfg.activities) {
+			let nUid = FrequencyDfgGraphvizVisualizer.nodeUuid();
+			uidMap[act] = nUid;
+			ret.push(nUid+" [shape=box, label=\""+act+"\nSM="+smCount[act]+";MM="+mmCount[act]+";LM="+lmCount[act]+"\"]");
+		}
+		let startNodeUid = FrequencyDfgGraphvizVisualizer.nodeUuid();
+		let endNodeUid = FrequencyDfgGraphvizVisualizer.nodeUuid();
+		ret.push(startNodeUid+" [shape=circle, label=\" \", style=filled, fillcolor=green]");
+		ret.push(endNodeUid+" [shape=circle, label=\" \", style=filled, fillcolor=orange]");
+		for (let sa in frequencyDfg.startActivities) {
+			let occ = frequencyDfg.startActivities[sa];
+			let penwidth = 0.5 + Math.log10(occ);
+			ret.push(startNodeUid+" -> "+uidMap[sa]+" [penwidth=\""+penwidth+"\"]");
+		}
+		for (let ea in frequencyDfg.endActivities) {
+			let occ = frequencyDfg.endActivities[ea];
+			let penwidth = 0.5 + Math.log10(occ);
+			ret.push(uidMap[ea]+" -> "+endNodeUid+" [penwidth=\""+penwidth+"\"]");
+		}
+		for (let arc in frequencyDfg.pathsFrequency) {
+			let act1 = arc.split(",")[0];
+			let act2 = arc.split(",")[1];
+			let occ = frequencyDfg.pathsFrequency[arc];
+			let penwidth = 0.5 + Math.log10(occ);
+			ret.push(uidMap[act1]+" -> "+uidMap[act2]+" [penwidth=\""+penwidth+"\"]");
+		}
+		ret.push("}");
+		return ret.join("\n");
+	}
+}
+
+try {
+	require('../../pm4js.js');
+	require('../../objects/dfg/frequency/obj.js');
+	module.exports = {AlignmentsDfgGraphvizVisualizer: AlignmentsDfgGraphvizVisualizer};
+	global.AlignmentsDfgGraphvizVisualizer = AlignmentsDfgGraphvizVisualizer;
+}
+catch (err) {
+	// not in node
+}
 
