@@ -20,6 +20,9 @@ class Celonis1DWrapper {
 	}
 	
 	downloadBaseEventLog(analysisId, processConfigurationId=null) {
+		if (analysisId == null) {
+			analysisId = this.celonisMapper.getFirstAnalysis();
+		}
 		let dataModel = this.celonisMapper.dataModels[this.celonisMapper.analysisDataModel[analysisId]];
 		let dataModelTables = this.celonisMapper.dataModelsTables[dataModel["id"]];
 		let processConfiguration = this.getProcessConfiguration(dataModel, processConfigurationId);
@@ -34,6 +37,9 @@ class Celonis1DWrapper {
 	}
 	
 	downloadStartActivities(analysisId, processConfigurationId=null) {
+		if (analysisId == null) {
+			analysisId = this.celonisMapper.getFirstAnalysis();
+		}
 		let dataModel = this.celonisMapper.dataModels[this.celonisMapper.analysisDataModel[analysisId]];
 		let dataModelTables = this.celonisMapper.dataModelsTables[dataModel["id"]];
 		let processConfiguration = this.getProcessConfiguration(dataModel, processConfigurationId);
@@ -55,6 +61,9 @@ class Celonis1DWrapper {
 	}
 	
 	downloadEndActivities(analysisId, processConfigurationId=null) {
+		if (analysisId == null) {
+			analysisId = this.celonisMapper.getFirstAnalysis();
+		}
 		let dataModel = this.celonisMapper.dataModels[this.celonisMapper.analysisDataModel[analysisId]];
 		let dataModelTables = this.celonisMapper.dataModelsTables[dataModel["id"]];
 		let processConfiguration = this.getProcessConfiguration(dataModel, processConfigurationId);
@@ -76,6 +85,9 @@ class Celonis1DWrapper {
 	}
 	
 	downloadActivities(analysisId, processConfigurationId=null) {
+		if (analysisId == null) {
+			analysisId = this.celonisMapper.getFirstAnalysis();
+		}
 		let dataModel = this.celonisMapper.dataModels[this.celonisMapper.analysisDataModel[analysisId]];
 		let dataModelTables = this.celonisMapper.dataModelsTables[dataModel["id"]];
 		let processConfiguration = this.getProcessConfiguration(dataModel, processConfigurationId);
@@ -96,6 +108,9 @@ class Celonis1DWrapper {
 	}
 	
 	downloadPathsFrequency(analysisId, processConfigurationId=null) {
+		if (analysisId == null) {
+			analysisId = this.celonisMapper.getFirstAnalysis();
+		}
 		let dataModel = this.celonisMapper.dataModels[this.celonisMapper.analysisDataModel[analysisId]];
 		let dataModelTables = this.celonisMapper.dataModelsTables[dataModel["id"]];
 		let processConfiguration = this.getProcessConfiguration(dataModel, processConfigurationId);
@@ -120,6 +135,9 @@ class Celonis1DWrapper {
 	}
 	
 	downloadVariants(analysisId, processConfigurationId=null) {
+		if (analysisId == null) {
+			analysisId = this.celonisMapper.getFirstAnalysis();
+		}
 		let dataModel = this.celonisMapper.dataModels[this.celonisMapper.analysisDataModel[analysisId]];
 		let dataModelTables = this.celonisMapper.dataModelsTables[dataModel["id"]];
 		let processConfiguration = this.getProcessConfiguration(dataModel, processConfigurationId);
@@ -142,6 +160,9 @@ class Celonis1DWrapper {
 	}
 	
 	downloadPathsPerformance(analysisId, processConfigurationId=null, relationship="ANY_OCCURRENCE [ ] TO ANY_OCCURRENCE [ ]") {
+		if (analysisId == null) {
+			analysisId = this.celonisMapper.getFirstAnalysis();
+		}
 		let dataModel = this.celonisMapper.dataModels[this.celonisMapper.analysisDataModel[analysisId]];
 		let dataModelTables = this.celonisMapper.dataModelsTables[dataModel["id"]];
 		let processConfiguration = this.getProcessConfiguration(dataModel, processConfigurationId);
@@ -165,6 +186,9 @@ class Celonis1DWrapper {
 	}
 	
 	downloadSojournTimes(analysisId, processConfigurationId=null, timestampColumn=null, startTimestampColumn=null) {
+		if (analysisId == null) {
+			analysisId = this.celonisMapper.getFirstAnalysis();
+		}
 		let dataModel = this.celonisMapper.dataModels[this.celonisMapper.analysisDataModel[analysisId]];
 		let dataModelTables = this.celonisMapper.dataModelsTables[dataModel["id"]];
 		let processConfiguration = this.getProcessConfiguration(dataModel, processConfigurationId);
@@ -195,6 +219,9 @@ class Celonis1DWrapper {
 	}
 	
 	downloadAllCaseDurations(analysisId, processConfigurationId=null) {
+		if (analysisId == null) {
+			analysisId = this.celonisMapper.getFirstAnalysis();
+		}
 		let dataModel = this.celonisMapper.dataModels[this.celonisMapper.analysisDataModel[analysisId]];
 		let dataModelTables = this.celonisMapper.dataModelsTables[dataModel["id"]];
 		let processConfiguration = this.getProcessConfiguration(dataModel, processConfigurationId);
@@ -222,6 +249,9 @@ class Celonis1DWrapper {
 	}
 	
 	downloadFrequencyDfg(analysisId, processConfigurationId=null) {
+		if (analysisId == null) {
+			analysisId = this.celonisMapper.getFirstAnalysis();
+		}
 		let activities = this.downloadActivities(analysisId, processConfigurationId);
 		let startActivities = this.downloadStartActivities(analysisId, processConfigurationId);
 		let endActivities = this.downloadEndActivities(analysisId, processConfigurationId);
@@ -230,6 +260,9 @@ class Celonis1DWrapper {
 	}
 	
 	downloadPerformanceDfg(analysisId, processConfigurationId=null, timestampColumn=null, startTimestampColumn=null) {
+		if (analysisId == null) {
+			analysisId = this.celonisMapper.getFirstAnalysis();
+		}
 		let activities = this.downloadActivities(analysisId, processConfigurationId);
 		let startActivities = this.downloadStartActivities(analysisId, processConfigurationId);
 		let endActivities = this.downloadEndActivities(analysisId, processConfigurationId);

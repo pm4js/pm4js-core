@@ -18,6 +18,11 @@ class CelonisMapper {
 		this.getAnalysesDataModel();
 	}
 	
+	getFirstAnalysis() {
+		let analysisIds = Object.keys(this.analysis).sort();
+		return analysisIds[0];
+	}
+	
 	getDataPools() {
 		this.dataPools = null;
 		this.dataPoolsNames = null;

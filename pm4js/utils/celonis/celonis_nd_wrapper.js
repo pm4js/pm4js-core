@@ -5,6 +5,9 @@ class CelonisNDWrapper {
 	}
 	
 	getMVPmodel(analysisId) {
+		if (analysisId == null) {
+			analysisId = this.celonisMapper.getFirstAnalysis();
+		}
 		let dataModel = this.celonisMapper.dataModels[this.celonisMapper.analysisDataModel[analysisId]];
 		let dataModelTables = this.celonisMapper.dataModelsTables[dataModel["id"]];
 		let mvp = {};
