@@ -168,7 +168,8 @@ class CelonisMapper {
 	static autoConfiguration() {
 		const queryString = window.location.search;
 		const urlParams = new URLSearchParams(queryString);
-		let targetUrl = document.referrer;
+		let targetUrl = ""+document.referrer;
+		targetUrl = targetUrl.substring(0, targetUrl.length - 1);
 		let apiKey = urlParams.get("key");
 		let analysis = urlParams.get("analysis");
 		let celonisMapper = new CelonisMapper(targetUrl, apiKey);
