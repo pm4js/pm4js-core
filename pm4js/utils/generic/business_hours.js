@@ -36,7 +36,7 @@ class BusinessHours {
 
 BusinessHours.DEFAULT_WORKING_HOURS = [7, 17];
 BusinessHours.DEFAULT_WEEKENDS = [0, 6];
-
+BusinessHours.ENABLED = false;
 
 try {
 	require('../../pm4js.js');

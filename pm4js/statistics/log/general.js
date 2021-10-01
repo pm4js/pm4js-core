@@ -158,9 +158,17 @@ class GeneralLogStatistics {
 					if (!(acti in sojTime)) {
 						sojTime[acti] = [];
 					}
-					let st = eve.attributes[startTimestamp].value.getTime();
-					let et = eve.attributes[completeTimestamp].value.getTime();
-					let diff = (et - st)*1000;
+					let st = eve.attributes[startTimestamp].value;
+					let et = eve.attributes[completeTimestamp].value;
+					let diff = 0;
+					if (BusinessHours.ENABLED) {
+						diff = BusinessHours.apply(st, et);
+					}
+					else {
+						st = st.getTime();
+						et = et.getTime();
+						diff = (et - st)*1000;
+					}
 					sojTime[acti].push(diff);
 				}
 			}

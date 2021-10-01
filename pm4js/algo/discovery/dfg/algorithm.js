@@ -53,9 +53,17 @@ class PerformanceDfgDiscovery {
 					let act1 = trace.events[i].attributes[activityKey].value;
 					let act2 = trace.events[i+1].attributes[activityKey].value;
 					let path = act1+","+act2;
-					let ts1 = trace.events[i].attributes[timestampKey].value.getTime();
-					let ts2 = trace.events[i+1].attributes[startTimestampKey].value.getTime();
-					let diff = (ts2 - ts1)/1000;
+					let ts1 = trace.events[i].attributes[timestampKey].value;
+					let ts2 = trace.events[i+1].attributes[startTimestampKey].value;
+					let diff = 0;
+					if (BusinessHours.ENABLED) {
+						diff = BusinessHours.apply(ts1, ts2);
+					}
+					else {
+						ts1 = ts1.getTime();
+						ts2 = ts2.getTime();
+						diff = (ts2 - ts1)/1000;
+					}
 					if (!(path in paths)) {
 						paths[path] = [];
 					}
