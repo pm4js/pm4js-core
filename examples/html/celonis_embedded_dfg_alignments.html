@@ -1,0 +1,24 @@
+<html>
+	<head>
+		<script type="text/javascript" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+		<script type="text/javascript" src="https://<URL>/viz.js"></script>
+		<script type="text/javascript" src="https://<URL>/pm4js_latest.js"></script>
+	</head>
+<body>
+	<div id="container">
+	</div>
+	<script type="text/javascript">
+		CelonisMapper.PROXY_URL_GET = "https://<URL>/celonis_proxy.php";
+		CelonisMapper.PROXY_URL_POST = "https://<URL>/celonis_proxy_post.php";
+		let celonisMapper = CelonisMapper.autoConfiguration();
+		let celonisWrapper = new Celonis1DWrapper(celonisMapper);
+		let eventLog = celonisWrapper.downloadBaseEventLog(null);
+		let frequencyDfg = celonisWrapper.downloadFrequencyDfg(null);
+		frequencyDfg = DfgSliders.filterDfgOnPercPaths(frequencyDfg, 0.05);
+		let alignedTraces = DfgAlignments.apply(eventLog, frequencyDfg);
+		let gv = AlignmentsDfgGraphvizVisualizer.apply(frequencyDfg, alignedTraces);
+		let svgXml = Viz(gv, { format: "svg"});
+		document.getElementById("container").innerHTML = svgXml;
+	</script>
+</body>
+</html>
