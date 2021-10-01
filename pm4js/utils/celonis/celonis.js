@@ -16,9 +16,13 @@ class CelonisMapper {
 		this.getDataModels();
 		this.getAnalyses();
 		this.getAnalysesDataModel();
+		this.defaultAnalysis = null;
 	}
 	
 	getFirstAnalysis() {
+		if (this.defaultAnalysis != null) {
+			return this.defaultAnalysis;
+		}
 		let analysisIds = Object.keys(this.analysis).sort();
 		return analysisIds[0];
 	}
@@ -159,6 +163,21 @@ class CelonisMapper {
 			$.ajax(ajaxDict);
 			return ret;
 		}
+	}
+	
+	static autoConfiguration() {
+		const queryString = window.location.search;
+		const urlParams = new URLSearchParams(queryString);
+		let targetUrl = document.referrer;
+		let apiKey = urlParams.get("key");
+		let analysis = urlParams.get("analysis");
+		let celonisMapper = new CelonisMapper(targetUrl, apiKey);
+		celonisMapper.defaultAnalysis = analysis;
+		return celonisMapper;
+	}
+	
+	toString() {
+		return "CelonisMapper url="+this.baseUrl+" key="+this.apiKey+" defaultAnalysis="+this.defaultAnalysis;
 	}
 }
 

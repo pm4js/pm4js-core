@@ -20,5 +20,9 @@ def post_wrapper():
                          json=call_contents).text
 
 
+USE_SSL = False
 if __name__ == "__main__":
-    app.run(threaded=True, port=5004)
+    if USE_SSL:
+        app.run(threaded=True, port=5004, host="0.0.0.0", ssl_context=('local.crt', 'local.key'))
+    else:
+        app.run(threaded=True, port=5004, host="0.0.0.0")
