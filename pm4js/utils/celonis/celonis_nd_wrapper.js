@@ -88,5 +88,4 @@ try {
 }
 catch (err) {
 	// not in Node
-	console.log(err);
 }

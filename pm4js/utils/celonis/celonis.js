@@ -166,7 +166,6 @@ try {
 }
 catch (err) {
 	// not in Node
-	console.log(err);
 	CelonisMapper.IS_NODE = false;
 	CelonisMapper.PROXY_URL_GET = "http://localhost:5004/getWrapper";
 	CelonisMapper.PROXY_URL_POST = "http://localhost:5004/postWrapper";
