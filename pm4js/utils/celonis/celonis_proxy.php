@@ -4,8 +4,6 @@
 		$authHeader
 	);
 	$url = $_GET["url"];
-	$file = 'req.txt';
-	file_put_contents($file, $authHeader." ".$url);
 	$ch = curl_init($url);
 	curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
 	$data = curl_exec($ch);
