@@ -99,7 +99,7 @@ class CelonisMapper {
 		let dataModel = this.dataModels[this.analysisDataModel[analysisId]];
 		let payload = {'dataCommandRequest': {'variables': [], 'request': {'commands': [{'queries': [pqlQuery], 'computationId': 0, 'isTransient': false}], 'cubeId': dataModel["id"]}}, 'exportType': 'CSV'};
 		let resp1 = this.performPostJson(this.baseUrl+"/process-mining/analysis/v1.2/api/analysis/"+analysisId+"/exporting/query", payload);
-		if (resp1["exportStatus"] != "FAILED") {
+		if (resp1["exportStatus"] == "WAITING" || resp1["exportStatus"] == "RUNNING" || resp1["exportStatus"] == "DONE") {
 			let downloadId = resp1["id"];
 			while (true) {
 				this.pausecomp(waitingTime1);
