@@ -115,6 +115,39 @@ class CelonisMapper {
 		return resp1;
 	}
 	
+	createWorkspace(dataModelId, name) {
+		let ret = this.performPostJson(this.baseUrl+"/process-mining/api/processes", {"name": name, "dataModelId": dataModelId});
+		return ret["id"];
+	}
+	
+	createAnalysis(workspaceId, name) {
+		let ret = this.performPostJson(this.baseUrl+"/process-mining/api/analysis", {"name": name, "processId": workspaceId, "applicationId": null});
+		return ret["id"];
+	}
+	
+	reloadDataModel(dataModelId, waitingTime1=1000, waitingTime2=10000) {
+		let dataPoolId = this.dataModelsDataPools[dataModelId];
+		let dataModel = this.dataModels[dataModelId];
+		let url = this.baseUrl+"/integration/api/pools/"+dataPoolId+"/data-models/"+dataModelId+"/reload";
+		try {
+			let ret = this.performPostJson(url, {"forceComplete": true});
+		}
+		catch (err) {
+		}
+		console.log("... reloading the data model: "+dataModel["name"]);
+		while (true) {
+			let url = this.baseUrl+"/integration/api/pools/"+dataPoolId+"/data-models/"+dataModelId+"/load-history/load-info-sync";
+			this.pausecomp(waitingTime1);
+			let ret = this.performGet(url)["loadInfo"]["currentComputeLoad"]["loadStatus"];
+			if (ret == "DONE" || ret == "SUCCESS") {
+				break;
+			}
+			console.log("... still waiting");
+			this.pausecomp(waitingTime2);
+		}
+		console.log("successful reload of data model: "+dataModel["name"]);
+	}
+	
 	performGet(url, isRequestJson=true) {
 		if (CelonisMapper.IS_NODE) {
 			let ret = retus(url, {headers: {"authorization": "Bearer "+this.apiKey}}).body;
