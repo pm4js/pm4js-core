@@ -16,8 +16,16 @@ def post_wrapper():
     call_contents = request.get_json()
     url = call_contents["url"]
     access_token = call_contents["access_token"]
+    files = {}
+    if "files" in call_contents:
+        content = call_contents["files"]
+        if "\n" in content and "\r" not in content:
+            content = content.replace("\n", "\r\n")
+        content = content.encode("utf-8")
+        del call_contents["files"]
+        files["file"] = content
     return requests.post(url, headers={"Authorization": "Bearer " + access_token},
-                         json=call_contents).text
+                         files=files, json=call_contents).text
 
 
 @app.route('/putWrapper', methods=['POST'])

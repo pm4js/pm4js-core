@@ -116,11 +116,22 @@ class CelonisMapper {
 	}
 	
 	pushCSV(dataPoolId, csvContent, tableName, waitingTime1=250, waitingTime2=750) {
-		/*let url = this.baseUrl+ "/integration/api/v1/data-push/"+dataPoolId+"/jobs/";
-		let payload = {"targetName": tableName, "dataPoolId": dataPoolId};
+		let url = this.baseUrl+ "/integration/api/v1/data-push/"+dataPoolId+"/jobs/";
+		let payload = {"targetName": tableName, "dataPoolId": dataPoolId, "fileType": "CSV"};
 		let dataPushID = this.performPostJson(url, payload)["id"];
 		let targetUrl = this.baseUrl+ "/integration/api/v1/data-push/"+dataPoolId+"/jobs/"+dataPushID+"/chunks/upserted";
-		payload = {"key": "file", "data": csvContent, "fileName": "prova.csv"};*/
+		payload = {"key": "file", "fileName": "prova.csv", "files": csvContent};
+		try {
+			this.performPostJsonAlwaysProxified(targetUrl, payload);
+		}
+		catch (err) {
+		}
+		targetUrl = this.baseUrl+ "/integration/api/v1/data-push/"+dataPoolId+"/jobs/"+dataPushID;
+		try {
+			this.performPostJson(targetUrl, {});
+		}
+		catch (err) {
+		}
 	}
 	
 	createWorkspace(dataModelId, name) {
@@ -276,6 +287,30 @@ class CelonisMapper {
 		}
 	}
 	
+	performPostJsonAlwaysProxified(url, jsonContent) {
+		jsonContent["access_token"] = this.apiKey;
+		jsonContent["url"] = url;
+		if (CelonisMapper.IS_NODE) {
+			return retus(CelonisMapper.PROXY_URL_POST, {method: "post", headers: {"authorization": "Bearer "+this.apiKey}, json: jsonContent}).body;
+		}
+		else {
+			let ret = null;
+			let ajaxDict = {
+				url: CelonisMapper.PROXY_URL_POST,
+				dataType: 'json',
+				type: 'post',
+				contentType: 'application/json',
+				data: JSON.stringify(jsonContent),
+				async: false,
+				success: function(data) {
+					ret = data;
+				}
+			}
+			$.ajax(ajaxDict);
+			return ret;
+		}
+	}
+	
 	performPutJson(url, jsonContent) {
 		if (CelonisMapper.IS_NODE) {
 			return retus(url, {method: "put", headers: {"authorization": "Bearer "+this.apiKey}, json: jsonContent}).body;
@@ -285,7 +320,7 @@ class CelonisMapper {
 			jsonContent["access_token"] = this.apiKey;
 			jsonContent["url"] = url;
 			let ajaxDict = {
-				url: CelonisMapper.PROXY_URL_POST,
+				url: CelonisMapper.PROXY_URL_PUT,
 				dataType: 'json',
 				type: 'post',
 				contentType: 'application/json',
@@ -317,6 +352,9 @@ class CelonisMapper {
 	}
 }
 
+CelonisMapper.PROXY_URL_GET = "http://localhost:5004/getWrapper";
+CelonisMapper.PROXY_URL_POST = "http://localhost:5004/postWrapper";
+CelonisMapper.PROXY_URL_PUT = "http://localhost:5004/putWrapper";
 try {
 	global.retus = require("retus");
 	require('../../pm4js.js');
@@ -327,7 +365,4 @@ try {
 catch (err) {
 	// not in Node
 	CelonisMapper.IS_NODE = false;
-	CelonisMapper.PROXY_URL_GET = "http://localhost:5004/getWrapper";
-	CelonisMapper.PROXY_URL_POST = "http://localhost:5004/postWrapper";
-	CelonisMapper.PROXY_URL_POST = "http://localhost:5004/putWrapper";
 }
