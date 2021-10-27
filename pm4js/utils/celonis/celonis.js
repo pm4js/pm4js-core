@@ -138,6 +138,36 @@ class CelonisMapper {
 		return ret["id"];
 	}
 	
+	getTablesFromPool(dataPoolId) {
+		let ret = this.performGet(this.baseUrl+"/integration/api/pools/"+dataPoolId+"/tables");
+		return ret;
+	}
+	
+	addTableFromPool(dataModelId, tableName) {
+		let dataPoolId = this.dataModelsDataPools[dataModelId];
+		let payload = [{"dataSourceId": null, "dataModelId": dataModelId, "name": tableName, "alias": tableName}];
+		let ret = this.performPostJson(this.baseUrl+"/integration/api/pools/"+dataPoolId+"/data-model/"+dataModelId+"/tables", payload);
+		this.getDataModels();
+	}
+	
+	getTableIdFromName(dataModelId, tableName) {
+		for (let tableId in this.dataModelsTables[dataModelId]) {
+			if (this.dataModelsTables[dataModelId][tableId] == tableName) {
+				return tableId;
+			}
+		}
+	}
+	
+	addForeignKey(dataModelId, table1, column1, table2, column2) {
+		table1 = this.getTableIdFromName(dataModelId, table1);
+		table2 = this.getTableIdFromName(dataModelId, table2);
+		let dataPoolId = this.dataModelsDataPools[dataModelId];
+		let url = this.baseUrl+"/integration/api/pools/"+dataPoolId+"/data-models/"+dataModelId+"/foreign-keys";
+		let payload = {"dataModelId": dataModelId, "sourceTableId": table1, "targetTableId": table2, "columns": [{"sourceColumnName": column1, "targetColumnName": column2}]};
+		let ret = this.performPostJson(url, payload);
+		this.getDataModels();
+	}
+	
 	reloadDataModel(dataModelId, waitingTime1=1000, waitingTime2=10000) {
 		let dataPoolId = this.dataModelsDataPools[dataModelId];
 		let dataModel = this.dataModels[dataModelId];
