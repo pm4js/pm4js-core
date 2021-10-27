@@ -115,6 +115,14 @@ class CelonisMapper {
 		return resp1;
 	}
 	
+	pushCSV(dataPoolId, csvContent, tableName, waitingTime1=250, waitingTime2=750) {
+		/*let url = this.baseUrl+ "/integration/api/v1/data-push/"+dataPoolId+"/jobs/";
+		let payload = {"targetName": tableName, "dataPoolId": dataPoolId};
+		let dataPushID = this.performPostJson(url, payload)["id"];
+		let targetUrl = this.baseUrl+ "/integration/api/v1/data-push/"+dataPoolId+"/jobs/"+dataPushID+"/chunks/upserted";
+		payload = {"key": "file", "data": csvContent, "fileName": "prova.csv"};*/
+	}
+	
 	createWorkspace(dataModelId, name) {
 		let ret = this.performPostJson(this.baseUrl+"/process-mining/api/processes", {"name": name, "dataModelId": dataModelId});
 		return ret["id"];
