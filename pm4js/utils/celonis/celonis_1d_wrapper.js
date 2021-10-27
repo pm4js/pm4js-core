@@ -289,9 +289,11 @@ class Celonis1DWrapper {
 		let dataPoolId = this.celonisMapper.createDataPool(baseName+"_POOL", false);
 		this.celonisMapper.pushCSV(dataPoolId, csvExport, baseName+"_ACTIVITIES", false);
 		this.celonisMapper.pushCSV(dataPoolId, cases, baseName+"_CASES", false);
-		let dataModelId = this.celonisMapper.createDataModel(dataPoolId, baseName+"_DMODEL", false);
+		this.celonisMapper.getDataPools();
+		let dataModelId = this.celonisMapper.createDataModel(dataPoolId, baseName+"_DMODEL");
 		this.celonisMapper.addTableFromPool(dataModelId, baseName+"_ACTIVITIES", false);
 		this.celonisMapper.addTableFromPool(dataModelId, baseName+"_CASES", false);
+		this.celonisMapper.getDataModels();
 		this.celonisMapper.addForeignKey(dataModelId, baseName+"_ACTIVITIES", caseIdKey, baseName+"_CASES", caseIdKey, false);
 		this.celonisMapper.addProcessConfiguration(dataModelId, baseName+"_ACTIVITIES", baseName+"_CASES", caseIdKey, activityKey, timestampKey, null, false);
 		this.celonisMapper.reloadDataModel(dataModelId);
