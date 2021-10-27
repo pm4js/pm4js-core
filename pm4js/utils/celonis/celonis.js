@@ -15,7 +15,6 @@ class CelonisMapper {
 		this.getDataPools();
 		this.getDataModels();
 		this.getAnalyses();
-		this.getAnalysesDataModel();
 		this.defaultAnalysis = null;
 	}
 	
@@ -76,6 +75,7 @@ class CelonisMapper {
 			this.analysis[ana["id"]] = ana;
 			this.analysisNames[ana["name"]] = ana["id"];
 		}
+		this.getAnalysesDataModel();
 	}
 	
 	getAnalysesDataModel() {
@@ -178,6 +178,23 @@ class CelonisMapper {
 		}
 	}
 	
+	addProcessConfiguration(dataModelId, activityTable, caseTable, caseIdColumn, activityColumn, timestampColumn, sortingColumn=null, reload=true) {
+		let payload = {};
+		let dataPoolId = this.dataModelsDataPools[dataModelId];
+		activityTable = this.getTableIdFromName(dataModelId, activityTable);
+		caseTable = this.getTableIdFromName(dataModelId, caseTable);
+		payload["activityTableId"] = activityTable;
+		payload["caseTableId"] = caseTable;
+		payload["caseIdColumn"] = caseIdColumn;
+		payload["activityColumn"] = activityColumn;
+		payload["timestampColumn"] = timestampColumn;
+		let url = this.baseUrl+"/integration/api/pools/"+dataPoolId+"/data-models/"+dataModelId+"/process-configurations";
+		let ret = this.performPutJson(url, payload);
+		if (reload) {
+			this.getDataModels();
+		}
+	}
+	
 	reloadDataModel(dataModelId, waitingTime1=1000, waitingTime2=10000) {
 		let dataPoolId = this.dataModelsDataPools[dataModelId];
 		let dataModel = this.dataModels[dataModelId];
@@ -251,6 +268,30 @@ class CelonisMapper {
 		}
 	}
 	
+	performPutJson(url, jsonContent) {
+		if (CelonisMapper.IS_NODE) {
+			return retus(url, {method: "put", headers: {"authorization": "Bearer "+this.apiKey}, json: jsonContent}).body;
+		}
+		else {
+			let ret = null;
+			jsonContent["access_token"] = this.apiKey;
+			jsonContent["url"] = url;
+			let ajaxDict = {
+				url: CelonisMapper.PROXY_URL_POST,
+				dataType: 'json',
+				type: 'post',
+				contentType: 'application/json',
+				data: JSON.stringify(jsonContent),
+				async: false,
+				success: function(data) {
+					ret = data;
+				}
+			}
+			$.ajax(ajaxDict);
+			return ret;
+		}
+	}
+	
 	static autoConfiguration() {
 		const queryString = window.location.search;
 		const urlParams = new URLSearchParams(queryString);
@@ -280,4 +321,5 @@ catch (err) {
 	CelonisMapper.IS_NODE = false;
 	CelonisMapper.PROXY_URL_GET = "http://localhost:5004/getWrapper";
 	CelonisMapper.PROXY_URL_POST = "http://localhost:5004/postWrapper";
+	CelonisMapper.PROXY_URL_POST = "http://localhost:5004/putWrapper";
 }

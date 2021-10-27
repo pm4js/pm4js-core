@@ -20,6 +20,15 @@ def post_wrapper():
                          json=call_contents).text
 
 
+@app.route('/putWrapper', methods=['POST'])
+def put_wrapper():
+    call_contents = request.get_json()
+    url = call_contents["url"]
+    access_token = call_contents["access_token"]
+    return requests.put(url, headers={"Authorization": "Bearer " + access_token},
+                         json=call_contents).text
+
+
 USE_SSL = False
 if __name__ == "__main__":
     if USE_SSL:
