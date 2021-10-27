@@ -1,4 +1,8 @@
 class CsvExporter {
+	static formatDateString(d) {
+		return ("0" + d.getDate()).slice(-2) + "-" + ("0"+(d.getMonth()+1)).slice(-2) + "-" + d.getFullYear() + " " + ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2);
+	}
+	
 	static apply(eventLog, sep=CsvExporter.DEFAULT_SEPARATOR, quotechar=CsvExporter.DEFAULT_QUOTECHAR, casePrefix=CsvExporter.DEFAULT_CASE_PREFIX) {
 		let caseAttributes = GeneralLogStatistics.getCaseAttributesList(eventLog);
 		let eventAttributes0 = GeneralLogStatistics.getEventAttributesList(eventLog);
@@ -28,7 +32,8 @@ class CsvExporter {
 						pref += quotechar+val+quotechar+sep;
 					}
 					else if (typeof val == "object") {
-						pref += val.toISOString()+sep;
+						//pref += val.toISOString()+sep;
+						pref += CsvExporter.formatDateString(val)+sep;
 					}
 					else {
 						pref += val+sep;
@@ -48,7 +53,8 @@ class CsvExporter {
 							eveStr += quotechar+val+quotechar+sep;
 						}
 						else if (typeof val == "object") {
-							eveStr += val.toISOString()+sep;
+							//eveStr += val.toISOString()+sep;
+							eveStr += CsvExporter.formatDateString(val)+sep;
 						}
 						else {
 							eveStr += val+sep;

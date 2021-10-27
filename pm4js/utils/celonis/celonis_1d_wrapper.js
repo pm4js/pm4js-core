@@ -272,22 +272,22 @@ class Celonis1DWrapper {
 		return new PerformanceDfg(activities, startActivities, endActivities, pathsFrequency, pathsPerformance, sojournTimes);
 	}
 	
-	uploadEventLogToCelonis(eventLog, baseName, caseIdKey="concept:name", activityKey="concept:name", timestampKey="time:timestamp") {
+	uploadEventLogToCelonis(eventLog, baseName, caseIdKey="concept:name", activityKey="concept:name", timestampKey="time:timestamp", sep=",", quotechar="\"", newline="\n") {
 		let cases = {};
 		for (let trace of eventLog.traces) {
 			let caseId = trace.attributes[caseIdKey].value;
-			if (caseId.indexOf(",") > -1) {
-				caseId = "\""+caseId+"\"";
+			if (caseId.indexOf(sep) > -1) {
+				caseId = quotechar+caseId+quotechar;
 			}
 			cases[caseId] = 0;
 		}
 		cases = Object.keys(cases);
 		caseIdKey = "case:"+caseIdKey;
 		cases.unshift(caseIdKey);
-		cases = cases.join("\n");
+		cases = cases.join(newline);
 		let csvExport = CsvExporter.apply(eventLog);
 		let dataPoolId = this.celonisMapper.createDataPool(baseName+"_POOL", false);
-		this.celonisMapper.pushCSV(dataPoolId, csvExport, baseName+"_ACTIVITIES", false);
+		this.celonisMapper.pushCSV(dataPoolId, csvExport, baseName+"_ACTIVITIES", false, "time:timestamp");
 		this.celonisMapper.pushCSV(dataPoolId, cases, baseName+"_CASES", false);
 		this.celonisMapper.getDataPools();
 		let dataModelId = this.celonisMapper.createDataModel(dataPoolId, baseName+"_DMODEL");

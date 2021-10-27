@@ -104,7 +104,7 @@ class CelonisMapper {
 			while (true) {
 				this.pausecomp(waitingTime1);
 				let resp2 = this.performGet(this.baseUrl+"/process-mining/analysis/v1.2/api/analysis/"+analysisId+"/exporting/query/"+downloadId+"/status");
-				if (resp2.exportStatus == "DONE") {
+				if (resp2.exportStatus == "DONE" || resp2.exportStatus == "SUCCESS" || resp2.exportStatus == "ERROR") {
 					break;
 				}
 				this.pausecomp(waitingTime2);
@@ -115,12 +115,33 @@ class CelonisMapper {
 		return resp1;
 	}
 	
-	pushCSV(dataPoolId, csvContent, tableName, reload=true, waitingTime1=750, waitingTime2=250) {
+	pushCSV(dataPoolId, csvContent, tableName, reload=true, timestampColumn=null, waitingTime1=750, waitingTime2=250, sep=",", quotechar="\"", newline="\n") {
 		let url = this.baseUrl+ "/integration/api/v1/data-push/"+dataPoolId+"/jobs/";
 		let payload = {"targetName": tableName, "dataPoolId": dataPoolId, "fileType": "CSV"};
+		let columnsConfig = [];
+		let header = csvContent.substring(0, csvContent.indexOf(newline)).split(sep);
+		for (let col of header) {
+			if (col == timestampColumn) {
+				columnsConfig.push({"columnName": col, "columnType": "DATETIME"});
+			}
+			else {
+				columnsConfig.push({"columnName": col, "columnType": "STRING"});
+			}
+		}
+		let csvParsingOptions = {};
+		csvParsingOptions["decimalSeparator"] = ".";
+		csvParsingOptions["separatorSequence"] = ",";
+		csvParsingOptions["lineEnding"] = "\\r";
+		// 2010-12-30T10:02:00.000Z
+		csvParsingOptions["dateFormat"] = "yyyy-mm-ddThh:mm:ss";
+		payload["tableSchema"] = {"tableName": tableName, "columns": columnsConfig};
+		//payload["csvParsingOptions"] = csvParsingOptions;
 		let dataPushID = this.performPostJson(url, payload)["id"];
 		let targetUrl = this.baseUrl+ "/integration/api/v1/data-push/"+dataPoolId+"/jobs/"+dataPushID+"/chunks/upserted";
 		payload = {"key": "file", "fileName": "prova.csv", "files": csvContent};
+		payload["tableSchema"] = {"tableName": tableName, "columns": columnsConfig};
+		//payload["csvParsingOptions"] = csvParsingOptions;
+		console.log(payload);
 		console.log("... uploading the table: "+tableName);
 		try {
 			this.performPostJsonAlwaysProxified(targetUrl, payload);
@@ -138,7 +159,7 @@ class CelonisMapper {
 		while (true) {
 			this.pausecomp(waitingTime1);
 			let ret = this.performGet(targetUrl);
-			if (ret.status == "DONE") {
+			if (ret.status == "DONE" || ret.status == "SUCCESS" || ret.status == "ERROR") {
 				break;
 			}
 			console.log("... still queued ("+ret.status+")");
@@ -219,7 +240,9 @@ class CelonisMapper {
 		activityTable = this.getTableIdFromName(dataModelId, activityTable);
 		caseTable = this.getTableIdFromName(dataModelId, caseTable);
 		payload["activityTableId"] = activityTable;
-		payload["caseTableId"] = caseTable;
+		if (caseTable != null) {
+			payload["caseTableId"] = caseTable;
+		}
 		payload["caseIdColumn"] = caseIdColumn;
 		payload["activityColumn"] = activityColumn;
 		payload["timestampColumn"] = timestampColumn;
@@ -247,10 +270,10 @@ class CelonisMapper {
 			let url = this.baseUrl+"/integration/api/pools/"+dataPoolId+"/data-models/"+dataModelId+"/load-history/load-info-sync";
 			this.pausecomp(waitingTime1);
 			let ret = this.performGet(url)["loadInfo"]["currentComputeLoad"]["loadStatus"];
-			if (ret == "DONE" || ret == "SUCCESS") {
+			if (ret == "DONE" || ret == "SUCCESS" || ret == "ERROR" || ret == "WARNING") {
 				break;
 			}
-			console.log("... still waiting  ("+ret.status+")");
+			console.log("... still waiting  ("+ret+")");
 			this.pausecomp(waitingTime2);
 		}
 		console.log("successful reload of data model: "+dataModel["name"]);
