@@ -271,6 +271,36 @@ class Celonis1DWrapper {
 		let sojournTimes = this.downloadSojournTimes(analysisId, processConfigurationId);
 		return new PerformanceDfg(activities, startActivities, endActivities, pathsFrequency, pathsPerformance, sojournTimes);
 	}
+	
+	uploadEventLogToCelonis(eventLog, baseName, caseIdKey="concept:name", activityKey="concept:name", timestampKey="time:timestamp") {
+		let cases = {};
+		for (let trace of eventLog.traces) {
+			let caseId = trace.attributes[caseIdKey].value;
+			if (caseId.indexOf(",") > -1) {
+				caseId = "\""+caseId+"\"";
+			}
+			cases[caseId] = 0;
+		}
+		cases = Object.keys(cases);
+		caseIdKey = "case:"+caseIdKey;
+		cases.unshift(caseIdKey);
+		cases = cases.join("\n");
+		let csvExport = CsvExporter.apply(eventLog);
+		let dataPoolId = this.celonisMapper.createDataPool(baseName+"_POOL", false);
+		this.celonisMapper.pushCSV(dataPoolId, csvExport, baseName+"_ACTIVITIES", false);
+		this.celonisMapper.pushCSV(dataPoolId, cases, baseName+"_CASES", false);
+		let dataModelId = this.celonisMapper.createDataModel(dataPoolId, baseName+"_DMODEL", false);
+		this.celonisMapper.addTableFromPool(dataModelId, baseName+"_ACTIVITIES", false);
+		this.celonisMapper.addTableFromPool(dataModelId, baseName+"_CASES", false);
+		this.celonisMapper.addForeignKey(dataModelId, baseName+"_ACTIVITIES", caseIdKey, baseName+"_CASES", caseIdKey, false);
+		this.celonisMapper.addProcessConfiguration(dataModelId, baseName+"_ACTIVITIES", baseName+"_CASES", caseIdKey, activityKey, timestampKey, null, false);
+		this.celonisMapper.reloadDataModel(dataModelId);
+		let workspaceId = this.celonisMapper.createWorkspace(dataModelId, baseName+"_WORKSPACE");
+		let analysisId = this.celonisMapper.createAnalysis(workspaceId, baseName+"_ANALYSIS", false);
+		this.celonisMapper.getDataPools();
+		this.celonisMapper.getDataModels();
+		this.celonisMapper.getAnalyses();
+	}
 }
 
 try {

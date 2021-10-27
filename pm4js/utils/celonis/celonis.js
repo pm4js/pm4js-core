@@ -115,22 +115,38 @@ class CelonisMapper {
 		return resp1;
 	}
 	
-	pushCSV(dataPoolId, csvContent, tableName, waitingTime1=250, waitingTime2=750) {
+	pushCSV(dataPoolId, csvContent, tableName, reload=true, waitingTime1=750, waitingTime2=250) {
 		let url = this.baseUrl+ "/integration/api/v1/data-push/"+dataPoolId+"/jobs/";
 		let payload = {"targetName": tableName, "dataPoolId": dataPoolId, "fileType": "CSV"};
 		let dataPushID = this.performPostJson(url, payload)["id"];
 		let targetUrl = this.baseUrl+ "/integration/api/v1/data-push/"+dataPoolId+"/jobs/"+dataPushID+"/chunks/upserted";
 		payload = {"key": "file", "fileName": "prova.csv", "files": csvContent};
+		console.log("... uploading the table: "+tableName);
 		try {
 			this.performPostJsonAlwaysProxified(targetUrl, payload);
 		}
 		catch (err) {
+			//console.log(err);
 		}
 		targetUrl = this.baseUrl+ "/integration/api/v1/data-push/"+dataPoolId+"/jobs/"+dataPushID;
 		try {
 			this.performPostJson(targetUrl, {});
 		}
 		catch (err) {
+			//console.log(err);
+		}
+		while (true) {
+			this.pausecomp(waitingTime1);
+			let ret = this.performGet(targetUrl);
+			if (ret.status == "DONE") {
+				break;
+			}
+			console.log("... still queued");
+			this.pausecomp(waitingTime2);
+		}
+		console.log("... finished upload of the table: "+tableName);
+		if (reload) {
+			this.getDataPools();
 		}
 	}
 	
@@ -207,6 +223,9 @@ class CelonisMapper {
 		payload["caseIdColumn"] = caseIdColumn;
 		payload["activityColumn"] = activityColumn;
 		payload["timestampColumn"] = timestampColumn;
+		if (sortingColumn != null) {
+			payload["sortingColumn"] = sortingColumn;
+		}
 		let url = this.baseUrl+"/integration/api/pools/"+dataPoolId+"/data-models/"+dataModelId+"/process-configurations";
 		let ret = this.performPutJson(url, payload);
 		if (reload) {
