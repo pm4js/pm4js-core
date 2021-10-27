@@ -120,21 +120,27 @@ class CelonisMapper {
 		return ret["id"];
 	}
 	
-	createAnalysis(workspaceId, name) {
+	createAnalysis(workspaceId, name, reload=true) {
 		let ret = this.performPostJson(this.baseUrl+"/process-mining/api/analysis", {"name": name, "processId": workspaceId, "applicationId": null});
-		this.getAnalyses();
+		if (reload) {
+			this.getAnalyses();
+		}
 		return ret["id"];
 	}
 	
-	createDataModel(dataPoolId, name) {
+	createDataModel(dataPoolId, name, reload=true) {
 		let ret = this.performPostJson(this.baseUrl+"/integration/api/pools/"+dataPoolId+"/data-models", {"name": name, "poolId": dataPoolId, "configurationSkipped": true});
-		this.getDataModels();
+		if (reload) {
+			this.getDataModels();
+		}
 		return ret["id"];
 	}
 	
-	createDataPool(name) {
+	createDataPool(name, reload=true) {
 		let ret = this.performPostJson(this.baseUrl+"/integration/api/pools", {"name": name});
-		this.getDataPools();
+		if (reload) {
+			this.getDataPools();
+		}
 		return ret["id"];
 	}
 	
@@ -143,11 +149,13 @@ class CelonisMapper {
 		return ret;
 	}
 	
-	addTableFromPool(dataModelId, tableName) {
+	addTableFromPool(dataModelId, tableName, reload=true) {
 		let dataPoolId = this.dataModelsDataPools[dataModelId];
 		let payload = [{"dataSourceId": null, "dataModelId": dataModelId, "name": tableName, "alias": tableName}];
 		let ret = this.performPostJson(this.baseUrl+"/integration/api/pools/"+dataPoolId+"/data-model/"+dataModelId+"/tables", payload);
-		this.getDataModels();
+		if (reload) {
+			this.getDataModels();
+		}
 	}
 	
 	getTableIdFromName(dataModelId, tableName) {
@@ -158,14 +166,16 @@ class CelonisMapper {
 		}
 	}
 	
-	addForeignKey(dataModelId, table1, column1, table2, column2) {
+	addForeignKey(dataModelId, table1, column1, table2, column2, reload=true) {
 		table1 = this.getTableIdFromName(dataModelId, table1);
 		table2 = this.getTableIdFromName(dataModelId, table2);
 		let dataPoolId = this.dataModelsDataPools[dataModelId];
 		let url = this.baseUrl+"/integration/api/pools/"+dataPoolId+"/data-models/"+dataModelId+"/foreign-keys";
 		let payload = {"dataModelId": dataModelId, "sourceTableId": table1, "targetTableId": table2, "columns": [{"sourceColumnName": column1, "targetColumnName": column2}]};
 		let ret = this.performPostJson(url, payload);
-		this.getDataModels();
+		if (reload) {
+			this.getDataModels();
+		}
 	}
 	
 	reloadDataModel(dataModelId, waitingTime1=1000, waitingTime2=10000) {
