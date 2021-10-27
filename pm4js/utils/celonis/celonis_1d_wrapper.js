@@ -287,8 +287,8 @@ class Celonis1DWrapper {
 		cases = cases.join(newline);
 		let csvExport = CsvExporter.apply(eventLog);
 		let dataPoolId = this.celonisMapper.createDataPool(baseName+"_POOL", false);
-		this.celonisMapper.pushCSV(dataPoolId, csvExport, baseName+"_ACTIVITIES", false, "time:timestamp");
-		this.celonisMapper.pushCSV(dataPoolId, cases, baseName+"_CASES", false);
+		this.celonisMapper.pushCSV(dataPoolId, csvExport, baseName+"_ACTIVITIES", false, "time:timestamp", sep, quotechar, newline);
+		this.celonisMapper.pushCSV(dataPoolId, cases, baseName+"_CASES", false, null, sep, quotechar, newline);
 		this.celonisMapper.getDataPools();
 		let dataModelId = this.celonisMapper.createDataModel(dataPoolId, baseName+"_DMODEL");
 		this.celonisMapper.addTableFromPool(dataModelId, baseName+"_ACTIVITIES", false);

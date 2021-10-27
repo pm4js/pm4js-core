@@ -115,7 +115,7 @@ class CelonisMapper {
 		return resp1;
 	}
 	
-	pushCSV(dataPoolId, csvContent, tableName, reload=true, timestampColumn=null, waitingTime1=750, waitingTime2=250, sep=",", quotechar="\"", newline="\n") {
+	pushCSV(dataPoolId, csvContent, tableName, reload=true, timestampColumn=null, sep=",", quotechar="\"", newline="\n", waitingTime1=750, waitingTime2=250) {
 		let url = this.baseUrl+ "/integration/api/v1/data-push/"+dataPoolId+"/jobs/";
 		let payload = {"targetName": tableName, "dataPoolId": dataPoolId, "fileType": "CSV"};
 		let columnsConfig = [];
@@ -141,7 +141,6 @@ class CelonisMapper {
 		payload = {"key": "file", "fileName": "prova.csv", "files": csvContent};
 		payload["tableSchema"] = {"tableName": tableName, "columns": columnsConfig};
 		//payload["csvParsingOptions"] = csvParsingOptions;
-		console.log(payload);
 		console.log("... uploading the table: "+tableName);
 		try {
 			this.performPostJsonAlwaysProxified(targetUrl, payload);
