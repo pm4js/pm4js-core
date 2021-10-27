@@ -122,6 +122,19 @@ class CelonisMapper {
 	
 	createAnalysis(workspaceId, name) {
 		let ret = this.performPostJson(this.baseUrl+"/process-mining/api/analysis", {"name": name, "processId": workspaceId, "applicationId": null});
+		this.getAnalyses();
+		return ret["id"];
+	}
+	
+	createDataModel(dataPoolId, name) {
+		let ret = this.performPostJson(this.baseUrl+"/integration/api/pools/"+dataPoolId+"/data-models", {"name": name, "poolId": dataPoolId, "configurationSkipped": true});
+		this.getDataModels();
+		return ret["id"];
+	}
+	
+	createDataPool(name) {
+		let ret = this.performPostJson(this.baseUrl+"/integration/api/pools", {"name": name});
+		this.getDataPools();
 		return ret["id"];
 	}
 	
