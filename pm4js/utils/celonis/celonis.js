@@ -141,7 +141,7 @@ class CelonisMapper {
 			if (ret.status == "DONE") {
 				break;
 			}
-			console.log("... still queued");
+			console.log("... still queued ("+ret.status+")");
 			this.pausecomp(waitingTime2);
 		}
 		console.log("... finished upload of the table: "+tableName);
@@ -250,7 +250,7 @@ class CelonisMapper {
 			if (ret == "DONE" || ret == "SUCCESS") {
 				break;
 			}
-			console.log("... still waiting");
+			console.log("... still waiting  ("+ret.status+")");
 			this.pausecomp(waitingTime2);
 		}
 		console.log("successful reload of data model: "+dataModel["name"]);
