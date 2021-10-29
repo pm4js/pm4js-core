@@ -1,4 +1,5 @@
 require('./pm4js/pm4js.js');
+require('./pm4js/utils/generic/dates.js');
 require('./pm4js/utils/generic/humanize-duration.js');
 require('./pm4js/utils/generic/intervaltree.js');
 require('./pm4js/utils/generic/numeric.js');
