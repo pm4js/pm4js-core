@@ -19,8 +19,6 @@ def post_wrapper():
     files = {}
     if "files" in call_contents:
         content = call_contents["files"]
-        if "\n" in content and "\r" not in content:
-            content = content.replace("\n", "\r\n")
         content = content.encode("utf-8")
         del call_contents["files"]
         files["file"] = content

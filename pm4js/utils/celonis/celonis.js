@@ -115,7 +115,7 @@ class CelonisMapper {
 		return resp1;
 	}
 	
-	pushCSV(dataPoolId, csvContent, tableName, reload=true, timestampColumn=null, sep=",", quotechar="\"", newline="\n", waitingTime1=750, waitingTime2=250) {
+	pushCSV(dataPoolId, csvContent, tableName, reload=true, timestampColumn=null, sep=",", quotechar="\"", newline="\r\n", waitingTime1=750, waitingTime2=250) {
 		let url = this.baseUrl+ "/integration/api/v1/data-push/"+dataPoolId+"/jobs/";
 		let payload = {"targetName": tableName, "dataPoolId": dataPoolId, "fileType": "CSV"};
 		let columnsConfig = [];
@@ -132,7 +132,6 @@ class CelonisMapper {
 		csvParsingOptions["decimalSeparator"] = ".";
 		csvParsingOptions["separatorSequence"] = ",";
 		csvParsingOptions["lineEnding"] = "\\r";
-		// 2010-12-30T10:02:00.000Z
 		csvParsingOptions["dateFormat"] = "yyyy-mm-ddThh:mm:ss";
 		payload["tableSchema"] = {"tableName": tableName, "columns": columnsConfig};
 		//payload["csvParsingOptions"] = csvParsingOptions;

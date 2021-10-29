@@ -3,7 +3,7 @@ class CsvExporter {
 		return ("0" + d.getDate()).slice(-2) + "-" + ("0"+(d.getMonth()+1)).slice(-2) + "-" + d.getFullYear() + " " + ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2);
 	}
 	
-	static apply(eventLog, sep=CsvExporter.DEFAULT_SEPARATOR, quotechar=CsvExporter.DEFAULT_QUOTECHAR, casePrefix=CsvExporter.DEFAULT_CASE_PREFIX) {
+	static apply(eventLog, sep=CsvExporter.DEFAULT_SEPARATOR, quotechar=CsvExporter.DEFAULT_QUOTECHAR, casePrefix=CsvExporter.DEFAULT_CASE_PREFIX, newline=CsvExporter.DEFAULT_NEWLINE) {
 		let caseAttributes = GeneralLogStatistics.getCaseAttributesList(eventLog);
 		let eventAttributes0 = GeneralLogStatistics.getEventAttributesList(eventLog);
 		let eventAttributes = [];
@@ -68,7 +68,7 @@ class CsvExporter {
 				ret.push(eveStr);
 			}
 		}
-		ret = ret.join('\n');
+		ret = ret.join(newline);
 		return ret;
 	}
 }
@@ -80,6 +80,7 @@ CsvExporter.DEFAULT_CASE_ID_AS_TRACE_ATTRIBUTE = "concept:name";
 CsvExporter.DEFAULT_CASE_PREFIX = "case:";
 CsvExporter.DEFAULT_SEPARATOR = ',';
 CsvExporter.DEFAULT_QUOTECHAR = '"';
+CsvExporter.DEFAULT_NEWLINE = '\n';
 
 try {
 	require('../../../../pm4js.js');

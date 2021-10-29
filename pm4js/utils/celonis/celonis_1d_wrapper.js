@@ -272,7 +272,7 @@ class Celonis1DWrapper {
 		return new PerformanceDfg(activities, startActivities, endActivities, pathsFrequency, pathsPerformance, sojournTimes);
 	}
 	
-	uploadEventLogToCelonis(eventLog, baseName, caseIdKey="concept:name", activityKey="concept:name", timestampKey="time:timestamp", sep=",", quotechar="\"", newline="\n") {
+	uploadEventLogToCelonis(eventLog, baseName, caseIdKey="concept:name", activityKey="concept:name", timestampKey="time:timestamp", sep=",", quotechar="\"", newline="\r\n", casePrefix="case:") {
 		let cases = {};
 		for (let trace of eventLog.traces) {
 			let caseId = trace.attributes[caseIdKey].value;
@@ -282,10 +282,10 @@ class Celonis1DWrapper {
 			cases[caseId] = 0;
 		}
 		cases = Object.keys(cases);
-		caseIdKey = "case:"+caseIdKey;
+		caseIdKey = casePrefix+caseIdKey;
 		cases.unshift(caseIdKey);
 		cases = cases.join(newline);
-		let csvExport = CsvExporter.apply(eventLog);
+		let csvExport = CsvExporter.apply(eventLog, sep, quotechar, casePrefix, newline);
 		let dataPoolId = this.celonisMapper.createDataPool(baseName+"_POOL", false);
 		this.celonisMapper.pushCSV(dataPoolId, csvExport, baseName+"_ACTIVITIES", false, "time:timestamp", sep, quotechar, newline);
 		this.celonisMapper.pushCSV(dataPoolId, cases, baseName+"_CASES", false, null, sep, quotechar, newline);
