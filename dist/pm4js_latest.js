@@ -59,7 +59,7 @@ class Pm4JS {
 	}
 }
 
-Pm4JS.VERSION = "0.0.12";
+Pm4JS.VERSION = "0.0.13";
 Pm4JS.registrationEnabled = false;
 Pm4JS.objects = [];
 Pm4JS.algorithms = [];
@@ -75,6 +75,23 @@ try {
 catch (err) {
 	// not in node
 }
+
+class DateUtils {
+	static formatDateString(d) {
+		return ("0" + d.getDate()).slice(-2) + "-" + ("0"+(d.getMonth()+1)).slice(-2) + "-" + d.getFullYear() + " " + ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2)+ ":" + ("0" + d.getSeconds()).slice(-2);
+	}
+}
+
+try {
+	require('../../pm4js.js');
+	module.exports = {DateUtils: DateUtils};
+	global.DateUtils = DateUtils;
+}
+catch (err) {
+	// not in node
+	//console.log(err);
+}
+
 
 // HumanizeDuration.js - https://git.io/j0HgmQ
 
@@ -7565,6 +7582,57 @@ numeric.svd= function svd(A) {
 
 
 
+class BusinessHours {
+	static apply(startDate, endDate, workingHours=null, weekends=null) {
+		if (workingHours == null) {
+			workingHours = BusinessHours.DEFAULT_WORKING_HOURS;
+		}
+		
+		if (weekends == null) {
+			weekends = BusinessHours.DEFAULT_WEEKENDS;
+		}
+		
+		// Store minutes worked
+		var minutesWorked = 0;
+	  
+		// Validate input
+		if (endDate < startDate) { return 0; }
+		
+		// Loop from your Start to End dates (by hour)
+		var current = startDate;
+
+		// Loop while currentDate is less than end Date (by minutes)
+		while(current < endDate){          
+			// Is the current time within a work day (and if it occurs on a weekend or not)          
+			if(current.getHours() >= workingHours[0] && current.getHours() <= workingHours[1] 
+			   && !(weekends.includes(current.getDay()))) {
+				  minutesWorked++;
+			}
+			 
+			// Increment current time
+			current.setTime(current.getTime() + 1000 * 60);
+		}
+
+		// Return the number of seconds
+		return minutesWorked * 60;
+	}
+}
+
+BusinessHours.DEFAULT_WORKING_HOURS = [7, 17];
+BusinessHours.DEFAULT_WEEKENDS = [0, 6];
+BusinessHours.ENABLED = false;
+
+try {
+	require('../../pm4js.js');
+	global.BusinessHours = BusinessHours;
+	module.exports = {BusinessHours: BusinessHours};
+}
+catch (err) {
+	// not in Node
+	//console.log(err);
+}
+
+
 class EventLog {
 	constructor() {
 		this.attributes = {};
@@ -7775,9 +7843,17 @@ class GeneralLogStatistics {
 					if (!(acti in sojTime)) {
 						sojTime[acti] = [];
 					}
-					let st = eve.attributes[startTimestamp].value.getTime();
-					let et = eve.attributes[completeTimestamp].value.getTime();
-					let diff = (et - st)*1000;
+					let st = eve.attributes[startTimestamp].value;
+					let et = eve.attributes[completeTimestamp].value;
+					let diff = 0;
+					if (BusinessHours.ENABLED) {
+						diff = BusinessHours.apply(st, et);
+					}
+					else {
+						st = st.getTime();
+						et = et.getTime();
+						diff = (et - st)*1000;
+					}
 					sojTime[acti].push(diff);
 				}
 			}
@@ -7968,7 +8044,7 @@ catch (err) {
 //Pm4JS.registerImporter("CsvImporter", "apply", ["csv"], "CSV Importer", "Alessandro Berti");
 
 class CsvExporter {
-	static apply(eventLog, sep=CsvExporter.DEFAULT_SEPARATOR, quotechar=CsvExporter.DEFAULT_QUOTECHAR, casePrefix=CsvExporter.DEFAULT_CASE_PREFIX) {
+	static apply(eventLog, sep=CsvExporter.DEFAULT_SEPARATOR, quotechar=CsvExporter.DEFAULT_QUOTECHAR, casePrefix=CsvExporter.DEFAULT_CASE_PREFIX, newline=CsvExporter.DEFAULT_NEWLINE) {
 		let caseAttributes = GeneralLogStatistics.getCaseAttributesList(eventLog);
 		let eventAttributes0 = GeneralLogStatistics.getEventAttributesList(eventLog);
 		let eventAttributes = [];
@@ -7997,7 +8073,8 @@ class CsvExporter {
 						pref += quotechar+val+quotechar+sep;
 					}
 					else if (typeof val == "object") {
-						pref += val.toISOString()+sep;
+						//pref += val.toISOString()+sep;
+						pref += DateUtils.formatDateString(val)+sep;
 					}
 					else {
 						pref += val+sep;
@@ -8017,7 +8094,8 @@ class CsvExporter {
 							eveStr += quotechar+val+quotechar+sep;
 						}
 						else if (typeof val == "object") {
-							eveStr += val.toISOString()+sep;
+							//eveStr += val.toISOString()+sep;
+							eveStr += DateUtils.formatDateString(val)+sep;
 						}
 						else {
 							eveStr += val+sep;
@@ -8031,7 +8109,7 @@ class CsvExporter {
 				ret.push(eveStr);
 			}
 		}
-		ret = ret.join('\n');
+		ret = ret.join(newline);
 		return ret;
 	}
 }
@@ -8043,6 +8121,7 @@ CsvExporter.DEFAULT_CASE_ID_AS_TRACE_ATTRIBUTE = "concept:name";
 CsvExporter.DEFAULT_CASE_PREFIX = "case:";
 CsvExporter.DEFAULT_SEPARATOR = ',';
 CsvExporter.DEFAULT_QUOTECHAR = '"';
+CsvExporter.DEFAULT_NEWLINE = '\n';
 
 try {
 	require('../../../../pm4js.js');
@@ -10348,9 +10427,17 @@ class PerformanceDfgDiscovery {
 					let act1 = trace.events[i].attributes[activityKey].value;
 					let act2 = trace.events[i+1].attributes[activityKey].value;
 					let path = act1+","+act2;
-					let ts1 = trace.events[i].attributes[timestampKey].value.getTime();
-					let ts2 = trace.events[i+1].attributes[startTimestampKey].value.getTime();
-					let diff = (ts2 - ts1)/1000;
+					let ts1 = trace.events[i].attributes[timestampKey].value;
+					let ts2 = trace.events[i+1].attributes[startTimestampKey].value;
+					let diff = 0;
+					if (BusinessHours.ENABLED) {
+						diff = BusinessHours.apply(ts1, ts2);
+					}
+					else {
+						ts1 = ts1.getTime();
+						ts2 = ts2.getTime();
+						diff = (ts2 - ts1)/1000;
+					}
 					if (!(path in paths)) {
 						paths[path] = [];
 					}
@@ -15326,6 +15413,430 @@ catch (err) {
 Pm4JS.registerAlgorithm("PerformanceDfgSimulation", "apply", ["PerformanceDfg"], "EventLog", "Perform Playout on a Performance DFG (performance simulation)", "Alessandro Berti");
 
 
+class JsonOcelImporter {
+	static apply(jsonString) {
+		return JsonOcelImporter.importLog(jsonString);
+	}
+	
+	static importLog(jsonString) {
+		return JSON.parse(jsonString);
+	}
+}
+
+try {
+	require('../../../../pm4js.js');
+	module.exports = {JsonOcelImporter: JsonOcelImporter};
+	global.JsonOcelImporter = JsonOcelImporter;
+}
+catch (err) {
+	// not in node
+	//console.log(err);
+}
+
+
+class XmlOcelImporter {
+	static apply(xmlString) {
+		return XmlOcelImporter.importLog(xmlString);
+	}
+	
+	static importLog(xmlString) {
+		var parser = new DOMParser();
+		var xmlDoc = parser.parseFromString(xmlString, "text/xml");
+		let xmlLog = xmlDoc.getElementsByTagName("log")[0];
+		let ocel = {};
+		XmlOcelImporter.parseXmlObj(xmlLog, ocel);
+		return ocel;
+	}
+	
+	static parseXmlObj(xmlObj, target) {
+		for (let childId in xmlObj.childNodes) {
+			let child = xmlObj.childNodes[childId];
+			if (child.tagName == "event") {
+				let eveId = null;
+				let eveActivity = null;
+				let eveTimestamp = null;
+				let eveOmap = [];
+				let eveVmap = {};
+				for (let childId2 in child.childNodes) {
+					let child2 = child.childNodes[childId2];
+					if (child2.tagName != null) {
+						if (child2.getAttribute("key") == "id") {
+							eveId = child2.getAttribute("value");
+						}
+						else if (child2.getAttribute("key") == "activity") {
+							eveActivity = child2.getAttribute("value");
+						}
+						else if (child2.getAttribute("key") == "timestamp") {
+							eveTimestamp = child2.getAttribute("value");
+						}
+						else if (child2.getAttribute("key") == "omap") {
+							for (let childId3 in child2.childNodes) {
+								let child3 = child2.childNodes[childId3];
+								if (child3.tagName != null) {
+									eveOmap.push(child3.getAttribute("value"));
+								}
+							}
+						}
+						else if (child2.getAttribute("key") == "vmap") {
+							for (let childId3 in child2.childNodes) {
+								let child3 = child2.childNodes[childId3];
+								if (child3.tagName != null) {
+									XmlOcelImporter.parseAttribute(child3, eveVmap);
+								}
+							}
+						}
+					}
+				}
+				target[eveId] = {"ocel:activity": eveActivity, "ocel:timestamp": eveTimestamp, "ocel:omap": eveOmap, "ocel:vmap": eveVmap};
+			}
+			else if (child.tagName == "object") {
+				let objId = null;
+				let objType = null;
+				let objOvmap = {};
+				for (let childId2 in child.childNodes) {
+					let child2 = child.childNodes[childId2];
+					if (child2.tagName != null) {
+						if (child2.getAttribute("key") == "id") {
+							objId = child2.getAttribute("value");
+						}
+						else if (child2.getAttribute("key") == "type") {
+							objType = child2.getAttribute("value");
+						}
+						else if (child2.getAttribute("key") == "ovmap") {
+							for (let childId3 in child2.childNodes) {
+								let child3 = child2.childNodes[childId3];
+								if (child3.tagName != null) {
+									XmlOcelImporter.parseAttribute(child3, objOvmap);
+								}
+							}
+						}
+					}
+				}
+				target[objId] = {"ocel:type": objType, "ocel:ovmap": objOvmap};
+			}
+			else if (child.tagName == "events") {
+				target["ocel:events"] = {};
+				XmlOcelImporter.parseXmlObj(child, target["ocel:events"]);
+			}
+			else if (child.tagName == "objects") {
+				target["ocel:objects"] = {};
+				XmlOcelImporter.parseXmlObj(child, target["ocel:objects"]);
+			}
+			else if (child.tagName == "global") {
+				if (child.getAttribute("scope") == "event") {
+					target["ocel:global-event"] = {};
+					for (let childId2 in child.childNodes) {
+						let child2 = child.childNodes[childId2];
+						if (child2.tagName != null) {
+							XmlOcelImporter.parseAttribute(child2, target["ocel:global-event"]);
+						}
+					}
+				}
+				else if (child.getAttribute("scope") == "object") {
+					target["ocel:global-object"] = {};
+					for (let childId2 in child.childNodes) {
+						let child2 = child.childNodes[childId2];
+						if (child2.tagName != null) {
+							XmlOcelImporter.parseAttribute(child2, target["ocel:global-object"]);
+						}
+					}
+				}
+				else if (child.getAttribute("scope") == "log") {
+					target["ocel:global-log"] = {"ocel:attribute-names": [], "ocel:object-types": []};
+					for (let childId2 in child.childNodes) {
+						let child2 = child.childNodes[childId2];
+						if (child2.tagName != null) {
+							if (child2.getAttribute("key") == "attribute-names") {
+								for (let childId3 in child2.childNodes) {
+									let child3 = child2.childNodes[childId3];
+									if (child3.tagName != null) {
+										target["ocel:global-log"]["ocel:attribute-names"].push(child3.getAttribute("value"));
+									}
+								}
+							}
+							else if (child2.getAttribute("key") == "object-types") {
+								for (let childId3 in child2.childNodes) {
+									let child3 = child2.childNodes[childId3];
+									if (child3.tagName != null) {
+										target["ocel:global-log"]["ocel:object-types"].push(child3.getAttribute("value"));
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	static parseAttribute(xmlObj, target) {
+		let attName = xmlObj.getAttribute("key");
+		let attValue = xmlObj.getAttribute("value");
+		if (xmlObj.tagName == "string") {
+			target[attName] = attValue;
+		}
+		else if (xmlObj.tagName == "date") {
+			target[attName] = attValue;
+		}
+		else {
+			target[attName] = ""+attValue;
+		}
+	}
+}
+
+try {
+	require('../../../../pm4js.js');
+	module.exports = {XmlOcelImporter: XmlOcelImporter};
+	global.XmlOcelImporter = XmlOcelImporter;
+	global.DOMParser = require('xmldom').DOMParser;
+}
+catch (err) {
+	// not in node
+	//console.log(err);
+}
+
+
+class JsonOcelExporter {
+	static apply(ocel) {
+		return JsonOcelExporter.exportLog(ocel);
+	}
+	
+	static exportLog(ocel) {
+		return JSON.stringify(ocel);
+	}
+}
+
+try {
+	require('../../../../pm4js.js');
+	module.exports = {JsonOcelExporter: JsonOcelExporter};
+	global.JsonOcelExporter = JsonOcelExporter;
+}
+catch (err) {
+	// not in node
+	//console.log(err);
+}
+
+
+
+class XmlOcelExporter {
+	static apply(ocel) {
+		return XmlOcelExporter.exportLog(ocel);
+	}
+	
+	static exportLog(ocel) {
+		let xmlDocument = document.createElement("log");
+		let globalLog = document.createElement("global");
+		globalLog.setAttribute("scope", "log");
+		let globalObject = document.createElement("global");
+		globalObject.setAttribute("scope", "object");
+		let globalEvent = document.createElement("global");
+		globalEvent.setAttribute("scope", "event");
+		let events = document.createElement("events");
+		let objects = document.createElement("objects");
+		xmlDocument.appendChild(globalLog);
+		xmlDocument.appendChild(globalObject);
+		xmlDocument.appendChild(globalEvent);
+		xmlDocument.appendChild(events);
+		xmlDocument.appendChild(objects);
+		
+		XmlOcelExporter.exportGlobalLog(ocel, globalLog);
+		XmlOcelExporter.exportGlobalObject(ocel, globalObject);
+		XmlOcelExporter.exportGlobalEvent(ocel, globalEvent);
+		XmlOcelExporter.exportEvents(ocel, events);
+		XmlOcelExporter.exportObjects(ocel, objects);
+
+		let serializer = null;
+		try {
+			serializer = new XMLSerializer();
+		}
+		catch (err) {
+			serializer = require('xmlserializer');
+		}
+		const xmlStr = serializer.serializeToString(xmlDocument);
+		return xmlStr;
+	}
+	
+	static exportEvents(ocel, xmlEvents) {
+		for (let evId in ocel["ocel:events"]) {
+			let eve = ocel["ocel:events"][evId];
+			let xmlEvent = document.createElement("event");
+			xmlEvents.appendChild(xmlEvent);
+			let eveId = document.createElement("string");
+			eveId.setAttribute("key", "id");
+			eveId.setAttribute("value", evId);
+			xmlEvent.appendChild(eveId);
+			let eveActivity = document.createElement("string");
+			eveActivity.setAttribute("key", "activity");
+			eveActivity.setAttribute("value", eve["ocel:activity"]);
+			xmlEvent.appendChild(eveActivity);
+			let eveTimestamp = document.createElement("date");
+			eveTimestamp.setAttribute("key", "timestamp");
+			eveTimestamp.setAttribute("value", eve["ocel:timestamp"]);
+			xmlEvent.appendChild(eveTimestamp);
+			let xmlOmap = document.createElement("list");
+			xmlOmap.setAttribute("key", "omap");
+			xmlEvent.appendChild(xmlOmap);
+			for (let relObj of eve["ocel:omap"]) {
+				let xmlObj = document.createElement("string");
+				xmlObj.setAttribute("key", "object-id");
+				xmlObj.setAttribute("value", relObj);
+				xmlOmap.appendChild(xmlObj);
+			}
+			let xmlVmap = document.createElement("list");
+			xmlVmap.setAttribute("key", "vmap");
+			xmlEvent.appendChild(xmlVmap);
+			for (let att in eve["ocel:vmap"]) {
+				XmlOcelExporter.exportAttribute(att, eve["ocel:vmap"][att], xmlEvent);
+			}
+		}
+	}
+	
+	static exportObjects(ocel, xmlObjects) {
+		for (let objId in ocel["ocel:objects"]) {
+			let obj = ocel["ocel:objects"][objId];
+			let xmlObj = document.createElement("object");
+			xmlObjects.appendChild(xmlObj);
+			let xmlObjId = document.createElement("string");
+			xmlObjId.setAttribute("key", "id");
+			xmlObjId.setAttribute("value", objId);
+			xmlObj.appendChild(xmlObjId);
+			let xmlObjType = document.createElement("string");
+			xmlObjType.setAttribute("key", "type")
+			xmlObjType.setAttribute("value", obj["ocel:type"]);
+			xmlObj.appendChild(xmlObjType);
+			let xmlObjOvmap = document.createElement("list");
+			xmlObjOvmap.setAttribute("key", "ovmap");
+			xmlObj.appendChild(xmlObjOvmap);
+			for (let att in obj["ocel:ovmap"]) {
+				XmlOcelExporter.exportAttribute(att, obj["ocel:ovmap"][att], xmlObj);
+			}
+		}
+	}
+	
+	static exportGlobalLog(ocel, globalLog) {
+		let attributeNames = document.createElement("list");
+		globalLog.appendChild(attributeNames);
+		attributeNames.setAttribute("key", "attribute-names");
+		let objectTypes = document.createElement("list");
+		globalLog.appendChild(objectTypes);
+		objectTypes.setAttribute("key", "object-types");
+		for (let att of ocel["ocel:global-log"]["ocel:attribute-names"]) {
+			let xmlAttr = document.createElement("string");
+			xmlAttr.setAttribute("key", "attribute-name");
+			xmlAttr.setAttribute("value", att);
+			attributeNames.appendChild(xmlAttr);
+		}
+		for (let ot of ocel["ocel:global-log"]["ocel:object-types"]) {
+			let xmlOt = document.createElement("string");
+			xmlOt.setAttribute("key", "object-type");
+			xmlOt.setAttribute("value", ot);
+			objectTypes.appendChild(xmlOt);
+		}
+	}
+	
+	static exportGlobalEvent(ocel, globalEvent) {
+		for (let att in ocel["ocel:global-event"]) {
+			XmlOcelExporter.exportAttribute(att, ocel["ocel:global-event"][att], globalEvent);
+		}
+	}
+	
+	static exportGlobalObject(ocel, globalObject) {
+		for (let att in ocel["ocel:global-object"]) {
+			XmlOcelExporter.exportAttribute(att, ocel["ocel:global-object"][att], globalObject);
+		}
+	}
+	
+	static exportAttribute(attName, attValue, parentObj) {
+		let xmlTag = null;
+		let value = null;
+			if (typeof attValue == "string") {
+				xmlTag = "string";
+				value = attValue;
+			}
+			else if (typeof attValue == "object") {
+				xmlTag = "date";
+				console.log(attValue);
+				value = attValue.toISOString();
+			}
+			else if (typeof attValue == "number") {
+				xmlTag = "float";
+				value = ""+attValue;
+			}
+			
+			if (value != null) {
+				let thisAttribute = document.createElement(xmlTag);
+				thisAttribute.setAttribute("key", attName);
+				thisAttribute.setAttribute("value", value);
+				parentObj.appendChild(thisAttribute);
+			}
+	}
+}
+
+try {
+	const jsdom = require("jsdom");
+	const { JSDOM } = jsdom;
+	global.dom = new JSDOM('<!doctype html><html><body></body></html>');
+	global.window = dom.window;
+	global.document = dom.window.document;
+	global.navigator = global.window.navigator;
+	require('../../../../pm4js.js');
+	module.exports = {XmlOcelExporter: XmlOcelExporter};
+	global.XmlOcelExporter = XmlOcelExporter;
+}
+catch (err) {
+	// not in node
+	//console.log(err);
+}
+
+
+class OcelFlattening {
+	static apply(ocel, objType, caseIdKey="concept:name", activityKey="concept:name", timestampKey="time:timestamp") {
+		return OcelFlattening.flatten(ocel, objType, caseIdKey, activityKey, timestampKey);
+	}
+	
+	static flatten(ocel, objType, caseIdKey="concept:name", activityKey="concept:name", timestampKey="time:timestamp") {
+		let log = new EventLog();
+		let objTraces = {};
+		for (let eveId in ocel["ocel:events"]) {
+			let eve = ocel["ocel:events"][eveId];
+			for (let objId of eve["ocel:omap"]) {
+				let obj = ocel["ocel:objects"][objId];
+				if (obj["ocel:type"] == objType) {
+					let trace = null;
+					if (!(objId in objTraces)) {
+						trace = new Trace();
+						trace.attributes[caseIdKey] = new Attribute(objId);
+						log.traces.push(trace);
+						objTraces[objId] = trace;
+					}
+					else {
+						trace = objTraces[objId];
+					}
+					let xesEve = new Event();
+					trace.events.push(xesEve);
+					xesEve.attributes[activityKey] = new Attribute(eve["ocel:activity"]);
+					xesEve.attributes[timestampKey] = new Attribute(new Date(eve["ocel:timestamp"]));
+					for (let attr in eve["ocel:vmap"]) {
+						xesEve.attributes[attr] = new Attribute(eve["ocel:vmap"][attr]);
+					}
+				}
+			}
+		}
+		return log;
+	}
+}
+
+try {
+	require('../../../pm4js.js');
+	module.exports = {OcelFlattening: OcelFlattening};
+	global.OcelFlattening = OcelFlattening;
+}
+catch (err) {
+	// not in node
+	//console.log(err);
+}
+
+
 class CelonisMapper {
 	constructor(baseUrl, apiKey) {
 		this.baseUrl = baseUrl;
@@ -15343,7 +15854,6 @@ class CelonisMapper {
 		this.getDataPools();
 		this.getDataModels();
 		this.getAnalyses();
-		this.getAnalysesDataModel();
 		this.defaultAnalysis = null;
 	}
 	
@@ -15404,6 +15914,7 @@ class CelonisMapper {
 			this.analysis[ana["id"]] = ana;
 			this.analysisNames[ana["name"]] = ana["id"];
 		}
+		this.getAnalysesDataModel();
 	}
 	
 	getAnalysesDataModel() {
@@ -15432,7 +15943,7 @@ class CelonisMapper {
 			while (true) {
 				this.pausecomp(waitingTime1);
 				let resp2 = this.performGet(this.baseUrl+"/process-mining/analysis/v1.2/api/analysis/"+analysisId+"/exporting/query/"+downloadId+"/status");
-				if (resp2.exportStatus == "DONE") {
+				if (resp2.exportStatus == "DONE" || resp2.exportStatus == "SUCCESS" || resp2.exportStatus == "ERROR") {
 					break;
 				}
 				this.pausecomp(waitingTime2);
@@ -15441,6 +15952,168 @@ class CelonisMapper {
 			return resp3;
 		}
 		return resp1;
+	}
+	
+	pushCSV(dataPoolId, csvContent, tableName, reload=true, timestampColumn=null, sep=",", quotechar="\"", newline="\r\n", waitingTime1=750, waitingTime2=250) {
+		let url = this.baseUrl+ "/integration/api/v1/data-push/"+dataPoolId+"/jobs/";
+		let payload = {"targetName": tableName, "dataPoolId": dataPoolId, "fileType": "CSV"};
+		let columnsConfig = [];
+		let header = csvContent.substring(0, csvContent.indexOf(newline)).split(sep);
+		for (let col of header) {
+			if (col == timestampColumn) {
+				columnsConfig.push({"columnName": col, "columnType": "DATETIME"});
+			}
+			else {
+				columnsConfig.push({"columnName": col, "columnType": "STRING"});
+			}
+		}
+		let csvParsingOptions = {};
+		csvParsingOptions["decimalSeparator"] = ".";
+		csvParsingOptions["separatorSequence"] = ",";
+		csvParsingOptions["lineEnding"] = "\\r";
+		csvParsingOptions["dateFormat"] = "yyyy-mm-ddThh:mm:ss";
+		payload["tableSchema"] = {"tableName": tableName, "columns": columnsConfig};
+		//payload["csvParsingOptions"] = csvParsingOptions;
+		let dataPushID = this.performPostJson(url, payload)["id"];
+		let targetUrl = this.baseUrl+ "/integration/api/v1/data-push/"+dataPoolId+"/jobs/"+dataPushID+"/chunks/upserted";
+		payload = {"key": "file", "fileName": "prova.csv", "files": csvContent};
+		payload["tableSchema"] = {"tableName": tableName, "columns": columnsConfig};
+		//payload["csvParsingOptions"] = csvParsingOptions;
+		console.log("... uploading the table: "+tableName);
+		try {
+			this.performPostJsonAlwaysProxified(targetUrl, payload);
+		}
+		catch (err) {
+			//console.log(err);
+		}
+		targetUrl = this.baseUrl+ "/integration/api/v1/data-push/"+dataPoolId+"/jobs/"+dataPushID;
+		try {
+			this.performPostJson(targetUrl, {});
+		}
+		catch (err) {
+			//console.log(err);
+		}
+		while (true) {
+			this.pausecomp(waitingTime1);
+			let ret = this.performGet(targetUrl);
+			if (ret.status == "DONE" || ret.status == "SUCCESS" || ret.status == "ERROR") {
+				break;
+			}
+			console.log("... still queued ("+ret.status+")");
+			this.pausecomp(waitingTime2);
+		}
+		console.log("... finished upload of the table: "+tableName);
+		if (reload) {
+			this.getDataPools();
+		}
+	}
+	
+	createWorkspace(dataModelId, name) {
+		let ret = this.performPostJson(this.baseUrl+"/process-mining/api/processes", {"name": name, "dataModelId": dataModelId});
+		return ret["id"];
+	}
+	
+	createAnalysis(workspaceId, name, reload=true) {
+		let ret = this.performPostJson(this.baseUrl+"/process-mining/api/analysis", {"name": name, "processId": workspaceId, "applicationId": null});
+		if (reload) {
+			this.getAnalyses();
+		}
+		return ret["id"];
+	}
+	
+	createDataModel(dataPoolId, name, reload=true) {
+		let ret = this.performPostJson(this.baseUrl+"/integration/api/pools/"+dataPoolId+"/data-models", {"name": name, "poolId": dataPoolId, "configurationSkipped": true});
+		if (reload) {
+			this.getDataModels();
+		}
+		return ret["id"];
+	}
+	
+	createDataPool(name, reload=true) {
+		let ret = this.performPostJson(this.baseUrl+"/integration/api/pools", {"name": name});
+		if (reload) {
+			this.getDataPools();
+		}
+		return ret["id"];
+	}
+	
+	getTablesFromPool(dataPoolId) {
+		let ret = this.performGet(this.baseUrl+"/integration/api/pools/"+dataPoolId+"/tables");
+		return ret;
+	}
+	
+	addTableFromPool(dataModelId, tableName, reload=true) {
+		let dataPoolId = this.dataModelsDataPools[dataModelId];
+		let payload = [{"dataSourceId": null, "dataModelId": dataModelId, "name": tableName, "alias": tableName}];
+		let ret = this.performPostJson(this.baseUrl+"/integration/api/pools/"+dataPoolId+"/data-model/"+dataModelId+"/tables", payload);
+		if (reload) {
+			this.getDataModels();
+		}
+	}
+	
+	getTableIdFromName(dataModelId, tableName) {
+		for (let tableId in this.dataModelsTables[dataModelId]) {
+			if (this.dataModelsTables[dataModelId][tableId] == tableName) {
+				return tableId;
+			}
+		}
+	}
+	
+	addForeignKey(dataModelId, table1, column1, table2, column2, reload=true) {
+		table1 = this.getTableIdFromName(dataModelId, table1);
+		table2 = this.getTableIdFromName(dataModelId, table2);
+		let dataPoolId = this.dataModelsDataPools[dataModelId];
+		let url = this.baseUrl+"/integration/api/pools/"+dataPoolId+"/data-models/"+dataModelId+"/foreign-keys";
+		let payload = {"dataModelId": dataModelId, "sourceTableId": table1, "targetTableId": table2, "columns": [{"sourceColumnName": column1, "targetColumnName": column2}]};
+		let ret = this.performPostJson(url, payload);
+		if (reload) {
+			this.getDataModels();
+		}
+	}
+	
+	addProcessConfiguration(dataModelId, activityTable, caseTable, caseIdColumn, activityColumn, timestampColumn, sortingColumn=null, reload=true) {
+		let payload = {};
+		let dataPoolId = this.dataModelsDataPools[dataModelId];
+		activityTable = this.getTableIdFromName(dataModelId, activityTable);
+		caseTable = this.getTableIdFromName(dataModelId, caseTable);
+		payload["activityTableId"] = activityTable;
+		if (caseTable != null) {
+			payload["caseTableId"] = caseTable;
+		}
+		payload["caseIdColumn"] = caseIdColumn;
+		payload["activityColumn"] = activityColumn;
+		payload["timestampColumn"] = timestampColumn;
+		if (sortingColumn != null) {
+			payload["sortingColumn"] = sortingColumn;
+		}
+		let url = this.baseUrl+"/integration/api/pools/"+dataPoolId+"/data-models/"+dataModelId+"/process-configurations";
+		let ret = this.performPutJson(url, payload);
+		if (reload) {
+			this.getDataModels();
+		}
+	}
+	
+	reloadDataModel(dataModelId, waitingTime1=1000, waitingTime2=10000) {
+		let dataPoolId = this.dataModelsDataPools[dataModelId];
+		let dataModel = this.dataModels[dataModelId];
+		let url = this.baseUrl+"/integration/api/pools/"+dataPoolId+"/data-models/"+dataModelId+"/reload";
+		try {
+			let ret = this.performPostJson(url, {"forceComplete": true});
+		}
+		catch (err) {
+		}
+		console.log("... reloading the data model: "+dataModel["name"]);
+		while (true) {
+			let url = this.baseUrl+"/integration/api/pools/"+dataPoolId+"/data-models/"+dataModelId+"/load-history/load-info-sync";
+			this.pausecomp(waitingTime1);
+			let ret = this.performGet(url)["loadInfo"]["currentComputeLoad"]["loadStatus"];
+			if (ret == "DONE" || ret == "SUCCESS" || ret == "ERROR" || ret == "WARNING") {
+				break;
+			}
+			console.log("... still waiting  ("+ret+")");
+			this.pausecomp(waitingTime2);
+		}
+		console.log("successful reload of data model: "+dataModel["name"]);
 	}
 	
 	performGet(url, isRequestJson=true) {
@@ -15493,6 +16166,54 @@ class CelonisMapper {
 		}
 	}
 	
+	performPostJsonAlwaysProxified(url, jsonContent) {
+		jsonContent["access_token"] = this.apiKey;
+		jsonContent["url"] = url;
+		if (CelonisMapper.IS_NODE) {
+			return retus(CelonisMapper.PROXY_URL_POST, {method: "post", headers: {"authorization": "Bearer "+this.apiKey}, json: jsonContent}).body;
+		}
+		else {
+			let ret = null;
+			let ajaxDict = {
+				url: CelonisMapper.PROXY_URL_POST,
+				dataType: 'json',
+				type: 'post',
+				contentType: 'application/json',
+				data: JSON.stringify(jsonContent),
+				async: false,
+				success: function(data) {
+					ret = data;
+				}
+			}
+			$.ajax(ajaxDict);
+			return ret;
+		}
+	}
+	
+	performPutJson(url, jsonContent) {
+		if (CelonisMapper.IS_NODE) {
+			return retus(url, {method: "put", headers: {"authorization": "Bearer "+this.apiKey}, json: jsonContent}).body;
+		}
+		else {
+			let ret = null;
+			jsonContent["access_token"] = this.apiKey;
+			jsonContent["url"] = url;
+			let ajaxDict = {
+				url: CelonisMapper.PROXY_URL_PUT,
+				dataType: 'json',
+				type: 'post',
+				contentType: 'application/json',
+				data: JSON.stringify(jsonContent),
+				async: false,
+				success: function(data) {
+					ret = data;
+				}
+			}
+			$.ajax(ajaxDict);
+			return ret;
+		}
+	}
+	
 	static autoConfiguration() {
 		const queryString = window.location.search;
 		const urlParams = new URLSearchParams(queryString);
@@ -15510,6 +16231,9 @@ class CelonisMapper {
 	}
 }
 
+CelonisMapper.PROXY_URL_GET = "http://localhost:5004/getWrapper";
+CelonisMapper.PROXY_URL_POST = "http://localhost:5004/postWrapper";
+CelonisMapper.PROXY_URL_PUT = "http://localhost:5004/putWrapper";
 try {
 	global.retus = require("retus");
 	require('../../pm4js.js');
@@ -15520,8 +16244,6 @@ try {
 catch (err) {
 	// not in Node
 	CelonisMapper.IS_NODE = false;
-	CelonisMapper.PROXY_URL_GET = "http://localhost:5004/getWrapper";
-	CelonisMapper.PROXY_URL_POST = "http://localhost:5004/postWrapper";
 }
 
 class Celonis1DWrapper {
@@ -15797,6 +16519,38 @@ class Celonis1DWrapper {
 		let sojournTimes = this.downloadSojournTimes(analysisId, processConfigurationId);
 		return new PerformanceDfg(activities, startActivities, endActivities, pathsFrequency, pathsPerformance, sojournTimes);
 	}
+	
+	uploadEventLogToCelonis(eventLog, baseName, caseIdKey="concept:name", activityKey="concept:name", timestampKey="time:timestamp", sep=",", quotechar="\"", newline="\r\n", casePrefix="case:") {
+		let cases = {};
+		for (let trace of eventLog.traces) {
+			let caseId = trace.attributes[caseIdKey].value;
+			if (caseId.indexOf(sep) > -1) {
+				caseId = quotechar+caseId+quotechar;
+			}
+			cases[caseId] = 0;
+		}
+		cases = Object.keys(cases);
+		caseIdKey = casePrefix+caseIdKey;
+		cases.unshift(caseIdKey);
+		cases = cases.join(newline);
+		let csvExport = CsvExporter.apply(eventLog, sep, quotechar, casePrefix, newline);
+		let dataPoolId = this.celonisMapper.createDataPool(baseName+"_POOL", false);
+		this.celonisMapper.pushCSV(dataPoolId, csvExport, baseName+"_ACTIVITIES", false, "time:timestamp", sep, quotechar, newline);
+		this.celonisMapper.pushCSV(dataPoolId, cases, baseName+"_CASES", false, null, sep, quotechar, newline);
+		this.celonisMapper.getDataPools();
+		let dataModelId = this.celonisMapper.createDataModel(dataPoolId, baseName+"_DMODEL");
+		this.celonisMapper.addTableFromPool(dataModelId, baseName+"_ACTIVITIES", false);
+		this.celonisMapper.addTableFromPool(dataModelId, baseName+"_CASES", false);
+		this.celonisMapper.getDataModels();
+		this.celonisMapper.addForeignKey(dataModelId, baseName+"_ACTIVITIES", caseIdKey, baseName+"_CASES", caseIdKey, false);
+		this.celonisMapper.addProcessConfiguration(dataModelId, baseName+"_ACTIVITIES", baseName+"_CASES", caseIdKey, activityKey, timestampKey, null, false);
+		this.celonisMapper.reloadDataModel(dataModelId);
+		let workspaceId = this.celonisMapper.createWorkspace(dataModelId, baseName+"_WORKSPACE");
+		let analysisId = this.celonisMapper.createAnalysis(workspaceId, baseName+"_ANALYSIS", false);
+		this.celonisMapper.getDataPools();
+		this.celonisMapper.getDataModels();
+		this.celonisMapper.getAnalyses();
+	}
 }
 
 try {
@@ -15892,6 +16646,98 @@ class CelonisNDWrapper {
 		}
 		ret.push("}");
 		return ret.join("\n");
+	}
+	
+	downloadBaseEventLog(analysisId, processConfiguration) {
+		let dataModel = this.celonisMapper.dataModels[this.celonisMapper.analysisDataModel[analysisId]];
+		let dataModelTables = this.celonisMapper.dataModelsTables[dataModel["id"]];
+		let activityTable = dataModelTables[processConfiguration["activityTableId"]];
+		let query = [];
+		query.push("TABLE(");
+		query.push("\""+activityTable+"\".\""+processConfiguration.caseIdColumn+"\" AS \"ocel:omap\", ");
+		query.push("\""+activityTable+"\".\""+processConfiguration.activityColumn+"\" AS \"ocel:activity\", ");
+		query.push("\""+activityTable+"\".\""+processConfiguration.timestampColumn+"\" AS \"ocel:timestamp\") NOLIMIT;");
+		query = query.join("");
+		let res = CsvImporter.parseCSV(this.celonisMapper.performQueryAnalysis(analysisId, query));
+		return [activityTable, res];
+	}
+
+	downloadRelations(analysisId, processConfiguration1, processConfiguration2) {
+		let dataModel = this.celonisMapper.dataModels[this.celonisMapper.analysisDataModel[analysisId]];
+		let dataModelTables = this.celonisMapper.dataModelsTables[dataModel["id"]];
+		let activityTable1 = dataModelTables[processConfiguration1["activityTableId"]];
+		let activityTable2 = dataModelTables[processConfiguration2["activityTableId"]];
+		let activityColumn1 = processConfiguration1["activityColumn"];
+		let activityColumn2 = processConfiguration2["activityColumn"];
+		let timestampColumn1 = processConfiguration1["timestampColumn"];
+		let timestampColumn2 = processConfiguration2["timestampColumn"];
+		let caseColumn2 = processConfiguration2["caseIdColumn"];
+		let query = [];
+		query.push("TABLE (");
+		query.push("TRANSIT_COLUMN ( TIMESTAMP_INTERLEAVED_MINER (");
+		query.push("\""+activityTable2+"\".\""+activityColumn2+"\", ");
+		query.push("\""+activityTable1+"\".\""+activityColumn1+"\"), ");
+		query.push("\""+activityTable2+"\".\""+caseColumn2+"\"), ");
+		query.push("\""+activityTable1+"\".\""+activityColumn1+"\", ");
+		query.push("\""+activityTable1+"\".\""+timestampColumn1+"\"");
+		query.push(") NOLIMIT;");
+		query = query.join("");
+		try {
+			let res0 = this.celonisMapper.performQueryAnalysis(analysisId, query);
+			return CsvImporter.parseCSV(res0);
+		}
+		catch (err) {
+			console.log(err);
+			return [];
+		}
+	}
+
+	downloadDataModelFromCelonis(analysisId) {
+		let dataModelId = this.celonisMapper.analysisDataModel[analysisId];
+		let dataModel = this.celonisMapper.dataModels[dataModelId];
+		let ocel = {"ocel:global-log": {"ocel:attribute-names": [], "ocel:object-types": []}, "ocel:events": {}, "ocel:objects": {}};
+		for (let conf of dataModel.processConfigurations) {
+			let arr = this.downloadBaseEventLog(analysisId, conf);
+			let ot = arr[0];
+			let log = arr[1];
+			ocel["ocel:global-log"]["ocel:object-types"].push(ot);
+			let i = 1;
+			while (i < log.length) {
+				let evid = log[i][1] + log[i][2];
+				let objId = log[i][0];
+				let eve = {"ocel:activity": log[i][1], "ocel:timestamp": new Date(log[i][2])};
+				ocel["ocel:events"][evid] = {"ocel:activity": log[i][1], "ocel:timestamp": new Date(log[i][2]), "ocel:omap": {objId: 0}};
+				if (!(objId in ocel["ocel:objects"])) {
+					ocel["ocel:objects"][objId] = {"ocel:type": ot};
+				}
+				i++;
+			}
+		}
+		let i = 0;
+		while (i < dataModel.processConfigurations.length) {
+			let j = 0;
+			while (j < dataModel.processConfigurations.length) {
+				if (i != j) {
+					let ret = this.downloadRelations(analysisId, dataModel.processConfigurations[i], dataModel.processConfigurations[j]);
+					let z = 1;
+					while (z < ret.length) {
+						let evid = ret[z][1] + ret[z][2];
+						let objId = ret[z][0];
+						ocel["ocel:events"][evid]["ocel:omap"][objId] = 0;
+						z = z + 1;
+					}
+				}
+				j++;
+			}
+			i++;
+		}
+		for (let evId in ocel["ocel:events"]) {
+			if ("objId" in ocel["ocel:events"][evId]["ocel:omap"]) {
+				delete ocel["ocel:events"][evId]["ocel:omap"]["objId"];
+			}
+			ocel["ocel:events"][evId]["ocel:omap"] = Object.keys(ocel["ocel:events"][evId]["ocel:omap"]);
+		}
+		return ocel;
 	}
 }
 
