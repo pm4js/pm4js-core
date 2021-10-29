@@ -1,3 +1,7 @@
+.idea/
+playground.js
+prova*.js
+
 *temp_output*
 # Logs
 logs
