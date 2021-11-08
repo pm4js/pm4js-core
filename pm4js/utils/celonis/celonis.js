@@ -305,8 +305,6 @@ class CelonisMapper {
 	}
 	
 	performPostJson(url, jsonContent) {
-		console.log(CelonisMapper.IS_NODE);
-		console.log(jsonContent);
 		if (CelonisMapper.IS_NODE) {
 			return retus(url, {method: "post", headers: {"authorization": "Bearer "+this.apiKey}, json: jsonContent}).body;
 		}
