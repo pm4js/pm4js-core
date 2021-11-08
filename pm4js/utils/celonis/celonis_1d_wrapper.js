@@ -314,6 +314,7 @@ class Celonis1DWrapper {
 		console.log("reloading data models");
 		this.celonisMapper.getAnalyses();
 		console.log("reloading analyses");
+		return {"dataPoolId": dataPoolId, "dataModelId": dataModelId, "workspaceId": workspaceId, "analysisId": analysisId};
 	}
 }
 
