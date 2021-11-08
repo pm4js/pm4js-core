@@ -272,7 +272,11 @@ class Celonis1DWrapper {
 		return new PerformanceDfg(activities, startActivities, endActivities, pathsFrequency, pathsPerformance, sojournTimes);
 	}
 	
-	uploadEventLogToCelonis(eventLog, baseName, caseIdKey="concept:name", activityKey="concept:name", timestampKey="time:timestamp", sep=",", quotechar="\"", newline="\r\n", casePrefix="case:") {
+	uploadEventLogToCelonis(eventLog, baseName, dummy=false, caseIdKey="concept:name", activityKey="concept:name", timestampKey="time:timestamp", sep=",", quotechar="\"", newline="\r\n", casePrefix="case:") {
+		let dataPoolId = null;
+		let dataModelId = null;
+		let workspaceId = null;
+		let analysisId = null;
 		let cases = {};
 		for (let trace of eventLog.traces) {
 			let caseId = trace.attributes[caseIdKey].value;
@@ -286,34 +290,36 @@ class Celonis1DWrapper {
 		cases.unshift(caseIdKey);
 		cases = cases.join(newline);
 		let csvExport = CsvExporter.apply(eventLog, sep, quotechar, casePrefix, newline);
-		let dataPoolId = this.celonisMapper.createDataPool(baseName+"_POOL", false);
-		console.log("created data pool");
-		this.celonisMapper.pushCSV(dataPoolId, csvExport, baseName+"_ACTIVITIES", false, "time:timestamp", sep, quotechar, newline);
-		console.log("created activity table");
-		this.celonisMapper.pushCSV(dataPoolId, cases, baseName+"_CASES", false, null, sep, quotechar, newline);
-		console.log("created cases table");
-		this.celonisMapper.getDataPools();
-		let dataModelId = this.celonisMapper.createDataModel(dataPoolId, baseName+"_DMODEL");
-		this.celonisMapper.addTableFromPool(dataModelId, baseName+"_ACTIVITIES", false);
-		this.celonisMapper.addTableFromPool(dataModelId, baseName+"_CASES", false);
-		console.log("created data models");
-		this.celonisMapper.getDataModels();
-		this.celonisMapper.addForeignKey(dataModelId, baseName+"_ACTIVITIES", caseIdKey, baseName+"_CASES", caseIdKey, false);
-		console.log("added foreign key");
-		this.celonisMapper.addProcessConfiguration(dataModelId, baseName+"_ACTIVITIES", baseName+"_CASES", caseIdKey, activityKey, timestampKey, null, false);
-		console.log("added process configuration");
-		this.celonisMapper.reloadDataModel(dataModelId);
-		console.log("reloaded data model");
-		let workspaceId = this.celonisMapper.createWorkspace(dataModelId, baseName+"_WORKSPACE");
-		console.log("created workspace");
-		let analysisId = this.celonisMapper.createAnalysis(workspaceId, baseName+"_ANALYSIS", false);
-		console.log("created analysis");
-		this.celonisMapper.getDataPools();
-		console.log("reloading data pools");
-		this.celonisMapper.getDataModels();
-		console.log("reloading data models");
-		this.celonisMapper.getAnalyses();
-		console.log("reloading analyses");
+		if (!(dummy)) {
+			dataPoolId = this.celonisMapper.createDataPool(baseName+"_POOL", false);
+			console.log("created data pool");
+			this.celonisMapper.pushCSV(dataPoolId, csvExport, baseName+"_ACTIVITIES", false, "time:timestamp", sep, quotechar, newline);
+			console.log("created activity table");
+			this.celonisMapper.pushCSV(dataPoolId, cases, baseName+"_CASES", false, null, sep, quotechar, newline);
+			console.log("created cases table");
+			this.celonisMapper.getDataPools();
+			dataModelId = this.celonisMapper.createDataModel(dataPoolId, baseName+"_DMODEL");
+			this.celonisMapper.addTableFromPool(dataModelId, baseName+"_ACTIVITIES", false);
+			this.celonisMapper.addTableFromPool(dataModelId, baseName+"_CASES", false);
+			console.log("created data models");
+			this.celonisMapper.getDataModels();
+			this.celonisMapper.addForeignKey(dataModelId, baseName+"_ACTIVITIES", caseIdKey, baseName+"_CASES", caseIdKey, false);
+			console.log("added foreign key");
+			this.celonisMapper.addProcessConfiguration(dataModelId, baseName+"_ACTIVITIES", baseName+"_CASES", caseIdKey, activityKey, timestampKey, null, false);
+			console.log("added process configuration");
+			this.celonisMapper.reloadDataModel(dataModelId);
+			console.log("reloaded data model");
+			workspaceId = this.celonisMapper.createWorkspace(dataModelId, baseName+"_WORKSPACE");
+			console.log("created workspace");
+			analysisId = this.celonisMapper.createAnalysis(workspaceId, baseName+"_ANALYSIS", false);
+			console.log("created analysis");
+			this.celonisMapper.getDataPools();
+			console.log("reloading data pools");
+			this.celonisMapper.getDataModels();
+			console.log("reloading data models");
+			this.celonisMapper.getAnalyses();
+			console.log("reloading analyses");
+		}
 		return {"dataPoolId": dataPoolId, "dataModelId": dataModelId, "workspaceId": workspaceId, "analysisId": analysisId};
 	}
 }
