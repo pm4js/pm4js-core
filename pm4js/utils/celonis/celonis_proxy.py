@@ -22,6 +22,8 @@ def post_wrapper():
         content = content.encode("utf-8")
         del call_contents["files"]
         files["file"] = content
+    if "@@content" in call_contents:
+        call_contents = call_contents["@@content"]
     return requests.post(url, headers={"Authorization": "Bearer " + access_token},
                          files=files, json=call_contents).text
 

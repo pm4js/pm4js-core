@@ -183,13 +183,13 @@ class CelonisNDWrapper {
 		let res = OcelToCelonis.apply(ocel, sep, quotechar, newline);
 		if (!(dummy)) {
 			dataPoolId = this.celonisMapper.createDataPool(baseName+"_POOL", false);
+			dataModelId = this.celonisMapper.createDataModel(dataPoolId, baseName+"_DMODEL");
+			this.celonisMapper.getDataPools();
+			this.celonisMapper.getDataModels();
 			for (let tab in res["coll"]) {
 				console.log("pushing table: "+tab+" "+res["timestampColumns"][tab]);
 				this.celonisMapper.pushCSV(dataPoolId, res["coll"][tab], tab, false, res["timestampColumns"][tab], sep, quotechar, newline);
-			}
-			this.celonisMapper.getDataPools();
-			dataModelId = this.celonisMapper.createDataModel(dataPoolId, baseName+"_DMODEL");
-			for (let tab in res["coll"]) {
+				this.celonisMapper.getDataPools();
 				console.log("adding table to data model: "+tab);
 				this.celonisMapper.addTableFromPool(dataModelId, tab, false);
 			}

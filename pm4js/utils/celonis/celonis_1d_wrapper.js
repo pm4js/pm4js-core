@@ -292,16 +292,20 @@ class Celonis1DWrapper {
 		let csvExport = CsvExporter.apply(eventLog, sep, quotechar, casePrefix, newline);
 		if (!(dummy)) {
 			dataPoolId = this.celonisMapper.createDataPool(baseName+"_POOL", false);
-			console.log("created data pool");
-			this.celonisMapper.pushCSV(dataPoolId, csvExport, baseName+"_ACTIVITIES", false, "time:timestamp", sep, quotechar, newline);
-			console.log("created activity table");
-			this.celonisMapper.pushCSV(dataPoolId, cases, baseName+"_CASES", false, null, sep, quotechar, newline);
-			console.log("created cases table");
 			this.celonisMapper.getDataPools();
 			dataModelId = this.celonisMapper.createDataModel(dataPoolId, baseName+"_DMODEL");
+			this.celonisMapper.getDataModels();
+			console.log("created data pool");
+			this.celonisMapper.pushCSV(dataPoolId, csvExport, baseName+"_ACTIVITIES", false, "time:timestamp", sep, quotechar, newline);
+			this.celonisMapper.getDataPools();
+			console.log("created activity table");
 			this.celonisMapper.addTableFromPool(dataModelId, baseName+"_ACTIVITIES", false);
+			console.log("created data model for activities");
+			this.celonisMapper.pushCSV(dataPoolId, cases, baseName+"_CASES", false, null, sep, quotechar, newline);
+			this.celonisMapper.getDataPools();
+			console.log("created cases table");
 			this.celonisMapper.addTableFromPool(dataModelId, baseName+"_CASES", false);
-			console.log("created data models");
+			console.log("created data model for cases");
 			this.celonisMapper.getDataModels();
 			this.celonisMapper.addForeignKey(dataModelId, baseName+"_ACTIVITIES", caseIdKey, baseName+"_CASES", caseIdKey, false);
 			console.log("added foreign key");

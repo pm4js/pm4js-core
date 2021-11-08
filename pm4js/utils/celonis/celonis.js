@@ -305,13 +305,18 @@ class CelonisMapper {
 	}
 	
 	performPostJson(url, jsonContent) {
+		console.log(CelonisMapper.IS_NODE);
+		console.log(jsonContent);
 		if (CelonisMapper.IS_NODE) {
 			return retus(url, {method: "post", headers: {"authorization": "Bearer "+this.apiKey}, json: jsonContent}).body;
 		}
 		else {
 			let ret = null;
-			jsonContent["access_token"] = this.apiKey;
-			jsonContent["url"] = url;
+			if (Array.isArray(jsonContent)) {
+				jsonContent = {"@@content": jsonContent};
+				jsonContent["access_token"] = this.apiKey;
+				jsonContent["url"] = url;
+			}
 			let ajaxDict = {
 				url: CelonisMapper.PROXY_URL_POST,
 				dataType: 'json',
