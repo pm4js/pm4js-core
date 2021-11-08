@@ -312,9 +312,9 @@ class CelonisMapper {
 			let ret = null;
 			if (Array.isArray(jsonContent)) {
 				jsonContent = {"@@content": jsonContent};
-				jsonContent["access_token"] = this.apiKey;
-				jsonContent["url"] = url;
 			}
+			jsonContent["access_token"] = this.apiKey;
+			jsonContent["url"] = url;
 			let ajaxDict = {
 				url: CelonisMapper.PROXY_URL_POST,
 				dataType: 'json',
