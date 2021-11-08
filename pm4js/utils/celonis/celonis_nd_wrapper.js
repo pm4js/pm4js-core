@@ -180,7 +180,7 @@ class CelonisNDWrapper {
 		let dataPoolId = this.celonisMapper.createDataPool(baseName+"_POOL", false);
 		for (let tab in res["coll"]) {
 			console.log("pushing table: "+tab+" "+res["timestampColumns"][tab]);
-			this.celonisMapper.pushCSV(dataPoolId, res["col1"][tab], tab, false, res["timestampColumns"][tab], sep, quotechar, newline);
+			this.celonisMapper.pushCSV(dataPoolId, res["coll"][tab], tab, false, res["timestampColumns"][tab], sep, quotechar, newline);
 		}
 		this.celonisMapper.getDataPools();
 		let dataModelId = this.celonisMapper.createDataModel(dataPoolId, baseName+"_DMODEL");

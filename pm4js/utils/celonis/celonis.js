@@ -16,6 +16,7 @@ class CelonisMapper {
 		this.getDataModels();
 		this.getAnalyses();
 		this.defaultAnalysis = null;
+		console.log("initialized mapper ("+this.baseUrl+")");
 	}
 	
 	getFirstAnalysis() {
