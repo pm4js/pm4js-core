@@ -211,7 +211,7 @@ class CelonisNDWrapper {
 		this.celonisMapper.getDataModels();
 		console.log("reloading analyses");
 		this.celonisMapper.getAnalyses();
-		return {"objectTypes": res["objectTypes"], "transitions": res["transitions"], "knowledgeYaml": res["knowledgeYaml"], "modelYaml": res["modelYaml"]};
+		return {"dataPoolId": dataPoolId, "dataModelId": dataModelId, "workspaceId": workspaceId, "analysisId": analysisId, "objectTypes": res["objectTypes"], "transitions": res["transitions"], "knowledgeYaml": res["knowledgeYaml"], "modelYaml": res["modelYaml"]};
 	}
 }
 
