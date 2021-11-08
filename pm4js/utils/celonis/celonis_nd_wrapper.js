@@ -174,6 +174,45 @@ class CelonisNDWrapper {
 		}
 		return ocel;
 	}
+	
+	uploadOcelToCelonis(ocel, baseName, sep=",", quotechar="\"", newline="\r\n") {
+		let res = OcelToCelonis.apply(ocel, sep, quotechar, newline);
+		let dataPoolId = this.celonisMapper.createDataPool(baseName+"_POOL", false);
+		for (let tab in res["coll"]) {
+			console.log("pushing table: "+tab+" "+res["timestampColumns"][tab]);
+			this.celonisMapper.pushCSV(dataPoolId, res["col1"][tab], tab, false, res["timestampColumns"][tab], sep, quotechar, newline);
+		}
+		this.celonisMapper.getDataPools();
+		let dataModelId = this.celonisMapper.createDataModel(dataPoolId, baseName+"_DMODEL");
+		for (let tab in res["coll"]) {
+			console.log("adding table to data model: "+tab);
+			this.celonisMapper.addTableFromPool(dataModelId, tab, false);
+		}
+		this.celonisMapper.getDataModels();
+		for (let ot of res["objectTypes"]) {
+			console.log("setting up foreign key for type: "+ot);
+			this.celonisMapper.addForeignKey(dataModelId, ot+"_EVENTS", "CASE_"+ot, ot+"_CASES", "CASE_"+ot, false);
+			console.log("adding process configuration:");
+			this.celonisMapper.addProcessConfiguration(dataModelId, ot+"_EVENTS", ot+"_CASES", "CASE_"+ot, "ACT_"+ot, "TIME_"+ot, null, false);
+		}
+		for (let trans of res["transitions"]) {
+			console.log("adding foreign keys for transition: "+trans);
+			this.celonisMapper.addForeignKey(dataModelId, "CONNECT_"+trans[0]+"_CASES_"+trans[1]+"_CASES", "CASE_"+trans[0], trans[0]+"_CASES", "CASE_"+trans[0], false);
+			this.celonisMapper.addForeignKey(dataModelId, "CONNECT_"+trans[0]+"_CASES_"+trans[1]+"_CASES", "CASE_"+trans[1], trans[1]+"_CASES", "CASE_"+trans[1], false);
+		}
+		this.celonisMapper.reloadDataModel(dataModelId);
+		console.log("creating workspace");
+		let workspaceId = this.celonisMapper.createWorkspace(dataModelId, baseName+"_WORKSPACE");
+		console.log("creating analysis");
+		let analysisId = this.celonisMapper.createAnalysis(workspaceId, baseName+"_ANALYSIS", false);
+		console.log("reloading data pools");
+		this.celonisMapper.getDataPools();
+		console.log("reloading data models");
+		this.celonisMapper.getDataModels();
+		console.log("reloading analyses");
+		this.celonisMapper.getAnalyses();
+		return {"objectTypes": res["objectTypes"], "transitions": res["transitions"], "knowledgeYaml": res["knowledgeYaml"], "modelYaml": res["modelYaml"]};
+	}
 }
 
 try {

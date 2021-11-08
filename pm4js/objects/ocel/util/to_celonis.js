@@ -21,7 +21,7 @@ class OcelToCelonis {
 				coll[logName].push("CASE_"+objType1+sep+"CASE_"+objType2);
 			}
 			else if (logType == "everel") {
-				coll[logName].push("EVID_"+objType1+sep+"EVID_"+objType2);
+				coll[logName].push("SOURCE_EVID_"+objType1+sep+"TARGET_EVID_"+objType2);
 			}
 		}
 		return coll[logName];
@@ -74,13 +74,14 @@ class OcelToCelonis {
 		let coll = {};
 		let objectTypes = {};
 		let transitions0 = {};
-		
+		let timestampColumns = {};
 		for (let evId in ocel["ocel:events"]) {
 			let eve = ocel["ocel:events"][evId];
 			for (let objId of eve["ocel:omap"]) {
 				let objType = ocel["ocel:objects"][objId]["ocel:type"];
 				OcelToCelonis.pushElementIntoCollection(coll, [objId], objType+"_CASES", "objects", objType, null, sep, quotechar, newline);
 				OcelToCelonis.pushElementIntoCollection(coll, [evId+":"+objId, objId, eve["ocel:activity"], eve["ocel:timestamp"], evId], objType+"_EVENTS", "events", objType, null, sep, quotechar, newline);
+				timestampColumns[objType+"_EVENTS"] = "TIME_"+objType;
 				objectTypes[objType] = 0;
 				for (let objId2 of eve["ocel:omap"]) {
 					if (objId != objId2) {
@@ -106,7 +107,7 @@ class OcelToCelonis {
 			let trans00 = trans0.split("@#@#");
 			transitions.push([trans00[0], trans00[1]]);
 		}
-		return {"coll": coll, "objectTypes": objectTypes, "transitions": transitions, "knowledgeYaml": OcelToCelonis.yaml1(objectTypes, transitions), "modelYaml": OcelToCelonis.yaml2(objectTypes, transitions)};
+		return {"coll": coll, "objectTypes": objectTypes, "transitions": transitions, "knowledgeYaml": OcelToCelonis.yaml1(objectTypes, transitions), "modelYaml": OcelToCelonis.yaml2(objectTypes, transitions), "timestampColumns": timestampColumns};
 	}
 }
 
