@@ -1,8 +1,10 @@
 class LtlFiltering {
-	static fourEyesPrinciple(log, activity1, activity2, positive=false, activityKey="concept:name", resourceKey="org:resource") {
-		log = LogGeneralFiltering.filterEventsHavingEventAttributeValues(log, [activity1, activity2], false, true, activityKey);
+	static fourEyesPrinciple(log0, activity1, activity2, positive=false, activityKey="concept:name", resourceKey="org:resource") {
+		let log = LogGeneralFiltering.filterEventsHavingEventAttributeValues(log0, [activity1, activity2], true, true, activityKey);
 		let filteredLog = new EventLog();
-		for (let trace of log.traces) {
+		let j = 0;
+		while (j < log0.traces.length) {
+			let trace = log.traces[j];
 			let i = 0;
 			let bo = false;
 			while (i < trace.events.length - 1) {
@@ -17,8 +19,40 @@ class LtlFiltering {
 				i++;
 			}
 			if (bo) {
-				filteredLog.traces.push(trace);
+				filteredLog.traces.push(log0.traces[j]);
 			}
+			j++;
+		}
+		return filteredLog;
+	}
+	
+	static eventuallyFollowsFilter(log0, activities, positive=true, activityKey="concept:name") {
+		let activitiesJoin = activities.join(",");
+		let log = LogGeneralFiltering.filterEventsHavingEventAttributeValues(log0, activities, true, true, activityKey);
+		let filteredLog = new EventLog();
+		let j = 0;
+		while (j < log0.traces.length) {
+			let trace = log.traces[j];
+			let i = 0;
+			let bo = false;
+			while (i < trace.events.length - activities.length + 1) {
+				let currActivities = [];
+				let z = i;
+				while (z < trace.events.length) {
+					currActivities.push(trace.events[z].attributes[activityKey].value);
+					z++;
+				}
+				let currActivitiesJoin = currActivities.join(",");
+				if (activitiesJoin == currActivitiesJoin) {
+					bo = true;
+					break;
+				}
+				i++;
+			}
+			if ((positive && bo) || !(positive || bo)) {
+				filteredLog.traces.push(log0.traces[j]);
+			}
+			j++;
 		}
 		return filteredLog;
 	}
