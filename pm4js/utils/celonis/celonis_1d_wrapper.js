@@ -145,7 +145,7 @@ class Celonis1DWrapper {
 		let query = [];
 		query.push("TABLE(");
 		query.push("VARIANT(\""+activityTable+"\".\""+processConfiguration.activityColumn+"\")");
-		query.push(", COUNT(\""+activityTable+"\".\""+processConfiguration.caseIdColumn+"\")");
+		query.push(", COUNT(VARIANT(\""+activityTable+"\".\""+processConfiguration.activityColumn+"\"))");
 		query.push(") NOLIMIT;");
 		query = query.join("");
 		let res = this.celonisMapper.performQueryAnalysis(analysisId, query);
