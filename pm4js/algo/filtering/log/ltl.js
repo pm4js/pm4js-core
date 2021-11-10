@@ -87,6 +87,29 @@ class LtlFiltering {
 		}
 		return filteredLog;
 	}
+	
+	static activityDoneDifferentResources(log0, activity, positive=true, activityKey="concept:name", resourceKey="org:resource") {
+		let log = LogGeneralFiltering.filterEventsHavingEventAttributeValues(log0, [activity], true, true, activityKey);
+		let filteredLog = new EventLog();
+		let j = 0;
+		while (j < log0.traces.length) {
+			let trace = log.traces[j];
+			let i = 0;
+			let bo = false;
+			while (i < trace.events.length - 1) {
+				if (trace.events[i].attributes[resourceKey].value != trace.events[i+1].attributes[resourceKey].value) {
+					bo = true;
+					break;
+				}
+				i++;
+			}
+			if ((positive && bo) || !(positive || bo)) {
+				filteredLog.traces.push(log0.traces[j]);
+			}
+			j++;
+		}
+		return filteredLog;
+	}
 }
 
 try {
