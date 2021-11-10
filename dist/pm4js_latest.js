@@ -59,7 +59,7 @@ class Pm4JS {
 	}
 }
 
-Pm4JS.VERSION = "0.0.13";
+Pm4JS.VERSION = "0.0.14";
 Pm4JS.registrationEnabled = false;
 Pm4JS.objects = [];
 Pm4JS.algorithms = [];
@@ -9472,6 +9472,130 @@ catch (err) {
 	// not in Node
 }
 
+class LtlFiltering {
+	static fourEyesPrinciple(log0, activity1, activity2, positive=false, activityKey="concept:name", resourceKey="org:resource") {
+		let log = LogGeneralFiltering.filterEventsHavingEventAttributeValues(log0, [activity1, activity2], true, true, activityKey);
+		let filteredLog = new EventLog();
+		let j = 0;
+		while (j < log0.traces.length) {
+			let trace = log.traces[j];
+			let i = 0;
+			let bo = false;
+			while (i < trace.events.length - 1) {
+				if (trace.events[i].attributes[activityKey].value == activity1 && trace.events[i+1].attributes[activityKey].value == activity2) {
+					if (!(positive) && (trace.events[i].attributes[resourceKey].value == trace.events[i+1].attributes[resourceKey].value)) {
+						bo = true;
+					}
+					else if (positive && (trace.events[i].attributes[resourceKey].value != trace.events[i+1].attributes[resourceKey].value)) {
+						bo = true;
+					}
+				}
+				i++;
+			}
+			if (bo) {
+				filteredLog.traces.push(log0.traces[j]);
+			}
+			j++;
+		}
+		return filteredLog;
+	}
+	
+	static eventuallyFollowsFilter(log0, activities, positive=true, activityKey="concept:name") {
+		let activitiesJoin = activities.join(",");
+		let log = LogGeneralFiltering.filterEventsHavingEventAttributeValues(log0, activities, true, true, activityKey);
+		let filteredLog = new EventLog();
+		let j = 0;
+		while (j < log0.traces.length) {
+			let trace = log.traces[j];
+			let i = 0;
+			let bo = false;
+			while (i < trace.events.length - activities.length + 1) {
+				let currActivities = [];
+				let z = i;
+				while (z < trace.events.length) {
+					currActivities.push(trace.events[z].attributes[activityKey].value);
+					z++;
+				}
+				let currActivitiesJoin = currActivities.join(",");
+				if (activitiesJoin == currActivitiesJoin) {
+					bo = true;
+					break;
+				}
+				i++;
+			}
+			if ((positive && bo) || !(positive || bo)) {
+				filteredLog.traces.push(log0.traces[j]);
+			}
+			j++;
+		}
+		return filteredLog;
+	}
+	
+	static directlyFollowsFilter(log0, activities, positive=true, activityKey="concept:name") {
+		let activitiesJoin = activities.join(",");
+		let log = log0;
+		let filteredLog = new EventLog();
+		let j = 0;
+		while (j < log0.traces.length) {
+			let trace = log.traces[j];
+			let i = 0;
+			let bo = false;
+			while (i < trace.events.length - activities.length + 1) {
+				let currActivities = [];
+				let z = i;
+				while (z < trace.events.length) {
+					currActivities.push(trace.events[z].attributes[activityKey].value);
+					z++;
+				}
+				let currActivitiesJoin = currActivities.join(",");
+				if (activitiesJoin == currActivitiesJoin) {
+					bo = true;
+					break;
+				}
+				i++;
+			}
+			if ((positive && bo) || !(positive || bo)) {
+				filteredLog.traces.push(log0.traces[j]);
+			}
+			j++;
+		}
+		return filteredLog;
+	}
+	
+	static activityDoneDifferentResources(log0, activity, positive=true, activityKey="concept:name", resourceKey="org:resource") {
+		let log = LogGeneralFiltering.filterEventsHavingEventAttributeValues(log0, [activity], true, true, activityKey);
+		let filteredLog = new EventLog();
+		let j = 0;
+		while (j < log0.traces.length) {
+			let trace = log.traces[j];
+			let i = 0;
+			let bo = false;
+			while (i < trace.events.length - 1) {
+				if (trace.events[i].attributes[resourceKey].value != trace.events[i+1].attributes[resourceKey].value) {
+					bo = true;
+					break;
+				}
+				i++;
+			}
+			if ((positive && bo) || !(positive || bo)) {
+				filteredLog.traces.push(log0.traces[j]);
+			}
+			j++;
+		}
+		return filteredLog;
+	}
+}
+
+try {
+	require('../../../pm4js.js');
+	module.exports = {LtlFiltering: LtlFiltering};
+	global.LtlFiltering = LtlFiltering;
+}
+catch (err) {
+	// not in Node
+}
+
+
 class FlowerMiner {
 	static apply(eventLog, activityKey="concept:name") {
 		let activities = GeneralLogStatistics.getAttributeValues(eventLog, activityKey);
@@ -12642,6 +12766,111 @@ catch (err) {
 }
 
 
+
+
+class IntervalTreeBuilder {
+	static apply(log, timestampKey="time:timestamp") {
+		let tree = new IntervalTree();
+		for (let trace of log.traces) {
+			let i = 0;
+			while (i < trace.events.length - 1) {
+				let eve1 = trace.events[i];
+				let eve2 = trace.events[i+1];
+				tree.insert(eve1.attributes[timestampKey].value.getTime()/1000.0, eve2.attributes[timestampKey].value.getTime()/1000.0, [trace, i]);
+				i++;
+			}
+		}
+		let mintime = null;
+		for (let n of tree.ascending()) {
+			mintime = n.low;
+			break;
+		}
+		let maxtime = null;
+		for (let n of tree.descending()) {
+			maxtime = n.high;
+			break;
+		}
+		tree.mintime = mintime;
+		tree.maxtime = maxtime;
+		return tree;
+	}
+}
+
+class IntervalTreeAlgorithms {
+	static resourceWorkload(tree, pointOfTime=null, resourceKey="org:resource") {
+		if (pointOfTime == null) {
+			pointOfTime = (tree.mintime + tree.maxtime) / 2.0;
+		}
+		let contained = tree.queryPoint(pointOfTime);
+		let returned = {};
+		for (let p of contained) {
+			let trace = p.value[0];
+			let idx = p.value[1];
+			let eve = trace.events[idx+1];
+			let res = eve.attributes[resourceKey].value;
+			if (!(res in returned)) {
+				returned[res] = 1;
+			}
+			else {
+				returned[res] += 1;
+			}
+		}
+		return returned;
+	}
+	
+	static targetActivityWorkload(tree, pointOfTime=null, activityKey="concept:name") {
+		if (pointOfTime == null) {
+			pointOfTime = (tree.mintime + tree.maxtime) / 2.0;
+		}
+		let contained = tree.queryPoint(pointOfTime);
+		let returned = {};
+		for (let p of contained) {
+			let trace = p.value[0];
+			let idx = p.value[1];
+			let eve = trace.events[idx+1];
+			let act = eve.attributes[activityKey].value;
+			if (!(act in returned)) {
+				returned[act] = 1;
+			}
+			else {
+				returned[act] += 1;
+			}
+		}
+		return returned;
+	}
+	
+	static sourceActivityWorkload(tree, pointOfTime=null, activityKey="concept:name") {
+		if (pointOfTime == null) {
+			pointOfTime = (tree.mintime + tree.maxtime) / 2.0;
+		}
+		let contained = tree.queryPoint(pointOfTime);
+		let returned = {};
+		for (let p of contained) {
+			let trace = p.value[0];
+			let idx = p.value[1];
+			let eve = trace.events[idx];
+			let act = eve.attributes[activityKey].value;
+			if (!(act in returned)) {
+				returned[act] = 1;
+			}
+			else {
+				returned[act] += 1;
+			}
+		}
+		return returned;
+	}
+}
+
+try {
+	require('../../pm4js.js');
+	module.exports = {IntervalTreeBuilder: IntervalTreeBuilder, IntervalTreeAlgorithms: IntervalTreeAlgorithms};
+	global.IntervalTreeBuilder = IntervalTreeBuilder;
+	global.IntervalTreeAlgorithms = IntervalTreeAlgorithms;
+}
+catch (err) {
+	// not in node
+	//console.log(err);
+}
 
 
 const heapqTop = 0;
@@ -15837,6 +16066,130 @@ catch (err) {
 }
 
 
+class OcelToCelonis {
+	static escap(stru, sep, quotechar) {
+		if (stru.indexOf(sep) > -1) {
+			return quotechar + stru + quotechar;
+		}
+		else {
+			return stru;
+		}
+	}
+	
+	static getLogFromCollection(coll, logName, logType, objType1, objType2, sep, quotechar, newline) {
+		if (!(logName in coll)) {
+			coll[logName] = [];
+			if (logType == "events") {
+				coll[logName].push("EVID_"+objType1+sep+"CASE_"+objType1+sep+"ACT_"+objType1+sep+"TIME_"+objType1+sep+"EVID_GENERAL");
+			}
+			else if (logType == "objects") {
+				coll[logName].push("CASE_"+objType1);
+			}
+			else if (logType == "objrel") {
+				coll[logName].push("CASE_"+objType1+sep+"CASE_"+objType2);
+			}
+			else if (logType == "everel") {
+				coll[logName].push("SOURCE_EVID_"+objType1+sep+"TARGET_EVID_"+objType2);
+			}
+		}
+		return coll[logName];
+	}
+	
+	static pushElementIntoCollection(coll, elem, logName, logType, objType1, objType2, sep, quotechar, newline) {
+		let log = OcelToCelonis.getLogFromCollection(coll, logName, logType, objType1, objType2, sep, quotechar, newline);
+		let i = 0;
+		while (i < elem.length) {
+			elem[i] = OcelToCelonis.escap(elem[i], sep, quotechar);
+			i++;
+		}
+		elem = elem.join(sep);
+		if (!(log.includes(elem))) {
+			log.push(elem);
+		}
+	}
+	
+	static yaml1(objectTypes, transitions) {
+		let ret = [];
+		ret.push("eventLogsMetadata:");
+		ret.push("    eventLogs:");
+		for (let ot of objectTypes) {
+			ret.push("      - id: "+ot);
+			ret.push("        displayName: "+ot);
+			ret.push("        pql: '\""+ot+"_EVENTS\".\"ACT_"+ot+"\"'")
+		}
+		ret.push("    transitions:");
+		for (let trans of transitions) {
+			ret.push("      - id: "+trans[0]+"_"+trans[1]);
+			ret.push("        displayName: "+trans[0]+"_"+trans[1]);
+			ret.push("        firstEventLogId: "+trans[0]);
+			ret.push("        secondEventLogId: "+trans[1]);
+			ret.push("        type: INTERLEAVED");
+		}
+		return ret.join("\n");
+	}
+	
+	static yaml2(objectTypes, transitions) {
+		let ret = [];
+		ret.push("settings:");
+		ret.push("    eventLogs:");
+		for (let ot of objectTypes) {
+			ret.push("      - eventLog: "+ot);
+		}
+		return ret.join("\n");
+	}
+	
+	static apply(ocel, sep=",", quotechar="\"", newline="\r\n") {
+		let coll = {};
+		let objectTypes = {};
+		let transitions0 = {};
+		let timestampColumns = {};
+		for (let evId in ocel["ocel:events"]) {
+			let eve = ocel["ocel:events"][evId];
+			for (let objId of eve["ocel:omap"]) {
+				let objType = ocel["ocel:objects"][objId]["ocel:type"];
+				OcelToCelonis.pushElementIntoCollection(coll, [objId], objType+"_CASES", "objects", objType, null, sep, quotechar, newline);
+				OcelToCelonis.pushElementIntoCollection(coll, [evId+":"+objId, objId, eve["ocel:activity"], eve["ocel:timestamp"], evId], objType+"_EVENTS", "events", objType, null, sep, quotechar, newline);
+				timestampColumns[objType+"_EVENTS"] = "TIME_"+objType;
+				objectTypes[objType] = 0;
+				for (let objId2 of eve["ocel:omap"]) {
+					if (objId != objId2) {
+						let objType2 = ocel["ocel:objects"][objId2]["ocel:type"];
+						if (objType <= objType2) {
+							if (objType < objType2) {
+								OcelToCelonis.pushElementIntoCollection(coll, [objId, objId2], "CONNECT_"+objType+"_CASES_"+objType2+"_CASES", "objrel", objType, objType2, sep, quotechar, newline);
+								transitions0[objType+"@#@#"+objType2] = 0;
+
+							}
+							OcelToCelonis.pushElementIntoCollection(coll, [evId+":"+objId, evId+":"+objId2],  "CONNECT_"+objType+"_EVENTS_"+objType2+"_EVENTS", "everel", objType, objType2, sep, quotechar, newline);
+						}
+					}
+				}
+			}
+		}
+		for (let logName in coll) {
+			coll[logName] = coll[logName].join(newline);
+		}
+		objectTypes = Object.keys(objectTypes);
+		let transitions = [];
+		for (let trans0 in transitions0) {
+			let trans00 = trans0.split("@#@#");
+			transitions.push([trans00[0], trans00[1]]);
+		}
+		return {"coll": coll, "objectTypes": objectTypes, "transitions": transitions, "knowledgeYaml": OcelToCelonis.yaml1(objectTypes, transitions), "modelYaml": OcelToCelonis.yaml2(objectTypes, transitions), "timestampColumns": timestampColumns};
+	}
+}
+
+try {
+	require('../../../pm4js.js');
+	module.exports = {OcelToCelonis: OcelToCelonis};
+	global.OcelToCelonis = OcelToCelonis;
+}
+catch (err) {
+	// not in node
+	//console.log(err);
+}
+
+
 class CelonisMapper {
 	constructor(baseUrl, apiKey) {
 		this.baseUrl = baseUrl;
@@ -15855,6 +16208,7 @@ class CelonisMapper {
 		this.getDataModels();
 		this.getAnalyses();
 		this.defaultAnalysis = null;
+		console.log("initialized mapper ("+this.baseUrl+")");
 	}
 	
 	getFirstAnalysis() {
@@ -16148,6 +16502,9 @@ class CelonisMapper {
 		}
 		else {
 			let ret = null;
+			if (Array.isArray(jsonContent)) {
+				jsonContent = {"@@content": jsonContent};
+			}
 			jsonContent["access_token"] = this.apiKey;
 			jsonContent["url"] = url;
 			let ajaxDict = {
@@ -16393,7 +16750,7 @@ class Celonis1DWrapper {
 		let query = [];
 		query.push("TABLE(");
 		query.push("VARIANT(\""+activityTable+"\".\""+processConfiguration.activityColumn+"\")");
-		query.push(", COUNT(\""+activityTable+"\".\""+processConfiguration.caseIdColumn+"\")");
+		query.push(", COUNT(VARIANT(\""+activityTable+"\".\""+processConfiguration.activityColumn+"\"))");
 		query.push(") NOLIMIT;");
 		query = query.join("");
 		let res = this.celonisMapper.performQueryAnalysis(analysisId, query);
@@ -16520,7 +16877,11 @@ class Celonis1DWrapper {
 		return new PerformanceDfg(activities, startActivities, endActivities, pathsFrequency, pathsPerformance, sojournTimes);
 	}
 	
-	uploadEventLogToCelonis(eventLog, baseName, caseIdKey="concept:name", activityKey="concept:name", timestampKey="time:timestamp", sep=",", quotechar="\"", newline="\r\n", casePrefix="case:") {
+	uploadEventLogToCelonis(eventLog, baseName, dummy=false, caseIdKey="concept:name", activityKey="concept:name", timestampKey="time:timestamp", sep=",", quotechar="\"", newline="\r\n", casePrefix="case:") {
+		let dataPoolId = null;
+		let dataModelId = null;
+		let workspaceId = null;
+		let analysisId = null;
 		let cases = {};
 		for (let trace of eventLog.traces) {
 			let caseId = trace.attributes[caseIdKey].value;
@@ -16534,22 +16895,41 @@ class Celonis1DWrapper {
 		cases.unshift(caseIdKey);
 		cases = cases.join(newline);
 		let csvExport = CsvExporter.apply(eventLog, sep, quotechar, casePrefix, newline);
-		let dataPoolId = this.celonisMapper.createDataPool(baseName+"_POOL", false);
-		this.celonisMapper.pushCSV(dataPoolId, csvExport, baseName+"_ACTIVITIES", false, "time:timestamp", sep, quotechar, newline);
-		this.celonisMapper.pushCSV(dataPoolId, cases, baseName+"_CASES", false, null, sep, quotechar, newline);
-		this.celonisMapper.getDataPools();
-		let dataModelId = this.celonisMapper.createDataModel(dataPoolId, baseName+"_DMODEL");
-		this.celonisMapper.addTableFromPool(dataModelId, baseName+"_ACTIVITIES", false);
-		this.celonisMapper.addTableFromPool(dataModelId, baseName+"_CASES", false);
-		this.celonisMapper.getDataModels();
-		this.celonisMapper.addForeignKey(dataModelId, baseName+"_ACTIVITIES", caseIdKey, baseName+"_CASES", caseIdKey, false);
-		this.celonisMapper.addProcessConfiguration(dataModelId, baseName+"_ACTIVITIES", baseName+"_CASES", caseIdKey, activityKey, timestampKey, null, false);
-		this.celonisMapper.reloadDataModel(dataModelId);
-		let workspaceId = this.celonisMapper.createWorkspace(dataModelId, baseName+"_WORKSPACE");
-		let analysisId = this.celonisMapper.createAnalysis(workspaceId, baseName+"_ANALYSIS", false);
-		this.celonisMapper.getDataPools();
-		this.celonisMapper.getDataModels();
-		this.celonisMapper.getAnalyses();
+		if (!(dummy)) {
+			dataPoolId = this.celonisMapper.createDataPool(baseName+"_POOL", false);
+			this.celonisMapper.getDataPools();
+			dataModelId = this.celonisMapper.createDataModel(dataPoolId, baseName+"_DMODEL");
+			this.celonisMapper.getDataModels();
+			console.log("created data pool");
+			this.celonisMapper.pushCSV(dataPoolId, csvExport, baseName+"_ACTIVITIES", false, "time:timestamp", sep, quotechar, newline);
+			this.celonisMapper.getDataPools();
+			console.log("created activity table");
+			this.celonisMapper.addTableFromPool(dataModelId, baseName+"_ACTIVITIES", false);
+			console.log("created data model for activities");
+			this.celonisMapper.pushCSV(dataPoolId, cases, baseName+"_CASES", false, null, sep, quotechar, newline);
+			this.celonisMapper.getDataPools();
+			console.log("created cases table");
+			this.celonisMapper.addTableFromPool(dataModelId, baseName+"_CASES", false);
+			console.log("created data model for cases");
+			this.celonisMapper.getDataModels();
+			this.celonisMapper.addForeignKey(dataModelId, baseName+"_ACTIVITIES", caseIdKey, baseName+"_CASES", caseIdKey, false);
+			console.log("added foreign key");
+			this.celonisMapper.addProcessConfiguration(dataModelId, baseName+"_ACTIVITIES", baseName+"_CASES", caseIdKey, activityKey, timestampKey, null, false);
+			console.log("added process configuration");
+			this.celonisMapper.reloadDataModel(dataModelId);
+			console.log("reloaded data model");
+			workspaceId = this.celonisMapper.createWorkspace(dataModelId, baseName+"_WORKSPACE");
+			console.log("created workspace");
+			analysisId = this.celonisMapper.createAnalysis(workspaceId, baseName+"_ANALYSIS", false);
+			console.log("created analysis");
+			this.celonisMapper.getDataPools();
+			console.log("reloading data pools");
+			this.celonisMapper.getDataModels();
+			console.log("reloading data models");
+			this.celonisMapper.getAnalyses();
+			console.log("reloading analyses");
+		}
+		return {"dataPoolId": dataPoolId, "dataModelId": dataModelId, "workspaceId": workspaceId, "analysisId": analysisId};
 	}
 }
 
@@ -16738,6 +17118,51 @@ class CelonisNDWrapper {
 			ocel["ocel:events"][evId]["ocel:omap"] = Object.keys(ocel["ocel:events"][evId]["ocel:omap"]);
 		}
 		return ocel;
+	}
+	
+	uploadOcelToCelonis(ocel, baseName, dummy=false, sep=",", quotechar="\"", newline="\r\n") {
+		let dataPoolId = null;
+		let dataModelId = null;
+		let workspaceId = null;
+		let analysisId = null;
+		let res = OcelToCelonis.apply(ocel, sep, quotechar, newline);
+		if (!(dummy)) {
+			dataPoolId = this.celonisMapper.createDataPool(baseName+"_POOL", false);
+			dataModelId = this.celonisMapper.createDataModel(dataPoolId, baseName+"_DMODEL");
+			this.celonisMapper.getDataPools();
+			this.celonisMapper.getDataModels();
+			for (let tab in res["coll"]) {
+				console.log("pushing table: "+tab+" "+res["timestampColumns"][tab]);
+				this.celonisMapper.pushCSV(dataPoolId, res["coll"][tab], tab, false, res["timestampColumns"][tab], sep, quotechar, newline);
+				this.celonisMapper.getDataPools();
+				console.log("adding table to data model: "+tab);
+				this.celonisMapper.addTableFromPool(dataModelId, tab, false);
+			}
+			this.celonisMapper.getDataModels();
+			for (let ot of res["objectTypes"]) {
+				console.log("setting up foreign key for type: "+ot);
+				this.celonisMapper.addForeignKey(dataModelId, ot+"_EVENTS", "CASE_"+ot, ot+"_CASES", "CASE_"+ot, false);
+				console.log("adding process configuration:");
+				this.celonisMapper.addProcessConfiguration(dataModelId, ot+"_EVENTS", ot+"_CASES", "CASE_"+ot, "ACT_"+ot, "TIME_"+ot, null, false);
+			}
+			for (let trans of res["transitions"]) {
+				console.log("adding foreign keys for transition: "+trans);
+				this.celonisMapper.addForeignKey(dataModelId, "CONNECT_"+trans[0]+"_CASES_"+trans[1]+"_CASES", "CASE_"+trans[0], trans[0]+"_CASES", "CASE_"+trans[0], false);
+				this.celonisMapper.addForeignKey(dataModelId, "CONNECT_"+trans[0]+"_CASES_"+trans[1]+"_CASES", "CASE_"+trans[1], trans[1]+"_CASES", "CASE_"+trans[1], false);
+			}
+			this.celonisMapper.reloadDataModel(dataModelId);
+			console.log("creating workspace");
+			workspaceId = this.celonisMapper.createWorkspace(dataModelId, baseName+"_WORKSPACE");
+			console.log("creating analysis");
+			analysisId = this.celonisMapper.createAnalysis(workspaceId, baseName+"_ANALYSIS", false);
+			console.log("reloading data pools");
+			this.celonisMapper.getDataPools();
+			console.log("reloading data models");
+			this.celonisMapper.getDataModels();
+			console.log("reloading analyses");
+			this.celonisMapper.getAnalyses();
+		}
+		return {"dataPoolId": dataPoolId, "dataModelId": dataModelId, "workspaceId": workspaceId, "analysisId": analysisId, "objectTypes": res["objectTypes"], "transitions": res["transitions"], "knowledgeYaml": res["knowledgeYaml"], "modelYaml": res["modelYaml"]};
 	}
 }
 
