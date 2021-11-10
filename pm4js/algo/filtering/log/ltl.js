@@ -56,6 +56,37 @@ class LtlFiltering {
 		}
 		return filteredLog;
 	}
+	
+	static directlyFollowsFilter(log0, activities, positive=true, activityKey="concept:name") {
+		let activitiesJoin = activities.join(",");
+		let log = log0;
+		let filteredLog = new EventLog();
+		let j = 0;
+		while (j < log0.traces.length) {
+			let trace = log.traces[j];
+			let i = 0;
+			let bo = false;
+			while (i < trace.events.length - activities.length + 1) {
+				let currActivities = [];
+				let z = i;
+				while (z < trace.events.length) {
+					currActivities.push(trace.events[z].attributes[activityKey].value);
+					z++;
+				}
+				let currActivitiesJoin = currActivities.join(",");
+				if (activitiesJoin == currActivitiesJoin) {
+					bo = true;
+					break;
+				}
+				i++;
+			}
+			if ((positive && bo) || !(positive || bo)) {
+				filteredLog.traces.push(log0.traces[j]);
+			}
+			j++;
+		}
+		return filteredLog;
+	}
 }
 
 try {
