@@ -4,6 +4,7 @@ class PetriNet {
 		this.places = {};
 		this.transitions = {};
 		this.arcs = {};
+		this.associatedTime = 0;
 	}
 	
 	addPlace(name) {
@@ -82,6 +83,7 @@ class PetriNetTransition {
 		this.inArcs = {};
 		this.outArcs = {};
 		this.properties = {};
+		this.associatedTime = 0;
 	}
 	
 	toString() {
@@ -163,13 +165,17 @@ class Marking {
 		return ret;
 	}
 	
-	execute(transition) {
+	execute(transition, associatedTime=null) {
 		let newMarking = new Marking(this.net);
 		for (let place in this.tokens) {
 			newMarking.setTokens(place, this.tokens[place]);
 		}
 		let preMarking = transition.getPreMarking();
 		let postMarking = transition.getPostMarking();
+		let transObj = this.net.transitions[transition];
+		if (associatedTime != null) {
+			transObj.associatedTime = associatedTime;
+		}
 		for (let place in preMarking) {
 			newMarking.tokens[place] -= preMarking[place];
 		}
@@ -179,6 +185,10 @@ class Marking {
 			}
 			else {
 				newMarking.tokens[place] += postMarking[place];
+			}
+			if (associatedTime != null) {
+				let placeObj = this.net.places[place];
+				placeObj.associatedTime = associatedTime;
 			}
 		}
 		for (let place in newMarking.tokens) {
@@ -214,6 +224,13 @@ class Marking {
 			}
 		}
 		return true;
+	}
+	
+	setAssociatedTimest(timest) {
+		for (let placeId in this.tokens) {
+			let place = this.net.places[placeId];
+			place.associatedTime = timest;
+		}
 	}
 }
 
