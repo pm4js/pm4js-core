@@ -80,7 +80,7 @@ class OcelToCelonis {
 			for (let objId of eve["ocel:omap"]) {
 				let objType = ocel["ocel:objects"][objId]["ocel:type"];
 				OcelToCelonis.pushElementIntoCollection(coll, [objId], objType+"_CASES", "objects", objType, null, sep, quotechar, newline);
-				OcelToCelonis.pushElementIntoCollection(coll, [evId+":"+objId, objId, eve["ocel:activity"], eve["ocel:timestamp"], evId], objType+"_EVENTS", "events", objType, null, sep, quotechar, newline);
+				OcelToCelonis.pushElementIntoCollection(coll, [evId+":"+objId, objId, eve["ocel:activity"], DateUtils.formatDateString(eve["ocel:timestamp"]), evId], objType+"_EVENTS", "events", objType, null, sep, quotechar, newline);
 				timestampColumns[objType+"_EVENTS"] = "TIME_"+objType;
 				objectTypes[objType] = 0;
 				for (let objId2 of eve["ocel:omap"]) {

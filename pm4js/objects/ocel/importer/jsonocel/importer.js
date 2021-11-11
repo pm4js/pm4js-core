@@ -4,7 +4,11 @@ class JsonOcelImporter {
 	}
 	
 	static importLog(jsonString) {
-		return JSON.parse(jsonString);
+		let ret = JSON.parse(jsonString);
+		for (let evId in ret["ocel:events"]) {
+			ret["ocel:events"][evId]["ocel:timestamp"] = new Date(ret["ocel:events"][evId]["ocel:timestamp"]);
+		}
+		return ret;
 	}
 }
 

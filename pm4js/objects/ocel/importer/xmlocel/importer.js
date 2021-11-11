@@ -31,7 +31,7 @@ class XmlOcelImporter {
 							eveActivity = child2.getAttribute("value");
 						}
 						else if (child2.getAttribute("key") == "timestamp") {
-							eveTimestamp = child2.getAttribute("value");
+							eveTimestamp = new Date(child2.getAttribute("value"));
 						}
 						else if (child2.getAttribute("key") == "omap") {
 							for (let childId3 in child2.childNodes) {
