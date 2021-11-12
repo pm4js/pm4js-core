@@ -59,7 +59,7 @@ class Pm4JS {
 	}
 }
 
-Pm4JS.VERSION = "0.0.14";
+Pm4JS.VERSION = "0.0.15";
 Pm4JS.registrationEnabled = false;
 Pm4JS.objects = [];
 Pm4JS.algorithms = [];
@@ -8242,6 +8242,7 @@ class PetriNet {
 		this.places = {};
 		this.transitions = {};
 		this.arcs = {};
+		this.associatedTime = 0;
 	}
 	
 	addPlace(name) {
@@ -8320,6 +8321,7 @@ class PetriNetTransition {
 		this.inArcs = {};
 		this.outArcs = {};
 		this.properties = {};
+		this.associatedTime = 0;
 	}
 	
 	toString() {
@@ -8401,13 +8403,17 @@ class Marking {
 		return ret;
 	}
 	
-	execute(transition) {
+	execute(transition, associatedTime=null) {
 		let newMarking = new Marking(this.net);
 		for (let place in this.tokens) {
 			newMarking.setTokens(place, this.tokens[place]);
 		}
 		let preMarking = transition.getPreMarking();
 		let postMarking = transition.getPostMarking();
+		let transObj = this.net.transitions[transition];
+		if (associatedTime != null) {
+			transObj.associatedTime = associatedTime;
+		}
 		for (let place in preMarking) {
 			newMarking.tokens[place] -= preMarking[place];
 		}
@@ -8417,6 +8423,10 @@ class Marking {
 			}
 			else {
 				newMarking.tokens[place] += postMarking[place];
+			}
+			if (associatedTime != null) {
+				let placeObj = this.net.places[place];
+				placeObj.associatedTime = associatedTime;
 			}
 		}
 		for (let place in newMarking.tokens) {
@@ -8452,6 +8462,22 @@ class Marking {
 			}
 		}
 		return true;
+	}
+	
+	setAssociatedTimest(timest) {
+		for (let placeId in this.tokens) {
+			let place = this.net.places[placeId];
+			place.associatedTime = timest;
+		}
+	}
+	
+	getAssociatedTimest() {
+		let maxTime = 0;
+		for (let placeId in this.tokens) {
+			let place = this.net.places[placeId];
+			maxTime = Math.max(place.associatedTime, maxTime);
+		}
+		return maxTime;
 	}
 }
 
@@ -9704,7 +9730,7 @@ class TokenBasedReplayResult {
 }
 
 class TokenBasedReplay {
-	static apply(eventLog, acceptingPetriNet, activityKey="concept:name", reachFm=true) {
+	static apply(eventLog, acceptingPetriNet, activityKey="concept:name", reachFm=true, oneReplayPerTrace=true, timestampKey="time:timestamp") {
 		let invisibleChain = TokenBasedReplay.buildInvisibleChain(acceptingPetriNet.net);
 		let transitionsMap = {};
 		for (let transId in acceptingPetriNet.net.transitions) {
@@ -9717,11 +9743,12 @@ class TokenBasedReplay {
 		let ret = [];
 		for (let trace of eventLog.traces) {
 			let arrActivities = TokenBasedReplay.getArrActivities(trace, activityKey);
-			if (arrActivities in dictioResultsVariant) {
+			let arrTimestamp = TokenBasedReplay.getArrTimestamp(trace, timestampKey);
+			if (oneReplayPerTrace && arrActivities in dictioResultsVariant) {
 				ret.push(dictioResultsVariant[arrActivities]);
 			}
 			else {
-				let thisRes = TokenBasedReplay.performTbr(arrActivities, transitionsMap, acceptingPetriNet, invisibleChain, reachFm);
+				let thisRes = TokenBasedReplay.performTbr(arrActivities, transitionsMap, acceptingPetriNet, invisibleChain, reachFm, arrTimestamp);
 				dictioResultsVariant[arrActivities] = thisRes;
 				ret.push(thisRes);
 			}
@@ -9744,7 +9771,11 @@ class TokenBasedReplay {
 		}
 		let ret = [];
 		for (let activities of listListActivities) {
-			let tbrResult = TokenBasedReplay.performTbr(activities.split(","), transitionsMap, acceptingPetriNet, invisibleChain, reachFm);
+			let arrTimestamp = [];
+			for (let act of activities) {
+				arrTimestamp.push(0);
+			}
+			let tbrResult = TokenBasedReplay.performTbr(activities.split(","), transitionsMap, acceptingPetriNet, invisibleChain, reachFm, arrTimestamp);
 			if (retMarking) {
 				let isFit = tbrResult.isFit;
 				tbrResult = tbrResult.visitedMarkings;
@@ -9756,8 +9787,12 @@ class TokenBasedReplay {
 		return ret;
 	}
 	
-	static performTbr(activities, transitionsMap, acceptingPetriNet, invisibleChain, reachFm) {
+	static performTbr(activities, transitionsMap, acceptingPetriNet, invisibleChain, reachFm, arrTimestamp) {
 		let marking = acceptingPetriNet.im.copy();
+		let currTimestamp = arrTimestamp[0];
+		if (arrTimestamp.length > 0) {
+			marking.setAssociatedTimest(currTimestamp);
+		}
 		let consumed = 0;
 		let produced = 0;
 		let missing = 0;
@@ -9781,17 +9816,36 @@ class TokenBasedReplay {
 			consumedPerPlace[place] += acceptingPetriNet.fm.tokens[place];
 		}
 		let visitedTransitions = [];
+		let visitedTimes = [];
 		let visitedMarkings = [];
+		let visitedMarkingsTimes = [];
 		let missingActivitiesInModel = [];
-		for (let act of activities) {
+		let mainidx = 0;
+		visitedMarkings.push(marking);
+		visitedMarkingsTimes.push(marking.getAssociatedTimest());
+		while (mainidx < activities.length) {
+			let act = activities[mainidx];
 			if (act in transitionsMap) {
+				currTimestamp = arrTimestamp[mainidx];
 				let trans = transitionsMap[act];
 				let transPreMarking = trans.getPreMarking();
 				let transPostMarking = trans.getPostMarking();
 				let enabled = marking.getEnabledTransitions();
 				let newVisitedTransitions = [];
+				let newVisitedTimes = [];
+				let newVisitedMarkings = [];
+				let newVisitedMarkingsTimes = [];
 				for (let trans of visitedTransitions) {
 					newVisitedTransitions.push(trans);
+				}
+				for (let time of visitedTimes) {
+					newVisitedTimes.push(time);
+				}
+				for (let mark of visitedMarkings) {
+					newVisitedMarkings.push(mark);
+				}
+				for (let time of visitedMarkingsTimes) {
+					newVisitedMarkingsTimes.push(time);
 				}
 				if (!(enabled.includes(trans))) {
 					let internalMarking = marking.copy();
@@ -9812,8 +9866,12 @@ class TokenBasedReplay {
 								let internalTransPostMarking = internalTrans.getPostMarking();
 								let internalEnabledTrans = internalMarking.getEnabledTransitions();
 								if (internalEnabledTrans.includes(internalTrans)) {
+									internalMarking = internalMarking.execute(internalTrans, currTimestamp);
 									newVisitedTransitions.push(internalTrans);
-									internalMarking = internalMarking.execute(internalTrans);
+									newVisitedTimes.push(internalTrans.associatedTime);
+									newVisitedMarkings.push(internalMarking);
+									newVisitedMarkingsTimes.push(internalMarking.getAssociatedTimest());
+
 									// counts consumed and produced tokens
 									for (let place in internalTransPreMarking) {
 										internalConsumed += internalTransPreMarking[place];
@@ -9840,8 +9898,11 @@ class TokenBasedReplay {
 						consumed = internalConsumed;
 						produced = internalProduced;
 						visitedTransitions = newVisitedTransitions;
+						visitedTimes = newVisitedTimes;
 						consumedPerPlace = internalConsumedPerPlace;
 						producedPerPlace = internalProducedPerPlace;
+						visitedMarkings = newVisitedMarkings;
+						visitedMarkingsTimes = newVisitedMarkingsTimes;
 					}
 				}
 				if (!(enabled.includes(trans))) {
@@ -9851,6 +9912,8 @@ class TokenBasedReplay {
 						if (place in marking.tokens) {
 							diff -= marking.tokens[place];
 						}
+						let plObj = acceptingPetriNet.net.places[place];
+						plObj.associatedTime = currTimestamp;
 						marking.tokens[place] = diff;
 						missing += diff;
 						missingPerPlace[place] += diff;
@@ -9865,13 +9928,16 @@ class TokenBasedReplay {
 					produced += transPostMarking[place];
 					producedPerPlace[place] += transPostMarking[place];
 				}
-				marking = marking.execute(trans);
-				visitedMarkings.push(marking);
+				marking = marking.execute(trans, currTimestamp);
 				visitedTransitions.push(trans);
+				visitedTimes.push(trans.associatedTime);
+				visitedMarkings.push(marking);
+				visitedMarkingsTimes.push(marking.getAssociatedTimest());
 			}
 			else if (!(act in missingActivitiesInModel)) {
 				missingActivitiesInModel.push(act);
 			}
+			mainidx++;
 		}
 		if (reachFm) {
 			if (!(acceptingPetriNet.fm.equals(marking))) {
@@ -9883,8 +9949,20 @@ class TokenBasedReplay {
 				Object.assign(internalConsumedPerPlace, consumedPerPlace);
 				Object.assign(internalProducedPerPlace, producedPerPlace);
 				let newVisitedTransitions = [];
+				let newVisitedTimes = [];
+				let newVisitedMarkings = [];
+				let newVisitedMarkingsTimes = [];
 				for (let trans of visitedTransitions) {
 					newVisitedTransitions.push(trans);
+				}
+				for (let time of visitedTimes) {
+					newVisitedTimes.push(time);
+				}
+				for (let mark of visitedMarkings) {
+					newVisitedMarkings.push(mark);
+				}
+				for (let time of visitedMarkingsTimes) {
+					newVisitedMarkingsTimes.push(time);
 				}
 				while (!(acceptingPetriNet.fm.equals(internalMarking))) {
 					let transList = TokenBasedReplay.reachFmThroughInvisibles(internalMarking, acceptingPetriNet.fm, invisibleChain);
@@ -9897,8 +9975,11 @@ class TokenBasedReplay {
 							let internalTransPostMarking = internalTrans.getPostMarking();
 							let internalEnabledTrans = internalMarking.getEnabledTransitions();
 							if (internalEnabledTrans.includes(internalTrans)) {
+								internalMarking = internalMarking.execute(internalTrans, currTimestamp);
 								newVisitedTransitions.push(internalTrans);
-								internalMarking = internalMarking.execute(internalTrans);
+								newVisitedTimes.push(internalTrans.associatedTime);
+								newVisitedMarkings.push(internalMarking);
+								newVisitedMarkingsTimes.push(internalMarking.getAssociatedTimest());
 								// counts consumed and produced tokens
 								for (let place in internalTransPreMarking) {
 									internalConsumed += internalTransPreMarking[place];
@@ -9924,8 +10005,11 @@ class TokenBasedReplay {
 					consumed = internalConsumed;
 					produced = internalProduced;
 					visitedTransitions = newVisitedTransitions;
+					visitedTimes = newVisitedTimes;
 					consumedPerPlace = internalConsumedPerPlace;
 					producedPerPlace = internalProducedPerPlace;
+					visitedMarkings = newVisitedMarkings;
+					visitedMarkingsTimes = newVisitedMarkingsTimes;
 				}
 			}
 			for (let place in acceptingPetriNet.fm.tokens) {
@@ -9959,7 +10043,7 @@ class TokenBasedReplay {
 		}
 		let fitness = 0.5*fitMC + 0.5*fitRP;
 		let isFit = (Object.keys(missingActivitiesInModel).length == 0) && (missing == 0);
-		return {"consumed": consumed, "produced": produced, "missing": missing, "remaining": remaining, "visitedTransitions": visitedTransitions, "visitedMarkings": visitedMarkings, "missingActivitiesInModel": missingActivitiesInModel, "fitness": fitness, "isFit": isFit, "reachedMarking": marking, "consumedPerPlace": consumedPerPlace, "producedPerPlace": producedPerPlace, "missingPerPlace": missingPerPlace, "remainingPerPlace": remainingPerPlace};
+		return {"consumed": consumed, "produced": produced, "missing": missing, "remaining": remaining, "visitedTransitions": visitedTransitions, "visitedTransitionsTimes": visitedTimes, "visitedMarkings": visitedMarkings, "visitedMarkingsTimes": visitedMarkingsTimes, "missingActivitiesInModel": missingActivitiesInModel, "fitness": fitness, "isFit": isFit, "reachedMarking": marking, "consumedPerPlace": consumedPerPlace, "producedPerPlace": producedPerPlace, "missingPerPlace": missingPerPlace, "remainingPerPlace": remainingPerPlace};
 	}
 	
 	static enableTransThroughInvisibles(marking, transPreMarking, invisibleChain) {
@@ -10016,6 +10100,14 @@ class TokenBasedReplay {
 		let ret = [];
 		for (let eve of trace.events) {
 			ret.push(eve.attributes[activityKey].value);
+		}
+		return ret;
+	}
+	
+	static getArrTimestamp(trace, timestampKey) {
+		let ret = [];
+		for (let eve of trace.events) {
+			ret.push(eve.attributes[timestampKey].value.getTime() / 1000.0);
 		}
 		return ret;
 	}
@@ -15648,7 +15740,11 @@ class JsonOcelImporter {
 	}
 	
 	static importLog(jsonString) {
-		return JSON.parse(jsonString);
+		let ret = JSON.parse(jsonString);
+		for (let evId in ret["ocel:events"]) {
+			ret["ocel:events"][evId]["ocel:timestamp"] = new Date(ret["ocel:events"][evId]["ocel:timestamp"]);
+		}
+		return ret;
 	}
 }
 
@@ -15696,7 +15792,7 @@ class XmlOcelImporter {
 							eveActivity = child2.getAttribute("value");
 						}
 						else if (child2.getAttribute("key") == "timestamp") {
-							eveTimestamp = child2.getAttribute("value");
+							eveTimestamp = new Date(child2.getAttribute("value"));
 						}
 						else if (child2.getAttribute("key") == "omap") {
 							for (let childId3 in child2.childNodes) {
@@ -16148,7 +16244,7 @@ class OcelToCelonis {
 			for (let objId of eve["ocel:omap"]) {
 				let objType = ocel["ocel:objects"][objId]["ocel:type"];
 				OcelToCelonis.pushElementIntoCollection(coll, [objId], objType+"_CASES", "objects", objType, null, sep, quotechar, newline);
-				OcelToCelonis.pushElementIntoCollection(coll, [evId+":"+objId, objId, eve["ocel:activity"], eve["ocel:timestamp"], evId], objType+"_EVENTS", "events", objType, null, sep, quotechar, newline);
+				OcelToCelonis.pushElementIntoCollection(coll, [evId+":"+objId, objId, eve["ocel:activity"], DateUtils.formatDateString(eve["ocel:timestamp"]), evId], objType+"_EVENTS", "events", objType, null, sep, quotechar, newline);
 				timestampColumns[objType+"_EVENTS"] = "TIME_"+objType;
 				objectTypes[objType] = 0;
 				for (let objId2 of eve["ocel:omap"]) {
