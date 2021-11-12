@@ -255,7 +255,8 @@ class TokenBasedReplay {
 						if (place in marking.tokens) {
 							diff -= marking.tokens[place];
 						}
-						place.associatedTime = currTimestamp;
+						let plObj = acceptingPetriNet.net.places[place];
+						plObj.associatedTime = currTimestamp;
 						marking.tokens[place] = diff;
 						missing += diff;
 						missingPerPlace[place] += diff;
