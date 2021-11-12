@@ -232,6 +232,15 @@ class Marking {
 			place.associatedTime = timest;
 		}
 	}
+	
+	getAssociatedTimest() {
+		let maxTime = 0;
+		for (let placeId in this.tokens) {
+			let place = this.net.places[placeId];
+			maxTime = Math.max(place.associatedTime, maxTime);
+		}
+		return maxTime;
+	}
 }
 
 class AcceptingPetriNet {
