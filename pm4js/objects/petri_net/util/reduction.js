@@ -30,16 +30,16 @@ class PetriNetReduction {
 					let arc = trans.outArcs[arcId];
 					targetPlaces.push(arc.target);
 				}
-				if (Object.keys(sourcePlace.inArcs).length == 1 && Object.keys(sourcePlace.outArcs).length == 1) {
-					let sourceTransition = null;
+				//if (Object.keys(sourcePlace.inArcs).length == 1 && Object.keys(sourcePlace.outArcs).length == 1) {
+				if (Object.keys(sourcePlace.inArcs).length > 0 && Object.keys(sourcePlace.outArcs).length == 1) {
 					for (let arcId in sourcePlace.inArcs) {
-						sourceTransition = sourcePlace.inArcs[arcId].source;
+						let sourceTransition = sourcePlace.inArcs[arcId].source;
+						for (let p of targetPlaces) {
+							net.addArcFromTo(sourceTransition, p);
+						}
 					}
 					net.removeTransition(trans);
 					net.removePlace(sourcePlace);
-					for (let p of targetPlaces) {
-						net.addArcFromTo(sourceTransition, p);
-					}
 					cont = true;
 					break;
 				}
@@ -69,16 +69,16 @@ class PetriNetReduction {
 					let arc = trans.inArcs[arcId];
 					sourcePlaces.push(arc.source);
 				}
-				if (Object.keys(targetPlace.inArcs).length == 1 && Object.keys(targetPlace.outArcs).length == 1) {
-					let targetTransition = null;
+				//if (Object.keys(targetPlace.inArcs).length == 1 && Object.keys(targetPlace.outArcs).length == 1) {
+				if (Object.keys(targetPlace.inArcs).length == 1 && Object.keys(targetPlace.outArcs).length > 0) {
 					for (let arcId in targetPlace.outArcs) {
-						targetTransition = targetPlace.outArcs[arcId].target;
+						let targetTransition = targetPlace.outArcs[arcId].target;
+						for (let p of sourcePlaces) {
+							net.addArcFromTo(p, targetTransition);
+						}
 					}
 					net.removeTransition(trans);
 					net.removePlace(targetPlace);
-					for (let p of sourcePlaces) {
-						net.addArcFromTo(p, targetTransition);
-					}
 					cont = true;
 					break;
 				}
