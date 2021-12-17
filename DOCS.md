@@ -60,6 +60,7 @@
 		* [General Statistics](#log---general-statistics)
 * Support for Celonis
 	* [Celonis Connector](#celonis-connector)
+	* [Traditional Celonis Wrapper](#traditional-celonis-wrapper)
 
 
 # Objects
@@ -838,4 +839,25 @@ Some methods are offered by the Celonis mapper object:
 * **addProcessConfiguration(dataModelId, activityTable, caseTable, caseIdColumn, activityColumn, timestampColumn)**: adds a process configuration to the data model. A process configuration establishes the activity table, the case table (which can be null), the case ID column, the activity column and the timestamp column.
 * **reloadDataModel(dataModelId)**: reloads the current data model.
 * **performQueryAnalysis(analysisId, pqlQuery)**: performs the PQL query and returns the result as a Javascript array.
+
+## Traditional Celonis Wrapper
+
+We offer a wrapper for the download of traditional analysis (event log, DFG, ...) from Celonis.
+The wrapper is instantiated on top of the Celonis mapper object.
+
+**let celonisWrapper = Celonis1DWrapper(celonisMapper)**
+
+The methods which are offered are:
+
+* **downloadBaseEventLog(analysisId)**: downloads an event log containing the case identifier, the activity and the timestamp from a Celonis analysis.
+* **downloadStartActivities(analysisId)**: downloads the start activities (along with the number of occurrences) from a Celonis analysis.
+* **downloadEndActivities(analysisId)**: downloads the end activities (along with the number of occurrences) from a Celonis analysis.
+* **downloadActivities(analysisId)**: downloads the activities (along with the number of occurrences) from a Celonis analysis.
+* **downloadPathsFrequency(analysisId)**: downloads the paths frequency (along with the number of occurrences) from a Celonis analysis.
+* **downloadVariants(analysisId)**: downloads the variants (along with the number of occurrences) from a Celonis analysis.
+* **downloadPathsPerformance(analysisId)**: downloads the average performance for every path of the DFG, from a Celonis analysis.
+* **downloadAllCaseDurations(analysisId)**: downloads all the case durations from the current analysis.
+* **downloadFrequencyDfg(analysisId)**: downloads the frequency DFG object.
+* **downloadPerformanceDfg(analysisId)**: downloads the performance DFG object.
+* **uploadEventLogToCelonis(eventLog, dataPoolName)**: uploads an EventLog object, creating a new data pool with the specified name.
 
