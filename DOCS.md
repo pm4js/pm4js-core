@@ -836,5 +836,5 @@ Some methods are offered by the Celonis mapper object:
 * **addForeignKey(dataModelId, table1, column1, table2, column2)**: adds a foreign key between two tables based on the provided information.
 * **addProcessConfiguration(dataModelId, activityTable, caseTable, caseIdColumn, activityColumn, timestampColumn)**: adds a process configuration to the data model. A process configuration establishes the activity table, the case table (which can be null), the case ID column, the activity column and the timestamp column.
 * **reloadDataModel(dataModelId)**: reloads the current data model.
-* **performQueryAnalysis(analysisId, pqlQuery)**: performs the PQL query and returns the result.
+* **performQueryAnalysis(analysisId, pqlQuery)**: performs the PQL query and returns the result as a Javascript array.
 
