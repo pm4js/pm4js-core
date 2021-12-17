@@ -59,6 +59,7 @@
 	* Log
 		* [General Statistics](#log---general-statistics)
 * Support for Celonis
+	* [Celonis Connector](#celonis-connector)
 
 
 # Objects
