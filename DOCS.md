@@ -58,6 +58,8 @@
 * Statistics
 	* Log
 		* [General Statistics](#log---general-statistics)
+* Support for Celonis
+
 
 # Objects
 
@@ -790,3 +792,49 @@ PM4JS offers some general log [statistics](./pm4js/statistics/log/general.js). T
 * Retrieval of the typed dictionary of attributes at the trace level starting from an event log: **GeneralLogStatistics.getTraceAttributesWithType(eventLog)**
 * Retrieval of the average sojourn time for each activity of the event log: **GeneralLogStatistics.getAverageSojournTime(eventLog, "concept:name", "time:timestamp", "time:timestamp")** (the arguments are the event log, the activity key, the timestamp key, the start timestamp key).
 * Retrieval of the number of events the log: **GeneralLogStatistics.numEvents(eventLog)**.
+
+# Support for Celonis
+
+## Celonis Connector
+
+We offer the possibility to connect to a Celonis instance with proxification (in the case of pure Javascript execution) and direct connection (with Node.JS).
+In the folder **pm4js/utils/celonis** different proxies can be found. The script **celonis_proxy.py** is a simple Python proxy (based on Flask) that can be used
+to connect PM4JS to Celonis.
+Moreover, we offer the possibility to do the proxification using PHP (supported by popular web services). The offered proxies are:
+* **celonis_proxy.php**: proxy for the GET calls.
+* **celonis_proxy_post.php**: proxy for the POST calls.
+* **celonis_proxy_put.php**: proxy for the PUT calls.
+
+The proxy must be configured in the application, with the following syntax:
+
+**CelonisMapper.PROXY_URL_GET = "URL TO THE GET PROXY"; CelonisMapper.PROXY_URL_POST = "URL TO THE POST PROXY"; CelonisMapper.PROXY_URL_PUT = "URL TO THE PUT PROXY";**
+
+The connection can be instantiated with the following syntax (for the generation of the API key, please refer to the official documentation of Celonis):
+
+**let celonisMapper = new CelonisMapper(celonisUrl, apiKey)**
+
+The properties of the Celonis mapper object are:
+
+* **dataPools**: associates the ID of a data pool with a dictionary containing information on the data pool.
+* **dataPoolsNames**: associates the name of a data pool with its ID.
+* **dataModels**: associates the ID of a data model with a dictionary containing information on the data model.
+* **dataModelsNames**: associates the name of a data model with its ID.
+* **dataPoolsDataModels**: associates the ID of a data pool with a dictionary mapping the ID of a data model to the data model itself.
+* **dataModelsDataPools**: associates the ID of a data model with the corresponding ID of the data pool.
+* **dataModelsTables**: associates the ID of a data model with its a dictionary associating the ID of a table with an object describing a table.
+* **analysis**: associates the ID of an analysis with an object describing the analysis.
+* **analysisNames**: associates the name of an analysis with the corresponding identifier.
+* **analysisDataModel**: associates the ID of an analysis with the ID of the corresponding data model.
+
+Some methods are offered by the Celonis mapper object:
+
+* **createDataPool(dataPoolName)**: creates a new data pool with the specified name, and returns the corresponding identifier.
+* **createDataModel(dataPoolId, dataModelName)**: creates a new data model with the specified name inside the data pool, and returns the corresponding identifier.
+* **createWorkspace(dataModelId, workspaceName)**: creates a new workspace with the specified name, and returns the corresponding identifier.
+* **createAnalysis(workspaceId, analysisName)**: creates a new analysis with the specified name, and returns the corresponding identifier.
+* **addTableFromPool(dataModelId, tableName)**: adds a table from the data pool to the data model.
+* **addForeignKey(dataModelId, table1, column1, table2, column2)**: adds a foreign key between two tables based on the provided information.
+* **addProcessConfiguration(dataModelId, activityTable, caseTable, caseIdColumn, activityColumn, timestampColumn)**: adds a process configuration to the data model. A process configuration establishes the activity table, the case table (which can be null), the case ID column, the activity column and the timestamp column.
+* **reloadDataModel(dataModelId)**: reloads the current data model.
+* **performQueryAnalysis(analysisId, pqlQuery)**: performs the PQL query and returns the result.
+
