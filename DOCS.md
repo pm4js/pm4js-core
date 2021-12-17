@@ -682,6 +682,12 @@ falls in the specified range. Setting positive to false, it keeps the cases havi
 * **LogGeneralFiltering.filterEventsHavingEventAttributeValues(log, valuesArray, $positive$, $attributeKey$)**: filters the events (trimming the cases) having the specified value for the attribute.
 Setting positive to false, it keeps the events for which the value for the attribute do not fall in the specified range.
 
+The following logical-temporal filters are also implemented:
+* **LogGeneralFiltering.fourEyesPrinciple(log, activity1, activity2, $positive$)**: if positive=false, filters the cases of the event log which violate the four eyes principle (activity1 and activity2 are done by the same resource); if positive=true, filters the cases of the event log which satisfy the four eyes principle.
+* **LogGeneralFiltering.eventuallyFollows(log, [activity1, activity2, ...], $positive$)**: if positive=true, filters the cases of the event log where activity1 is eventually followed by activity2 is eventually followed ... if positive=false, filters the cases of the event log which do not satisfy such property.
+* **LogGeneralFiltering.directlyFollows(log, [activity1, activity2, ...], $positive$)**: if positive=true, filters the cases of the event log where activity1 is directly followed by activity2 is directly followed ... if positive=false, filters the cases of the event log which do not satisfy such property.
+* **LogGeneralFiltering.activityDoneDifferentResources(log, activity, $positive$)**: if positive=true, filters the cases of the event log where activity is repeated by different resources. If positive=false, filters the cases of the event log which do not satisfy such property.
+
 ### Sliding Directly Follows Graphs
 
 PM4JS offers the possibility to slide the directly-follows graph, restricting the behavior to the desidered number of activities/paths.
