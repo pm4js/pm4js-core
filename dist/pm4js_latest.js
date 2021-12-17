@@ -59,7 +59,7 @@ class Pm4JS {
 	}
 }
 
-Pm4JS.VERSION = "0.0.15";
+Pm4JS.VERSION = "0.0.16";
 Pm4JS.registrationEnabled = false;
 Pm4JS.objects = [];
 Pm4JS.algorithms = [];
@@ -8536,15 +8536,15 @@ class PetriNetReduction {
 					targetPlaces.push(arc.target);
 				}
 				if (Object.keys(sourcePlace.inArcs).length == 1 && Object.keys(sourcePlace.outArcs).length == 1) {
-					let sourceTransition = null;
+				//if (Object.keys(sourcePlace.inArcs).length > 0 && Object.keys(sourcePlace.outArcs).length == 1) {
 					for (let arcId in sourcePlace.inArcs) {
-						sourceTransition = sourcePlace.inArcs[arcId].source;
+						let sourceTransition = sourcePlace.inArcs[arcId].source;
+						for (let p of targetPlaces) {
+							net.addArcFromTo(sourceTransition, p);
+						}
 					}
 					net.removeTransition(trans);
 					net.removePlace(sourcePlace);
-					for (let p of targetPlaces) {
-						net.addArcFromTo(sourceTransition, p);
-					}
 					cont = true;
 					break;
 				}
@@ -8575,15 +8575,15 @@ class PetriNetReduction {
 					sourcePlaces.push(arc.source);
 				}
 				if (Object.keys(targetPlace.inArcs).length == 1 && Object.keys(targetPlace.outArcs).length == 1) {
-					let targetTransition = null;
+				//if (Object.keys(targetPlace.inArcs).length == 1 && Object.keys(targetPlace.outArcs).length > 0) {
 					for (let arcId in targetPlace.outArcs) {
-						targetTransition = targetPlace.outArcs[arcId].target;
+						let targetTransition = targetPlace.outArcs[arcId].target;
+						for (let p of sourcePlaces) {
+							net.addArcFromTo(p, targetTransition);
+						}
 					}
 					net.removeTransition(trans);
 					net.removePlace(targetPlace);
-					for (let p of sourcePlaces) {
-						net.addArcFromTo(p, targetTransition);
-					}
 					cont = true;
 					break;
 				}
@@ -9669,8 +9669,10 @@ class TokenBasedReplayResult {
 		this.totalProducedPerPlace = {};
 		this.totalMissingPerPlace = {};
 		this.totalRemainingPerPlace = {};
+		this.transExecutionPerformance = {};
 		for (let t in acceptingPetriNet.net.transitions) {
 			this.transExecutions[t] = 0;
+			this.transExecutionPerformance[t] = [];
 		}
 		for (let a in acceptingPetriNet.net.arcs) {
 			this.arcExecutions[a] = 0;
@@ -9706,6 +9708,14 @@ class TokenBasedReplayResult {
 				for (let a in t.outArcs) {
 					this.arcExecutions[a]++;
 				}
+			}
+			let i = 0;
+			while (i < res["visitedTransitions"].length) {
+				let trans = res["visitedTransitions"][i];
+				let transTime = res["visitedTransitionsTimes"][i];
+				let markTime = res["visitedMarkingsTimes"][i];
+				this.transExecutionPerformance[trans].push((transTime - markTime));
+				i = i + 1;
 			}
 			for (let p in this.acceptingPetriNet.net.places) {
 				this.totalConsumedPerPlace[p] += res["consumedPerPlace"][p];
@@ -17352,4 +17362,150 @@ try {
 catch (err) {
 	// not in node
 }
+
+class TemporalProfile {
+	constructor(temporalProfile) {
+		this.temporalProfile = temporalProfile;
+	}
+}
+
+class TemporalProfileDiscovery {
+	static getAvg(vect) {
+		if (vect.length > 0) {
+			let sum = 0.0;
+			for (let el of vect) {
+				sum += el;
+			}
+			return sum / vect.length;
+		}
+		return 0;
+	}
+	
+	static getStdev(vect, avg) {
+		if (vect.length > 0) {
+			let sum = 0.0;
+			for (let el of vect) {
+				sum += (el - avg)*(el - avg);
+			}
+			return Math.sqrt(sum / vect.length);
+		}
+		return 0;
+	}
+	
+	static apply(eventLog, activityKey="concept:name", timestampKey="time:timestamp", startTimestampKey="time:timestamp", addObject=false) {
+		let actCouplesTimes = {};
+		let temporalProfile = {};
+		for (let trace of eventLog.traces) {
+			let i = 0;
+			while (i < trace.events.length - 1) {
+				let act_i = trace.events[i].attributes[activityKey].value;
+				let j = i + 1;
+				while (j < trace.events.length) {
+					let act_j = trace.events[j].attributes[activityKey].value;
+					let ts1 = trace.events[i].attributes[timestampKey].value;
+					let ts2 = trace.events[j].attributes[startTimestampKey].value;
+					let diff = 0;
+					if (BusinessHours.ENABLED) {
+						diff = BusinessHours.apply(ts1, ts2);
+					}
+					else {
+						ts1 = ts1.getTime();
+						ts2 = ts2.getTime();
+						diff = (ts2 - ts1)/1000;
+					}
+					if (!([act_i, act_j] in actCouplesTimes)) {
+						actCouplesTimes[[act_i, act_j]] = [];
+					}
+					actCouplesTimes[[act_i, act_j]].push(diff);
+					j++;
+				}
+				i++;
+			}
+		}
+		for (let cou in actCouplesTimes) {
+			let vect = actCouplesTimes[cou]
+			let avg = TemporalProfileDiscovery.getAvg(vect);
+			let stdev = TemporalProfileDiscovery.getStdev(vect, avg);
+			temporalProfile[cou] = [avg, stdev];
+		}
+		return new TemporalProfile(temporalProfile);
+	}
+}
+
+try {
+	require("../../../pm4js.js");
+	module.exports = {TemporalProfileDiscovery: TemporalProfileDiscovery};
+	global.TemporalProfileDiscovery = TemporalProfileDiscovery;
+}
+catch (err) {
+	// not in Node.JS
+}
+
+class TemporalProfileConformanceResults {
+	constructor(results) {
+		this.results = results;
+	}
+}
+
+class TemporalProfileConformance {
+	static getAnalysis(eventLog, temporalProfile, activityKey="concept:name", timestampKey="time:timestamp", startTimestampKey="time:timestamp") {
+		let confResults = [];
+		for (let trace of eventLog.traces) {
+			confResults.push([])
+			let i = 0;
+			while (i < trace.events.length - 1) {
+				let act_i = trace.events[i].attributes[activityKey].value;
+				let j = i + 1;
+				while (j < trace.events.length) {
+					let act_j = trace.events[j].attributes[activityKey].value;
+					let ts1 = trace.events[i].attributes[timestampKey].value;
+					let ts2 = trace.events[j].attributes[startTimestampKey].value;
+					let diff = 0;
+					if (BusinessHours.ENABLED) {
+						diff = BusinessHours.apply(ts1, ts2);
+					}
+					else {
+						ts1 = ts1.getTime();
+						ts2 = ts2.getTime();
+						diff = (ts2 - ts1)/1000;
+					}
+					let cou = [act_i, act_j];
+					if (cou in temporalProfile.temporalProfile) {
+						let avg = temporalProfile.temporalProfile[cou][0];
+						let stdev = temporalProfile.temporalProfile[cou][1] + 0.0000001;
+						let k = Math.abs(avg - diff) / stdev;
+						confResults[confResults.length - 1].push([act_i, act_j, diff, k]);
+					}
+					j++;
+				}
+				i++;
+			}
+		}
+		return confResults;
+	}
+	
+	static apply(eventLog, temporalProfile, zeta, activityKey="concept:name", timestampKey="time:timestamp", startTimestampKey="time:timestamp", addObject=false) {
+		let analysis = TemporalProfileConformance.getAnalysis(eventLog, temporalProfile, activityKey, timestampKey, startTimestampKey);
+		let result = [];
+		for (let trace of analysis) {
+			result.push([]);
+			for (let cou of trace) {
+				if (cou[cou.length - 1] > zeta) {
+					result[result.length - 1].push(cou);
+				}
+			}
+		}
+		return new TemporalProfileConformanceResults(result);
+	}
+}
+
+try {
+	require("../../../pm4js.js");
+	module.exports = {TemporalProfileConformance: TemporalProfileConformance};
+	global.TemporalProfileConformance = TemporalProfileConformance;
+}
+catch (err) {
+	// not in Node.JS
+}
+
 
