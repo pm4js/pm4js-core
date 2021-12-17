@@ -61,6 +61,7 @@
 * Support for Celonis
 	* [Celonis Connector](#celonis-connector)
 	* [Traditional Celonis Wrapper](#traditional-celonis-wrapper)
+	* [Object Centric Celonis Wrapper](#object-centric-celonis-wrapper)
 
 
 # Objects
@@ -842,10 +843,10 @@ Some methods are offered by the Celonis mapper object:
 
 ## Traditional Celonis Wrapper
 
-We offer a wrapper for the download of traditional analysis (event log, DFG, ...) from Celonis.
+We offer a wrapper for the download/upload of traditional analyses (event log, DFG, ...) from Celonis.
 The wrapper is instantiated on top of the Celonis mapper object.
 
-**let celonisWrapper = Celonis1DWrapper(celonisMapper)**
+**let celonisWrapper = new Celonis1DWrapper(celonisMapper);**
 
 The methods which are offered are:
 
@@ -861,3 +862,14 @@ The methods which are offered are:
 * **downloadPerformanceDfg(analysisId)**: downloads the performance DFG object.
 * **uploadEventLogToCelonis(eventLog, dataPoolName)**: uploads an EventLog object, creating a new data pool with the specified name.
 
+## Object Centric Celonis Wrapper
+
+We offer a wrapper for the download/upload of object-centric analyses from Celonis.
+The wrapper is instantiated on top of a Celonis mapper object.
+
+**let celonisNDWrapper = new CelonisNDWrapper(celonisMapper);**
+
+The methods which are offered are:
+
+* **downloadDataModelFromCelonis(analysisId)**: forms an OCEL given all the process configurations.
+* **uploadOcelToCelonis(ocel, baseName)**: uploads an OCEL to Celonis.
