@@ -54,6 +54,7 @@
 	* Simulation
 		* [Playout of a DFG](#playout-of-a-dfg)
 	* [Feature Extraction](#feature-extraction)
+	* [Interval Analysis](#interval-analysis)
 * Statistics
 	* Log
 		* [General Statistics](#log---general-statistics)
@@ -746,6 +747,31 @@ Where:
 * **trStrAttr** (if provided) is the list of string attributes at the case level that should be used  for the feature extraction (one-hot encoding). If not provided, the default feature selection is performed for these attributes.
 * **trNumAttr** (if provided) is the list of numeric attributes at the case level that should be used for the feature extraction. If not provided, the default feature selection is performed for these attributes.
 * **evSuccAttr** (if provided) use the paths between the attributes provided in the list as features.
+
+## Interval Analysis
+
+The interval analysis permits to understand different inter-case features of the event log (such as the work in progress, or the workload of a resource).
+
+It starts from the construction of an interval tree given an event log.
+
+**let intervalTree = IntervalTreeBuilder.apply(eventLog, timestampKey);**
+
+The interval tree can be queried at any point of time to get information about the open activities of a case.
+For example, if we have the following open cases (simplified): **c1: [[A, 1000], [B, 2000]], c2: [[A, 1100], [B, 1500]]**,
+and perform:
+
+**intervalTree.queryPoint(1300)**,
+
+we will get both the exchange between the activities **A** and **B** of **c1**, and the activities **A** and **B** of **c2**,
+while **intervalTree.queryPoint(1800)** would return only **c1** as open case.
+
+After the calculation of the interval tree, several algorithms can be applied:
+
+* **IntervalTreeAlgorithms.resourceWorkload(tree, pointOfTime)**: returns a dictionary with the number of events performed by a resource at a given point in time.
+* **IntervalTreeAlgorithms.targetActivityWorkload(tree, pointOfTime)**: returns a dictionary with the number of events waiting to reach an activity at a given point in time.
+* **IntervalTreeAlgorithms.sourceActivityWorkload(tree, pointOfTime)**: returns a dictionary with the number of events exiting an activity (and waiting to reach another act.) at a given point in time.
+
+The information of the interval tree can be used, for example, to populate the token-flow in a process map.
 
 # Statistics
 
