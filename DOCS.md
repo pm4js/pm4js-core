@@ -32,6 +32,7 @@
 		* [Exporting BPMN](#exporting-bpmn)
 		* [Converting a BPMN to an accepting Petri net](#converting-a-bpmn-to-an-accepting-petri-net)
 		* [Converting an accepting Petri net to BPMN](#converting-an-accepting-petri-net-to-bpmn)
+	* [Business Hours configuration](#business-hours-configuration)
 * Algorithms 
 	* Process Discovery
 		* [Inductive Miner](#inductive-miner)
@@ -441,6 +442,18 @@ To convert a workflow net (a sub-class of Petri nets) to a BPMN diagram, the fol
 **let bpmnGraph = WfNetToBpmnConverter.apply(acceptingPetriNet)**
 
 As important point to mention, the automatic layouting of the BPMN diagrams is still missing from the library.
+
+## Business Hours configuration
+
+PM4JS permits the configuration of the so-called business hours. Business hours establish the active working time,
+so they permit to exclude nights / weekends from several performance measures implemented in PM4JS.
+
+The business hours can be configured as follows:
+
+* **BusinessHours.ENABLED = true**: enables considering the business hours.
+* **BusinessHours.ENABLED = false**: disables considering the business hours.
+* **BusinessHours.DEFAULT_WORKING_HOURS = [7, 17]**: working hours of the day (UTC).
+* **BusinessHours.DEFAULT_WEEKENDS = [0, 6];**: weekends (0 = Sunday, first day of the week; 6 = Saturday).
 
 # Algorithms
 
