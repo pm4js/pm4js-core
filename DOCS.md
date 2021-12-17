@@ -872,4 +872,4 @@ The wrapper is instantiated on top of a Celonis mapper object.
 The methods which are offered are:
 
 * **downloadDataModelFromCelonis(analysisId)**: forms an OCEL given all the process configurations.
-* **uploadOcelToCelonis(ocel, baseName)**: uploads an OCEL to Celonis.
+* **uploadOcelToCelonis(ocel, baseName)**: uploads an OCEL to Celonis, creating a data pool with the provided name.
