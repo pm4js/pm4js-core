@@ -75,3 +75,4 @@ require('./pm4js/utils/celonis/celonis.js');
 require('./pm4js/utils/celonis/celonis_1d_wrapper.js');
 require('./pm4js/utils/celonis/celonis_nd_wrapper.js');
 require('./pm4js/visualization/dfg/alignments.js');
+require('./pm4js/algo/discovery/temporal_profile/algorithm.js');
