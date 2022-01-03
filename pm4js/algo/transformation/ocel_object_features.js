@@ -1,4 +1,24 @@
 class OcelObjectFeatures {
+	static enrichEventLogWithObjectFeatures(ocel, strAttributes=null, numAttributes=null) {
+		let fea = OcelObjectFeatures.apply(ocel, strAttributes, numAttributes);
+		let data = fea["data"];
+		let featureNames = fea["featureNames"];
+		let count = 0;
+		let objects = ocel["ocel:objects"];
+		for (let objId in objects) {
+			let obj = objects[objId];
+			let i = 0;
+			while (i < featureNames.length) {
+				let fn = featureNames[i];
+				let val = data[count][i];
+				obj["ocel:ovmap"][fn] = val;
+				i = i + 1;
+			}
+			count = count + 1;
+		}
+		return ocel;
+	}
+	
 	static apply(ocel, strAttributes=null, numAttributes=null) {
 		let objStrAttr = OcelObjectFeatures.encodeObjStrAttr(ocel, strAttributes);
 		let objNumAttr = OcelObjectFeatures.encodeObjNumAttr(ocel, numAttributes);
