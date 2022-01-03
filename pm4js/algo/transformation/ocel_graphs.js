@@ -197,6 +197,46 @@ class OcelGraphs {
 		}
 		return graph;
 	}
+	
+	static connectedComponents(graph) {
+		let allNodes = {};
+		for (let k in graph) {
+			allNodes[k] = 0;
+			for (let k2 of graph[k]) {
+				allNodes[k2] = 0;
+			}
+		}
+		let count = 0;
+		for (let k in allNodes) {
+			allNodes[k] = count;
+			count = count + 1;
+		}
+		let changed = true;
+		while (changed) {
+			changed = false;
+			for (let k in graph) {
+				for (let k2 of graph[k]) {
+					let v1 = allNodes[k];
+					let v2 = allNodes[k2];
+					if (v1 != v2) {
+						changed = true;
+						let v3 = Math.min(v1, v2);
+						allNodes[k] = v3;
+						allNodes[k2] = v3;
+					}
+				}
+			}
+		}
+		let nodesGrouping = {};
+		for (let k in allNodes) {
+			let v = allNodes[k];
+			if (!(v in nodesGrouping)) {
+				nodesGrouping[v] = [];
+			}
+			nodesGrouping[v].push(k);
+		}
+		return Object.values(nodesGrouping);
+	}
 }
 
 try {
