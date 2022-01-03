@@ -48,10 +48,21 @@ class OcelLinkAnalysis {
 		return links;
 	}
 	
-	static filterFirstLink(eveLinks) {
+	static filterFirstLink(ocel, eveLinks) {
 		let links = {};
 		for (let k in eveLinks) {
 			links[k] = [eveLinks[k][0]];
+		}
+		return links;
+	}
+	
+	static linksToFinalForm(ocel, eveLinks) {
+		let links = [];
+		let events = ocel["ocel:events"];
+		for (let k in eveLinks) {
+			for (let k2 of eveLinks[k]) {
+				links.push([events[k], events[k2]]);
+			}
 		}
 		return links;
 	}
