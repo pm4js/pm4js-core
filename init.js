@@ -79,3 +79,4 @@ require('./pm4js/algo/discovery/temporal_profile/algorithm.js');
 require('./pm4js/algo/conformance/temporal_profile/algorithm.js');
 require('./pm4js/algo/transformation/ocel_graphs.js');
 require('./pm4js/algo/transformation/ocel_event_features.js');
+require('./pm4js/algo/transformation/ocel_object_features.js');
