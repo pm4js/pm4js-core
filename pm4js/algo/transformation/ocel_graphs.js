@@ -148,6 +148,55 @@ class OcelGraphs {
 		}
 		return dl;
 	}
+	
+	static expandGraph(graph0) {
+		let graph = {};
+		for (let k in graph0) {
+			graph[k] = {};
+			for (let k2 of graph0[k]) {
+				graph[k][k2] = 0;
+			}
+		}
+		let toVisit = {};
+		let invGraph = {};
+		for (let k in graph) {
+			if (!(k in invGraph)) {
+				invGraph[k] = [];
+			}
+			for (let k2 in graph[k]) {
+				if (!(k2 in invGraph)) {
+					invGraph[k2] = {};
+				}
+				invGraph[k2][k] = 0;
+			}
+		}
+		for (let k in graph) {
+			toVisit[k] = 0;
+		}
+		while (true) {
+			let newToVisit = {};
+			for (let k2 in toVisit) {
+				for (let k in invGraph[k2]) {
+					let newGraph = Object.assign({}, graph[k]);
+					for (let k3 in graph[k2]) {
+						newGraph[k3] = 0;
+					}
+					if (Object.keys(newGraph).length > Object.keys(graph[k]).length) {
+						graph[k] = newGraph;
+						newToVisit[k] = 0;
+					}
+				}
+			}
+			if (Object.keys(newToVisit).length == 0) {
+				break;
+			}
+			toVisit = newToVisit;
+		}
+		for (let k in graph) {
+			graph[k] = Object.keys(graph[k]);
+		}
+		return graph;
+	}
 }
 
 try {
