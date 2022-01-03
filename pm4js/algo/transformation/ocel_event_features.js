@@ -37,6 +37,39 @@ class OcelEventFeatures {
 		let featureNames = ["@@ev_timest_abs", "@@ev_timest_dayofweek", "@@ev_timest_month", "@@ev_timest_hour"];
 		return {"data": data, "featureNames": featureNames};
 	}
+	
+	static encodeNumRelObj(ocel) {
+		let events = ocel["ocel:events"];
+		let objects = ocel["ocel:objects"];
+		let objectTypes = {};
+		let otPerObject = {};
+		for (let objId in objects) {
+			let obj = objects[objId];
+			objectTypes[obj["ocel:type"]] = 0;
+			otPerObject[objId] = obj["ocel:type"];
+		}
+		objectTypes = Object.keys(objectTypes);
+		let data = [];
+		for (let evId in events) {
+			let eve = events[evId];
+			let arr = [eve["ocel:omap"].length];
+			for (let ot of objectTypes) {
+				let thisCount = 0;
+				for (let objId of eve["ocel:omap"]) {
+					if (otPerObject[objId] == ot) {
+						thisCount = thisCount + 1;
+					}
+				}
+				arr.push(thisCount);
+			}
+			data.push(arr);
+		}
+		let featureNames = ["@@ev_rel_objs_abs"];
+		for (let objType of objectTypes) {
+			featureNames.push("@@ev_rel_objs_ot_"+objType);
+		}
+		return {"data": data, "featureNames": featureNames};
+	}
 }
 
 try {
