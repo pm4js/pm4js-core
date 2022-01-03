@@ -47,6 +47,14 @@ class OcelLinkAnalysis {
 		}
 		return links;
 	}
+	
+	static filterFirstLink(eveLinks) {
+		let links = {};
+		for (let k in eveLinks) {
+			links[k] = [eveLinks[k][0]];
+		}
+		return links;
+	}
 }
 
 try {
