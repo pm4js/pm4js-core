@@ -1,8 +1,21 @@
 class EventLogToStream {
-	static apply(eventLog, sortingAttribute="time:timestamp") {
+	static shallowCopy(eve0) {
+		let eve = new Event();
+		for (let attr in eve0.attributes) {
+			eve.attributes[attr] = eve0.attributes[attr];
+		}
+		return eve;
+	}
+	
+	static apply(eventLog, sortingAttribute="time:timestamp", casePrefix="case:") {
 		let stream = [];
 		for (let trace of eventLog.traces) {
-			for (let eve of trace.events) {
+			for (let eve0 of trace.events) {
+				let eve = EventLogToStream.shallowCopy(eve0);
+				for (let traceAttr in trace.attributes) {
+					let traceAttrValue = trace.attributes[traceAttr];
+					eve.attributes[casePrefix+traceAttr] = traceAttrValue;
+				}
 				stream.push(eve);
 			}
 		}
