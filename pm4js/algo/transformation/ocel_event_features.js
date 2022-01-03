@@ -155,6 +155,73 @@ class OcelEventFeatures {
 		}
 		return {"data": data, "featureNames": featureNames};
 	}
+	
+	static encodeStrAttrEv(ocel, strAttributes=null) {
+		if (strAttributes == null) {
+			strAttributes = [];
+		}
+		let events = ocel["ocel:events"];
+		let data = [];
+		let featureNames = [];
+		
+		for (let evId in events) {
+			data.push([]);
+		}
+		for (let attr of strAttributes) {
+			let diffValues = {};
+			for (let evId in events) {
+				let eve = events[evId];
+				if (attr in eve["ocel:vmap"]) {					
+					diffValues[eve["ocel:vmap"][attr]] = 0;
+				}
+			}
+			diffValues = Object.keys(diffValues);
+			let zeroArr = [];
+			for (let val of diffValues) {
+				featureNames.push("@@ev_attr_"+attr+"_"+val);
+				zeroArr.push(0);
+			}
+			let count = 0;
+			for (let evId in events) {
+				let eve = events[evId];
+				let vect = [...zeroArr];
+				if (attr in eve["ocel:vmap"]) {
+					let val = eve["ocel:vmap"][attr];
+					vect[diffValues.indexOf(val)] = 1;
+				}
+				data[count] = [...data[count], ...vect];
+				count = count + 1;
+			}
+		}
+		return {"data": data, "featureNames": featureNames};
+	}
+	
+	static encodeNumAttrEv(ocel, numAttributes=null) {
+		if (numAttributes == null) {
+			numAttributes = [];
+		}
+		let events = ocel["ocel:events"];
+		let data = [];
+		let featureNames = [];
+		for (let evId in events) {
+			data.push([]);
+		}
+		for (let attr of numAttributes) {
+			let count = 0;
+			for (let evId in events) {
+				let eve = events[evId];
+				if (attr in eve["ocel:vmap"]) {
+					data[count].push(eve["ocel:vmap"][attr]);
+				}
+				else {
+					data[count].push(0);
+				}
+				count = count + 1;
+			}
+			featureNames.push("@@ev_num_attr_"+attr);
+		}
+		return {"data": data, "featureNames": featureNames};
+	}
 }
 
 try {
