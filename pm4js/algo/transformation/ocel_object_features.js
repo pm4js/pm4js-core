@@ -208,6 +208,38 @@ class OcelObjectFeatures {
 		}
 		return {"data": data, "featureNames": featureNames};
 	}
+	
+	static encodeWip(ocel) {
+		let tree = OcelIntervalTree.buildObjectLifecycleTimestampIntervalTree(ocel);
+		let objLifecycle = OcelObjectFeatures.getObjectsLifecycle(ocel);
+		let data = [];
+		let featureNames = ["@@object_wip"];
+		let objects = ocel["ocel:objects"];
+		for (let objId in objects) {
+			let obj = objects[objId];
+			let lif = objLifecycle[objId];
+			let st = lif[0]["ocel:timestamp"].getTime() / 1000.0;
+			let et = lif[lif.length - 1]["ocel:timestamp"].getTime() / 1000.0;
+			let afterIntersectingObjects0 = tree.queryAfterPoint(st);
+			let beforeIntersectingObjects0 = tree.queryBeforePoint(et);
+			let afterIntersectingObjects = [];
+			let beforeIntersectingObjects = [];
+			for (let obj of afterIntersectingObjects0) {
+				afterIntersectingObjects.push(obj);
+			}
+			for (let obj of beforeIntersectingObjects0) {
+				beforeIntersectingObjects.push(obj);
+			}
+			let intersectionAfterBefore = [];
+			for (let obj of afterIntersectingObjects) {
+				if (beforeIntersectingObjects.includes(obj)) {
+					intersectionAfterBefore.push(obj);
+				}
+			}
+			data.push([intersectionAfterBefore.length]);
+		}
+		return {"data": data, "featureNames": featureNames};
+	}
 }
 
 try {
