@@ -38,6 +38,35 @@ class OcelObjectFeatures {
 		}
 		return {"data": data, "featureNames": featureNames};
 	}
+	
+	static encodeObjNumAttr(ocel, numAttributes=null) {
+		if (numAttributes == null) {
+			numAttributes = [];
+		}
+		let objects = ocel["ocel:objects"];
+		let data = [];
+		let featureNames = [];
+		
+		for (let objId in objects) {
+			data.push([]);
+		}
+		
+		for (let attr of numAttributes) {
+			let count = 0;
+			for (let objId in objects) {
+				let obj = objects[objId];
+				if (attr in obj["ocel:ovmap"]) {
+					data[count].push(obj["ocel:ovmap"][attr]);
+				}
+				else {
+					data[count].push(0);
+				}
+				count = count + 1;
+			}
+			featureNames.push("@@obj_num_attr_"+attr);
+		}
+		return {"data": data, "featureNames": featureNames};
+	}
 }
 
 try {
