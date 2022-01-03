@@ -70,6 +70,91 @@ class OcelEventFeatures {
 		}
 		return {"data": data, "featureNames": featureNames};
 	}
+
+	static encodeNumRelObjStart(ocel) {
+		let events = ocel["ocel:events"];
+		let objects = ocel["ocel:objects"];
+		let objectTypes = {};
+		let otPerObject = {};
+		for (let objId in objects) {
+			let obj = objects[objId];
+			objectTypes[obj["ocel:type"]] = 0;
+			otPerObject[objId] = obj["ocel:type"];
+		}
+		objectTypes = Object.keys(objectTypes);
+		let data = [];
+		let seenObjects = {};
+		for (let evId in events) {
+			let eve = events[evId];
+			let arr = [];
+			for (let ot of objectTypes) {
+				let thisCount = 0;
+				for (let objId of eve["ocel:omap"]) {
+					if (otPerObject[objId] == ot) {
+						if (!(objId in seenObjects)) {
+							thisCount = thisCount + 1;
+						}
+					}
+				}
+				arr.push(thisCount);
+			}
+			for (let objId of eve["ocel:omap"]) {
+				seenObjects[objId] = 0;
+			}
+			data.push(arr);
+		}
+		let featureNames = [];
+		for (let objType of objectTypes) {
+			featureNames.push("@@ev_rel_objs_start_ot_"+objType);
+		}
+		return {"data": data, "featureNames": featureNames};
+	}
+
+	static encodeNumRelObjEnd(ocel) {
+		let events = ocel["ocel:events"];
+		let objects = ocel["ocel:objects"];
+		let objectTypes = {};
+		let otPerObject = {};
+		for (let objId in objects) {
+			let obj = objects[objId];
+			objectTypes[obj["ocel:type"]] = 0;
+			otPerObject[objId] = obj["ocel:type"];
+		}
+		objectTypes = Object.keys(objectTypes);
+		let evIds = Object.keys(events).reverse();
+		let lastEventLifecycle = {};
+		for (let evId of evIds) {
+			let eve = events[evId];
+			for (let objId of eve["ocel:omap"]) {
+				if (!(objId in lastEventLifecycle)) {
+					lastEventLifecycle[objId] = evId;
+				}
+			}
+		}
+		evIds = evIds.reverse();
+		let data = [];
+		for (let evId of evIds) {
+			let eve = events[evId];
+			let arr = [];
+			for (let ot of objectTypes) {
+				let thisCount = 0;
+				for (let objId of eve["ocel:omap"]) {
+					if (otPerObject[objId] == ot) {
+						if (lastEventLifecycle[objId] == evId) {
+							thisCount = thisCount + 1;
+						}
+					}
+				}
+				arr.push(thisCount);
+			}
+			data.push(arr);
+		}
+		let featureNames = [];
+		for (let objType of objectTypes) {
+			featureNames.push("@@ev_rel_objs_end_ot_"+objType);
+		}
+		return {"data": data, "featureNames": featureNames};
+	}
 }
 
 try {
