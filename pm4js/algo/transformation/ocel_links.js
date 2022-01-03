@@ -24,6 +24,27 @@ class OcelLinkAnalysis {
 				}
 			}
 		}
+		for (let k in links) {
+			links[k] = Object.keys(links[k]);
+		}
+		return links;
+	}
+	
+	static filterLinksByTimestamp(ocel, eveLinks) {
+		let links = {};
+		let events = ocel["ocel:events"];
+		for (let k in eveLinks) {
+			let tk = events[k]["ocel:timestamp"];
+			for (let k2 of eveLinks[k]) {
+				let tk2 = events[k2]["ocel:timestamp"];
+				if (tk < tk2) {
+					if (!(k in links)) {
+						links[k] = [];
+					}
+					links[k].push(k2);
+				}
+			}
+		}
 		return links;
 	}
 }
