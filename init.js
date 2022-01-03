@@ -82,3 +82,4 @@ require('./pm4js/algo/transformation/ocel_interval_tree.js');
 require('./pm4js/algo/transformation/ocel_event_features.js');
 require('./pm4js/algo/transformation/ocel_object_features.js');
 require('./pm4js/objects/log/util/log_to_stream.js');
+require('./pm4js/utils/stream/stream_attr_wrapper.js');
