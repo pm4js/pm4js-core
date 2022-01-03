@@ -1,4 +1,22 @@
 class OcelEventFeatures {
+	static apply(ocel, strAttributes=null, numAttributes=null) {
+		let activitiesEncoding = OcelEventFeatures.encodeActivity(ocel);
+		let timestampEncoding = OcelEventFeatures.encodeTimestamp(ocel);
+		let numRelObjEncoding = OcelEventFeatures.encodeNumRelObj(ocel);
+		let numRelObjStartEncoding = OcelEventFeatures.encodeNumRelObjStart(ocel);
+		let numRelObjEndEncoding = OcelEventFeatures.encodeNumRelObjEnd(ocel);
+		let strAttrEncoding = OcelEventFeatures.encodeStrAttrEv(ocel, strAttributes);
+		let numAttrEncoding = OcelEventFeatures.encodeNumAttrEv(ocel, numAttributes);
+		let featureNames = [...activitiesEncoding["featureNames"], ...timestampEncoding["featureNames"], ...numRelObjEncoding["featureNames"], ...numRelObjStartEncoding["featureNames"], ...numRelObjEndEncoding["featureNames"], ...strAttrEncoding["featureNames"], ...numAttrEncoding["featureNames"]];
+		let data = [];
+		let count = 0;
+		for (let evId in ocel["ocel:events"]) {
+			data.push([...activitiesEncoding["data"][count], ...timestampEncoding["data"][count], ...numRelObjEncoding["data"][count], ...numRelObjStartEncoding["data"][count], ...numRelObjEndEncoding["data"][count], ...strAttrEncoding["data"][count], ...numAttrEncoding["data"][count]]);
+			count = count + 1;
+		}
+		return {"data": data, "featureNames": featureNames};
+	}
+	
 	static encodeActivity(ocel) {
 		let activities = {};
 		let events = ocel["ocel:events"];
