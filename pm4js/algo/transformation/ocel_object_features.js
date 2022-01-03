@@ -1,4 +1,24 @@
 class OcelObjectFeatures {
+	static apply(ocel, strAttributes=null, numAttributes=null) {
+		let objStrAttr = OcelObjectFeatures.encodeObjStrAttr(ocel, strAttributes);
+		let objNumAttr = OcelObjectFeatures.encodeObjNumAttr(ocel, numAttributes);
+		let objLifecycleActivities = OcelObjectFeatures.encodeLifecycleActivities(ocel);
+		let objLifecycleDuration = OcelObjectFeatures.encodeLifecycleDuration(ocel);
+		let objLifecycleLength = OcelObjectFeatures.encodeLifecycleLength(ocel);
+		let overallObjectGraphs = OcelObjectFeatures.encodeOverallObjectGraphs(ocel);
+		let interactionGraphOt = OcelObjectFeatures.encodeInteractionGraphOt(ocel);
+		let wip = OcelObjectFeatures.encodeWip(ocel);
+		let featureNames = [...objStrAttr["featureNames"], ...objNumAttr["featureNames"], ...objLifecycleActivities["featureNames"], ...objLifecycleDuration["featureNames"], ...objLifecycleLength["featureNames"], ...overallObjectGraphs["featureNames"], ...interactionGraphOt["featureNames"], ...wip["featureNames"]];
+		let data = [];
+		let objects = ocel["ocel:objects"];
+		let count = 0;
+		for (let objId in objects) {
+			data.push([...objStrAttr["data"][count], ...objNumAttr["data"][count], ...objLifecycleActivities["data"][count], ...objLifecycleDuration["data"][count], ...objLifecycleLength["data"][count], ...overallObjectGraphs["data"][count], ...interactionGraphOt["data"][count], ...wip["data"][count]]);
+			count = count + 1;
+		}
+		return {"data": data, "featureNames": featureNames};
+	}
+	
 	static encodeObjStrAttr(ocel, strAttributes=null) {
 		if (strAttributes == null) {
 			strAttributes = [];
