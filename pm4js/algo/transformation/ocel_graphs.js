@@ -14,7 +14,7 @@ class OcelGraphs {
 				}
 			}
 		}
-		return Object.keys(ret);
+		return OcelGraphs.transformArrayToDictArray(Object.keys(ret));
 	}
 	
 	static objectDescendantsGraph(ocel) {
@@ -40,7 +40,7 @@ class OcelGraphs {
 				}
 			}
 		}
-		return Object.keys(ret);
+		return OcelGraphs.transformArrayToDictArray(Object.keys(ret));
 	}
 	
 	static objectCobirthGraph(ocel) {
@@ -68,7 +68,7 @@ class OcelGraphs {
 				}
 			}
 		}
-		return Object.keys(ret);
+		return OcelGraphs.transformArrayToDictArray(Object.keys(ret));
 	}
 	
 	static objectCodeathGraph(ocel) {
@@ -96,7 +96,7 @@ class OcelGraphs {
 				}
 			}
 		}
-		return Object.keys(ret);
+		return OcelGraphs.transformArrayToDictArray(Object.keys(ret));
 	}
 	
 	static objectInheritanceGraph(ocel) {
@@ -132,7 +132,21 @@ class OcelGraphs {
 				seenObjects[objId] = 0;
 			}
 		}
-		return Object.keys(ret);
+		return OcelGraphs.transformArrayToDictArray(Object.keys(ret));
+	}
+	
+	static transformArrayToDictArray(arr) {
+		let dl = {};
+		let i = 0;
+		while (i < arr.length) {
+			let spli = arr[i].split(",");
+			if (!(spli[0] in dl)) {
+				dl[spli[0]] = [];
+			}
+			dl[spli[0]].push(spli[1]);
+			i++;
+		}
+		return dl;
 	}
 }
 

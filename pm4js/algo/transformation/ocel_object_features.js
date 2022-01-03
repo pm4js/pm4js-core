@@ -141,7 +141,73 @@ class OcelObjectFeatures {
 		return {"data": data, "featureNames": featureNames};
 	}
 	
+	static encodeOverallObjectGraphs(ocel) {
+		let interactionGraph = OcelGraphs.objectInteractionGraph(ocel);
+		let descendantsGraph = OcelGraphs.objectDescendantsGraph(ocel);
+		let cobirthGraph = OcelGraphs.objectCobirthGraph(ocel);
+		let codeathGraph = OcelGraphs.objectCodeathGraph(ocel);
+		let inheritanceGraph = OcelGraphs.objectInheritanceGraph(ocel);
+		let objects = ocel["ocel:objects"];
+		let data = [];
+		let featureNames = ["@@object_overall_interactions", "@@object_overall_descendants", "@@object_overall_cobirth", "@@object_overall_codeath", "@@object_overall_inheritance"];
+		for (let objId in objects) {
+			let interactions = 0;
+			let descendants = 0;
+			let cobirth = 0;
+			let codeath = 0;
+			let inheritance = 0;
+			if (objId in interactionGraph) {
+				interactions = interactionGraph[objId].length;
+			}
+			if (objId in descendantsGraph) {
+				descendants = descendantsGraph[objId].length;
+			}
+			if (objId in cobirthGraph) {
+				cobirth = cobirthGraph[objId].length;
+			}
+			if (objId in codeathGraph) {
+				codeath = codeathGraph[objId].length;
+			}
+			if (objId in inheritanceGraph) {
+				inheritance = inheritanceGraph[objId].length;
+			}
+			data.push([interactions, descendants, cobirth, codeath, inheritance]);
+		}
+		return {"data": data, "featureNames": featureNames};
+	}
 	
+	static encodeInteractionGraphOt(ocel) {
+		let interactionGraph = OcelGraphs.objectInteractionGraph(ocel);
+		let objects = ocel["ocel:objects"];
+		let objOt = {};
+		let objectTypes = {};
+		for (let objId in objects) {
+			let obj = objects[objId];
+			objOt[objId] = obj["ocel:type"];
+			objectTypes[obj["ocel:type"]] = 0;
+		}
+		objectTypes = Object.keys(objectTypes);
+		let data = [];
+		let featureNames = [];
+		for (let ot of objectTypes) {
+			featureNames.push("@@object_interaction_ot_" + ot);
+		}
+		for (let objId in objects) {
+			let interactions = interactionGraph[objId];
+			let arr = [];
+			for (let ot of objectTypes) {
+				let count = 0;
+				for (let objId2 of interactions) {
+					if (objOt[objId2] == ot) {
+						count = count + 1
+					}
+				}
+				arr.push(count);
+			}
+			data.push(arr);
+		}
+		return {"data": data, "featureNames": featureNames};
+	}
 }
 
 try {
