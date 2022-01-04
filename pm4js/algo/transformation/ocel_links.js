@@ -30,6 +30,46 @@ class OcelLinkAnalysis {
 		return links;
 	}
 	
+	static linkAnalysisAttributeOutIn(ocel, outAttribute, inAttribute) {
+		let outAttributeValuesEvents = {};
+		let inAttributeValuesEvents = {};
+		let linkedEventsPos = {};
+		let events = ocel["ocel:events"];
+		for (let evId in events) {
+			let eve = events[evId];
+			let val = StreamAttrWrapper.accessAttribute(eve, outAttribute);
+			if (val != null) {
+				if (!(val in outAttributeValuesEvents)) {
+					outAttributeValuesEvents[val] = [];
+				}
+				outAttributeValuesEvents[val].push(evId);
+			}
+			val = StreamAttrWrapper.accessAttribute(eve, inAttribute);
+			if (val != null) {
+				if (!(val in inAttributeValuesEvents)) {
+					inAttributeValuesEvents[val] = [];
+				}
+				inAttributeValuesEvents[val].push(evId);
+			}
+		}
+		for (let val in outAttributeValuesEvents) {
+			if (val in inAttributeValuesEvents) {
+				for (let i1 of outAttributeValuesEvents[val]) {
+					if (!(i1 in linkedEventsPos)) {
+						linkedEventsPos[i1] = {};
+					}
+					for (let i2 of inAttributeValuesEvents[val]) {
+						linkedEventsPos[i1][i2] = 0;
+					}
+				}
+			}
+		}
+		for (let idx in linkedEventsPos) {
+			linkedEventsPos[idx] = Object.keys(linkedEventsPos[idx]);
+		}
+		return linkedEventsPos;
+	}
+	
 	static filterLinksByTimestamp(ocel, eveLinks) {
 		let links = {};
 		let events = ocel["ocel:events"];

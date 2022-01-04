@@ -6,23 +6,19 @@ class LogLinksAnalysis {
 		let i = 0;
 		while (i < stream.length) {
 			let eve = stream[i];
-			if (outAttribute in eve.attributes) {
-				let val = StreamAttrWrapper.accessAttribute(eve, outAttribute);
-				if (val != null) {
-					if (!(val in outAttributeValuesEvents)) {
-						outAttributeValuesEvents[val] = [];
-					}
-					outAttributeValuesEvents[val].push(i);
+			let val = StreamAttrWrapper.accessAttribute(eve, outAttribute);
+			if (val != null) {
+				if (!(val in outAttributeValuesEvents)) {
+					outAttributeValuesEvents[val] = [];
 				}
+				outAttributeValuesEvents[val].push(i);
 			}
-			if (inAttribute in eve.attributes) {
-				let val = StreamAttrWrapper.accessAttribute(eve, inAttribute);
-				if (val != null) {
-					if (!(val in inAttributeValuesEvents)) {
-						inAttributeValuesEvents[val] = [];
-					}
-					inAttributeValuesEvents[val].push(i);
+			val = StreamAttrWrapper.accessAttribute(eve, inAttribute);
+			if (val != null) {
+				if (!(val in inAttributeValuesEvents)) {
+					inAttributeValuesEvents[val] = [];
 				}
+				inAttributeValuesEvents[val].push(i);
 			}
 			i = i + 1;
 		}
@@ -51,10 +47,10 @@ class LogLinksAnalysis {
 			for (let k2 of oldLinks[k1]) {
 				let n2 = parseInt(k2);
 				if (n2 > n1) {
-					if (!(n1 in links)) {
-						links[n1] = [];
+					if (!(k1 in links)) {
+						links[k1] = [];
 					}
-					links[n1].push(n2);
+					links[k1].push(k2);
 				}
 			}
 		}
@@ -65,6 +61,55 @@ class LogLinksAnalysis {
 		let links = {};
 		for (let k1 in oldLinks) {
 			links[k1] = [oldLinks[k1][0]];
+		}
+		return links;
+	}
+	
+	static expandLinks(stream, links0) {
+		let links = {};
+		for (let k in links0) {
+			links[k] = {};
+			for (let k2 of links0[k]) {
+				links[k][k2] = 0;
+			}
+		}
+		let toVisit = {};
+		let invGraph = {};
+		for (let k in links) {
+			if (!(k in invGraph)) {
+				invGraph[k] = [];
+			}
+			for (let k2 in links[k]) {
+				if (!(k2 in invGraph)) {
+					invGraph[k2] = {};
+				}
+				invGraph[k2][k] = 0;
+			}
+		}
+		for (let k in links) {
+			toVisit[k] = 0;
+		}
+		while (true) {
+			let newToVisit = {};
+			for (let k2 in toVisit) {
+				for (let k in invGraph[k2]) {
+					let newGraph = Object.assign({}, links[k]);
+					for (let k3 in links[k2]) {
+						newGraph[k3] = 0;
+					}
+					if (Object.keys(newGraph).length > Object.keys(links[k]).length) {
+						links[k] = newGraph;
+						newToVisit[k] = 0;
+					}
+				}
+			}
+			if (Object.keys(newToVisit).length == 0) {
+				break;
+			}
+			toVisit = newToVisit;
+		}
+		for (let k in links) {
+			links[k] = Object.keys(links[k]);
 		}
 		return links;
 	}
