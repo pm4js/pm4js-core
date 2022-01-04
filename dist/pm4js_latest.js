@@ -59,7 +59,7 @@ class Pm4JS {
 	}
 }
 
-Pm4JS.VERSION = "0.0.16";
+Pm4JS.VERSION = "0.0.17";
 Pm4JS.registrationEnabled = false;
 Pm4JS.objects = [];
 Pm4JS.algorithms = [];
@@ -17506,6 +17506,1623 @@ try {
 }
 catch (err) {
 	// not in Node.JS
+}
+
+
+class OcelGraphs {
+	static objectInteractionGraph(ocel) {
+		let ret = {};
+		let events = ocel["ocel:events"];
+		let objects = ocel["ocel:objects"];
+		let evIds = Object.keys(events);
+		for (let evId of evIds) {
+			let eve = events[evId];
+			for (let objId of eve["ocel:omap"]) {
+				for (let objId2 of eve["ocel:omap"]) {
+					if (objId != objId2) {
+						ret[[objId, objId2]] = 0;
+					}
+				}
+			}
+		}
+		return OcelGraphs.transformArrayToDictArray(Object.keys(ret));
+	}
+	
+	static objectDescendantsGraph(ocel) {
+		let ret = {};
+		let events = ocel["ocel:events"];
+		let objects = ocel["ocel:objects"];
+		let evIds = Object.keys(events);
+		let seenObjects = {};
+		for (let evId of evIds) {
+			let eve = events[evId];
+			for (let objId of eve["ocel:omap"]) {
+				if (objId in seenObjects) {
+					for (let objId2 of eve["ocel:omap"]) {
+						if (!(objId2 in seenObjects)) {
+							ret[[objId, objId2]] = 0;
+						}
+					}
+				}
+			}
+			for (let objId of eve["ocel:omap"]) {
+				if (!(objId in seenObjects)) {
+					seenObjects[objId] = 0;
+				}
+			}
+		}
+		return OcelGraphs.transformArrayToDictArray(Object.keys(ret));
+	}
+	
+	static objectCobirthGraph(ocel) {
+		let ret = {};
+		let events = ocel["ocel:events"];
+		let objects = ocel["ocel:objects"];
+		let evIds = Object.keys(events);
+		let seenObjects = {};
+		for (let evId of evIds) {
+			let eve = events[evId];
+			for (let objId of eve["ocel:omap"]) {
+				if (!(objId in seenObjects)) {
+					for (let objId2 of eve["ocel:omap"]) {
+						if (!(objId2 in seenObjects)) {
+							if (objId != objId2) {
+								ret[[objId, objId2]] = 0;
+							}
+						}
+					}
+				}
+			}
+			for (let objId of eve["ocel:omap"]) {
+				if (!(objId in seenObjects)) {
+					seenObjects[objId] = 0;
+				}
+			}
+		}
+		return OcelGraphs.transformArrayToDictArray(Object.keys(ret));
+	}
+	
+	static objectCodeathGraph(ocel) {
+		let ret = {};
+		let events = ocel["ocel:events"];
+		let objects = ocel["ocel:objects"];
+		let evIds = Object.keys(events).reverse();
+		let seenObjects = {};
+		for (let evId of evIds) {
+			let eve = events[evId];
+			for (let objId of eve["ocel:omap"]) {
+				if (!(objId in seenObjects)) {
+					for (let objId2 of eve["ocel:omap"]) {
+						if (!(objId2 in seenObjects)) {
+							if (objId != objId2) {
+								ret[[objId, objId2]] = 0;
+							}
+						}
+					}
+				}
+			}
+			for (let objId of eve["ocel:omap"]) {
+				if (!(objId in seenObjects)) {
+					seenObjects[objId] = 0;
+				}
+			}
+		}
+		return OcelGraphs.transformArrayToDictArray(Object.keys(ret));
+	}
+	
+	static objectInheritanceGraph(ocel) {
+		let ret = {};
+		let events = ocel["ocel:events"];
+		let objects = ocel["ocel:objects"];
+		let evIds = Object.keys(events).reverse();
+		let lastEventLifecycle = {};
+		for (let evId of evIds) {
+			let eve = events[evId];
+			for (let objId of eve["ocel:omap"]) {
+				if (!(objId in lastEventLifecycle)) {
+					lastEventLifecycle[objId] = evId;
+				}
+			}
+		}
+		evIds = evIds.reverse();
+		let seenObjects = {};
+		for (let evId of evIds) {
+			let eve = events[evId];
+			for (let objId of eve["ocel:omap"]) {
+				if (objId in lastEventLifecycle && lastEventLifecycle[objId] == evId) {
+					for (let objId2 of eve["ocel:omap"]) {
+						if (objId != objId2) {
+							if (!(objId2 in seenObjects)) {
+								ret[[objId, objId2]] = 0;
+							}
+						}
+					}
+				}
+			}
+			for (let objId of eve["ocel:omap"]) {
+				seenObjects[objId] = 0;
+			}
+		}
+		return OcelGraphs.transformArrayToDictArray(Object.keys(ret));
+	}
+	
+	static transformArrayToDictArray(arr) {
+		let dl = {};
+		let i = 0;
+		while (i < arr.length) {
+			let spli = arr[i].split(",");
+			if (!(spli[0] in dl)) {
+				dl[spli[0]] = [];
+			}
+			dl[spli[0]].push(spli[1]);
+			i++;
+		}
+		return dl;
+	}
+	
+	static expandGraph(graph0) {
+		let graph = {};
+		for (let k in graph0) {
+			graph[k] = {};
+			for (let k2 of graph0[k]) {
+				graph[k][k2] = 0;
+			}
+		}
+		let toVisit = {};
+		let invGraph = {};
+		for (let k in graph) {
+			if (!(k in invGraph)) {
+				invGraph[k] = [];
+			}
+			for (let k2 in graph[k]) {
+				if (!(k2 in invGraph)) {
+					invGraph[k2] = {};
+				}
+				invGraph[k2][k] = 0;
+			}
+		}
+		for (let k in graph) {
+			toVisit[k] = 0;
+		}
+		while (true) {
+			let newToVisit = {};
+			for (let k2 in toVisit) {
+				for (let k in invGraph[k2]) {
+					let newGraph = Object.assign({}, graph[k]);
+					for (let k3 in graph[k2]) {
+						newGraph[k3] = 0;
+					}
+					if (Object.keys(newGraph).length > Object.keys(graph[k]).length) {
+						graph[k] = newGraph;
+						newToVisit[k] = 0;
+					}
+				}
+			}
+			if (Object.keys(newToVisit).length == 0) {
+				break;
+			}
+			toVisit = newToVisit;
+		}
+		for (let k in graph) {
+			graph[k] = Object.keys(graph[k]);
+		}
+		return graph;
+	}
+	
+	static connectedComponents(graph) {
+		let allNodes = {};
+		for (let k in graph) {
+			allNodes[k] = 0;
+			for (let k2 of graph[k]) {
+				allNodes[k2] = 0;
+			}
+		}
+		let count = 0;
+		for (let k in allNodes) {
+			allNodes[k] = count;
+			count = count + 1;
+		}
+		let changed = true;
+		while (changed) {
+			changed = false;
+			for (let k in graph) {
+				for (let k2 of graph[k]) {
+					let v1 = allNodes[k];
+					let v2 = allNodes[k2];
+					if (v1 != v2) {
+						changed = true;
+						let v3 = Math.min(v1, v2);
+						allNodes[k] = v3;
+						allNodes[k2] = v3;
+					}
+				}
+			}
+		}
+		let nodesGrouping = {};
+		for (let k in allNodes) {
+			let v = allNodes[k];
+			if (!(v in nodesGrouping)) {
+				nodesGrouping[v] = [];
+			}
+			nodesGrouping[v].push(k);
+		}
+		return Object.values(nodesGrouping);
+	}
+}
+
+try {
+	require('../../pm4js.js');
+	module.exports = {OcelGraphs: OcelGraphs};
+	global.OcelGraphs = OcelGraphs;
+}
+catch (err) {
+	// not in node
+	//console.log(err);
+}
+
+class OcelIntervalTree {
+	static buildEventTimestampIntervalTree(ocel) {
+		let events = ocel["ocel:events"];
+		let tree = new IntervalTree();
+		for (let evId in events) {
+			let eve = events[evId];
+			let evTimest = eve["ocel:timestamp"].getTime() / 1000.0;
+			tree.insert(evTimest-0.00001, evTimest+0.00001, eve);
+		}
+		let mintime = null;
+		for (let n of tree.ascending()) {
+			mintime = n.low;
+			break;
+		}
+		let maxtime = null;
+		for (let n of tree.descending()) {
+			maxtime = n.high;
+			break;
+		}
+		tree.mintime = mintime;
+		tree.maxtime = maxtime;
+		return tree;
+	}
+	
+	static getObjectsLifecycle(ocel) {
+		let lif = {};
+		let events = ocel["ocel:events"];
+		for (let evId in events) {
+			let eve = events[evId];
+			for (let objId of eve["ocel:omap"]) {
+				if (!(objId in lif)) {
+					lif[objId] = [];
+				}
+				lif[objId].push(eve);
+			}
+		}
+		return lif;
+	}
+	
+	static buildObjectLifecycleTimestampIntervalTree(ocel) {
+		let objects = ocel["ocel:objects"];
+		let objLifecycle = OcelIntervalTree.getObjectsLifecycle(ocel);
+		let tree = new IntervalTree();
+		for (let objId in objects) {
+			let obj = objects[objId];
+			let lif = objLifecycle[objId];
+			let st = lif[0]["ocel:timestamp"].getTime() / 1000.0;
+			let et = lif[lif.length - 1]["ocel:timestamp"].getTime() / 1000.0;
+			tree.insert(st-0.00001, et+0.00001, [obj, lif]);
+		}
+		let mintime = null;
+		for (let n of tree.ascending()) {
+			mintime = n.low;
+			break;
+		}
+		let maxtime = null;
+		for (let n of tree.descending()) {
+			maxtime = n.high;
+			break;
+		}
+		tree.mintime = mintime;
+		tree.maxtime = maxtime;
+		return tree;
+	}
+}
+
+try {
+	require('../../pm4js.js');
+	module.exports = {OcelIntervalTree: OcelIntervalTree};
+	global.OcelIntervalTree = OcelIntervalTree;
+}
+catch (err) {
+	// not in node
+	//console.log(err);
+}
+
+class OcelEventFeatures {
+	static enrichEventLogWithEventFeatures(ocel, strAttributes=null, numAttributes=null) {
+		let fea = OcelEventFeatures.apply(ocel, strAttributes, numAttributes);
+		let data = fea["data"];
+		let featureNames = fea["featureNames"];
+		let count = 0;
+		let events = ocel["ocel:events"];
+		for (let evId in events) {
+			let eve = events[evId];
+			let i = 0;
+			while (i < featureNames.length) {
+				let fn = featureNames[i];
+				let val = data[count][i];
+				eve["ocel:vmap"][fn] = val;
+				i = i + 1;
+			}
+			count = count + 1;
+		}
+		return ocel;
+	}
+	
+	static apply(ocel, strAttributes=null, numAttributes=null) {
+		let activitiesEncoding = OcelEventFeatures.encodeActivity(ocel);
+		let timestampEncoding = OcelEventFeatures.encodeTimestamp(ocel);
+		let numRelObjEncoding = OcelEventFeatures.encodeNumRelObj(ocel);
+		let numRelObjStartEncoding = OcelEventFeatures.encodeNumRelObjStart(ocel);
+		let numRelObjEndEncoding = OcelEventFeatures.encodeNumRelObjEnd(ocel);
+		let strAttrEncoding = OcelEventFeatures.encodeStrAttrEv(ocel, strAttributes);
+		let numAttrEncoding = OcelEventFeatures.encodeNumAttrEv(ocel, numAttributes);
+		let featureNames = [...activitiesEncoding["featureNames"], ...timestampEncoding["featureNames"], ...numRelObjEncoding["featureNames"], ...numRelObjStartEncoding["featureNames"], ...numRelObjEndEncoding["featureNames"], ...strAttrEncoding["featureNames"], ...numAttrEncoding["featureNames"]];
+		let data = [];
+		let count = 0;
+		for (let evId in ocel["ocel:events"]) {
+			data.push([...activitiesEncoding["data"][count], ...timestampEncoding["data"][count], ...numRelObjEncoding["data"][count], ...numRelObjStartEncoding["data"][count], ...numRelObjEndEncoding["data"][count], ...strAttrEncoding["data"][count], ...numAttrEncoding["data"][count]]);
+			count = count + 1;
+		}
+		return {"data": data, "featureNames": featureNames};
+	}
+	
+	static encodeActivity(ocel) {
+		let activities = {};
+		let events = ocel["ocel:events"];
+		for (let evId in events) {
+			let eve = events[evId];
+			activities[eve["ocel:activity"]] = 0;
+		}
+		activities = Object.keys(activities);
+		let arrNull = [];
+		for (let act of activities) {
+			arrNull.push(0);
+		}
+		let data = [];
+		for (let evId in events) {
+			let eve = events[evId];
+			let act = eve["ocel:activity"];
+			let vect = [...arrNull];
+			vect[activities.indexOf(act)] = 1;
+			data.push(vect);
+		}
+		let featureNames = [];
+		for (let act of activities) {
+			featureNames.push("@@ev_act_" + act);
+		}
+		return {"data": data, "featureNames": featureNames};
+	}
+	
+	static encodeTimestamp(ocel) {
+		let events = ocel["ocel:events"];
+		let data = [];
+		for (let evId in events) {
+			let eve = events[evId];
+			let timest = eve["ocel:timestamp"];
+			data.push([timest.getTime() / 1000.0, timest.getDay(), timest.getMonth(), timest.getHours()]);
+		}
+		let featureNames = ["@@ev_timest_abs", "@@ev_timest_dayofweek", "@@ev_timest_month", "@@ev_timest_hour"];
+		return {"data": data, "featureNames": featureNames};
+	}
+	
+	static encodeNumRelObj(ocel) {
+		let events = ocel["ocel:events"];
+		let objects = ocel["ocel:objects"];
+		let objectTypes = {};
+		let otPerObject = {};
+		for (let objId in objects) {
+			let obj = objects[objId];
+			objectTypes[obj["ocel:type"]] = 0;
+			otPerObject[objId] = obj["ocel:type"];
+		}
+		objectTypes = Object.keys(objectTypes);
+		let data = [];
+		for (let evId in events) {
+			let eve = events[evId];
+			let arr = [eve["ocel:omap"].length];
+			for (let ot of objectTypes) {
+				let thisCount = 0;
+				for (let objId of eve["ocel:omap"]) {
+					if (otPerObject[objId] == ot) {
+						thisCount = thisCount + 1;
+					}
+				}
+				arr.push(thisCount);
+			}
+			data.push(arr);
+		}
+		let featureNames = ["@@ev_rel_objs_abs"];
+		for (let objType of objectTypes) {
+			featureNames.push("@@ev_rel_objs_ot_"+objType);
+		}
+		return {"data": data, "featureNames": featureNames};
+	}
+
+	static encodeNumRelObjStart(ocel) {
+		let events = ocel["ocel:events"];
+		let objects = ocel["ocel:objects"];
+		let objectTypes = {};
+		let otPerObject = {};
+		for (let objId in objects) {
+			let obj = objects[objId];
+			objectTypes[obj["ocel:type"]] = 0;
+			otPerObject[objId] = obj["ocel:type"];
+		}
+		objectTypes = Object.keys(objectTypes);
+		let data = [];
+		let seenObjects = {};
+		for (let evId in events) {
+			let eve = events[evId];
+			let arr = [];
+			for (let ot of objectTypes) {
+				let thisCount = 0;
+				for (let objId of eve["ocel:omap"]) {
+					if (otPerObject[objId] == ot) {
+						if (!(objId in seenObjects)) {
+							thisCount = thisCount + 1;
+						}
+					}
+				}
+				arr.push(thisCount);
+			}
+			for (let objId of eve["ocel:omap"]) {
+				seenObjects[objId] = 0;
+			}
+			data.push(arr);
+		}
+		let featureNames = [];
+		for (let objType of objectTypes) {
+			featureNames.push("@@ev_rel_objs_start_ot_"+objType);
+		}
+		return {"data": data, "featureNames": featureNames};
+	}
+
+	static encodeNumRelObjEnd(ocel) {
+		let events = ocel["ocel:events"];
+		let objects = ocel["ocel:objects"];
+		let objectTypes = {};
+		let otPerObject = {};
+		for (let objId in objects) {
+			let obj = objects[objId];
+			objectTypes[obj["ocel:type"]] = 0;
+			otPerObject[objId] = obj["ocel:type"];
+		}
+		objectTypes = Object.keys(objectTypes);
+		let evIds = Object.keys(events).reverse();
+		let lastEventLifecycle = {};
+		for (let evId of evIds) {
+			let eve = events[evId];
+			for (let objId of eve["ocel:omap"]) {
+				if (!(objId in lastEventLifecycle)) {
+					lastEventLifecycle[objId] = evId;
+				}
+			}
+		}
+		evIds = evIds.reverse();
+		let data = [];
+		for (let evId of evIds) {
+			let eve = events[evId];
+			let arr = [];
+			for (let ot of objectTypes) {
+				let thisCount = 0;
+				for (let objId of eve["ocel:omap"]) {
+					if (otPerObject[objId] == ot) {
+						if (lastEventLifecycle[objId] == evId) {
+							thisCount = thisCount + 1;
+						}
+					}
+				}
+				arr.push(thisCount);
+			}
+			data.push(arr);
+		}
+		let featureNames = [];
+		for (let objType of objectTypes) {
+			featureNames.push("@@ev_rel_objs_end_ot_"+objType);
+		}
+		return {"data": data, "featureNames": featureNames};
+	}
+	
+	static encodeStrAttrEv(ocel, strAttributes=null) {
+		if (strAttributes == null) {
+			strAttributes = [];
+		}
+		let events = ocel["ocel:events"];
+		let data = [];
+		let featureNames = [];
+		
+		for (let evId in events) {
+			data.push([]);
+		}
+		for (let attr of strAttributes) {
+			let diffValues = {};
+			for (let evId in events) {
+				let eve = events[evId];
+				if (attr in eve["ocel:vmap"]) {					
+					diffValues[eve["ocel:vmap"][attr]] = 0;
+				}
+			}
+			diffValues = Object.keys(diffValues);
+			let zeroArr = [];
+			for (let val of diffValues) {
+				featureNames.push("@@ev_attr_"+attr+"_"+val);
+				zeroArr.push(0);
+			}
+			let count = 0;
+			for (let evId in events) {
+				let eve = events[evId];
+				let vect = [...zeroArr];
+				if (attr in eve["ocel:vmap"]) {
+					let val = eve["ocel:vmap"][attr];
+					vect[diffValues.indexOf(val)] = 1;
+				}
+				data[count] = [...data[count], ...vect];
+				count = count + 1;
+			}
+		}
+		return {"data": data, "featureNames": featureNames};
+	}
+	
+	static encodeNumAttrEv(ocel, numAttributes=null) {
+		if (numAttributes == null) {
+			numAttributes = [];
+		}
+		let events = ocel["ocel:events"];
+		let data = [];
+		let featureNames = [];
+		for (let evId in events) {
+			data.push([]);
+		}
+		for (let attr of numAttributes) {
+			let count = 0;
+			for (let evId in events) {
+				let eve = events[evId];
+				if (attr in eve["ocel:vmap"]) {
+					data[count].push(eve["ocel:vmap"][attr]);
+				}
+				else {
+					data[count].push(0);
+				}
+				count = count + 1;
+			}
+			featureNames.push("@@ev_num_attr_"+attr);
+		}
+		return {"data": data, "featureNames": featureNames};
+	}
+}
+
+try {
+	require('../../pm4js.js');
+	module.exports = {OcelEventFeatures: OcelEventFeatures};
+	global.OcelEventFeatures = OcelEventFeatures;
+}
+catch (err) {
+	// not in node
+	//console.log(err);
+}
+
+
+class OcelObjectFeatures {
+	static enrichEventLogWithObjectFeatures(ocel, strAttributes=null, numAttributes=null) {
+		let fea = OcelObjectFeatures.apply(ocel, strAttributes, numAttributes);
+		let data = fea["data"];
+		let featureNames = fea["featureNames"];
+		let count = 0;
+		let objects = ocel["ocel:objects"];
+		for (let objId in objects) {
+			let obj = objects[objId];
+			let i = 0;
+			while (i < featureNames.length) {
+				let fn = featureNames[i];
+				let val = data[count][i];
+				obj["ocel:ovmap"][fn] = val;
+				i = i + 1;
+			}
+			count = count + 1;
+		}
+		return ocel;
+	}
+	
+	static apply(ocel, strAttributes=null, numAttributes=null) {
+		let objStrAttr = OcelObjectFeatures.encodeObjStrAttr(ocel, strAttributes);
+		let objNumAttr = OcelObjectFeatures.encodeObjNumAttr(ocel, numAttributes);
+		let objLifecycleActivities = OcelObjectFeatures.encodeLifecycleActivities(ocel);
+		let objLifecycleDuration = OcelObjectFeatures.encodeLifecycleDuration(ocel);
+		let objLifecycleLength = OcelObjectFeatures.encodeLifecycleLength(ocel);
+		let overallObjectGraphs = OcelObjectFeatures.encodeOverallObjectGraphs(ocel);
+		let interactionGraphOt = OcelObjectFeatures.encodeInteractionGraphOt(ocel);
+		let wip = OcelObjectFeatures.encodeWip(ocel);
+		let featureNames = [...objStrAttr["featureNames"], ...objNumAttr["featureNames"], ...objLifecycleActivities["featureNames"], ...objLifecycleDuration["featureNames"], ...objLifecycleLength["featureNames"], ...overallObjectGraphs["featureNames"], ...interactionGraphOt["featureNames"], ...wip["featureNames"]];
+		let data = [];
+		let objects = ocel["ocel:objects"];
+		let count = 0;
+		for (let objId in objects) {
+			data.push([...objStrAttr["data"][count], ...objNumAttr["data"][count], ...objLifecycleActivities["data"][count], ...objLifecycleDuration["data"][count], ...objLifecycleLength["data"][count], ...overallObjectGraphs["data"][count], ...interactionGraphOt["data"][count], ...wip["data"][count]]);
+			count = count + 1;
+		}
+		return {"data": data, "featureNames": featureNames};
+	}
+	
+	static encodeObjStrAttr(ocel, strAttributes=null) {
+		if (strAttributes == null) {
+			strAttributes = [];
+		}
+		let objects = ocel["ocel:objects"];
+		let data = [];
+		let featureNames = [];
+		
+		for (let objId in objects) {
+			data.push([]);
+		}
+		for (let attr of strAttributes) {
+			let diffValues = {};
+			for (let objId in objects) {
+				let obj = objects[objId];
+				if (attr in obj["ocel:ovmap"]) {
+					diffValues[obj["ocel:ovmap"][attr]] = 0;
+				}
+			}
+			diffValues = Object.keys(diffValues);
+			let zeroArr = [];
+			for (let val of diffValues) {
+				featureNames.push("@@obj_attr_"+attr+"_"+val);
+				zeroArr.push(0);
+			}
+			let count = 0;
+			for (let objId in objects) {
+				let obj = objects[objId];
+				let vect = [...zeroArr];
+				if (attr in obj["ocel:ovmap"]) {
+					let val = obj["ocel:ovmap"][attr];
+					vect[diffValues.indexOf(val)] = 1;
+				}
+				data[count] = [...data[count], ...vect];
+				count = count + 1;
+			}
+		}
+		return {"data": data, "featureNames": featureNames};
+	}
+	
+	static encodeObjNumAttr(ocel, numAttributes=null) {
+		if (numAttributes == null) {
+			numAttributes = [];
+		}
+		let objects = ocel["ocel:objects"];
+		let data = [];
+		let featureNames = [];
+		
+		for (let objId in objects) {
+			data.push([]);
+		}
+		
+		for (let attr of numAttributes) {
+			let count = 0;
+			for (let objId in objects) {
+				let obj = objects[objId];
+				if (attr in obj["ocel:ovmap"]) {
+					data[count].push(obj["ocel:ovmap"][attr]);
+				}
+				else {
+					data[count].push(0);
+				}
+				count = count + 1;
+			}
+			featureNames.push("@@obj_num_attr_"+attr);
+		}
+		return {"data": data, "featureNames": featureNames};
+	}
+	
+	static getObjectsLifecycle(ocel) {
+		let lif = {};
+		let events = ocel["ocel:events"];
+		for (let evId in events) {
+			let eve = events[evId];
+			for (let objId of eve["ocel:omap"]) {
+				if (!(objId in lif)) {
+					lif[objId] = [];
+				}
+				lif[objId].push(eve);
+			}
+		}
+		return lif;
+	}
+	
+	static encodeLifecycleActivities(ocel) {
+		let events = ocel["ocel:events"];
+		let objects = ocel["ocel:objects"];
+		let diffActivities = {};
+		for (let evId in events) {
+			let eve = events[evId];
+			diffActivities[eve["ocel:activity"]] = 0;
+		}
+		diffActivities = Object.keys(diffActivities);
+		let zeroArr = [];
+		for (let act of diffActivities) {
+			zeroArr.push(0);
+		}
+		let objLifecycle = OcelObjectFeatures.getObjectsLifecycle(ocel);
+		let data = [];
+		for (let objId in objects) {
+			let lif = objLifecycle[objId];
+			let vect = [...zeroArr];
+			for (let eve of lif) {
+				vect[diffActivities.indexOf(eve["ocel:activity"])] += 1;
+			}
+			data.push(vect);
+		}
+		let featureNames = [];
+		for (let act of diffActivities) {
+			featureNames.push("@@obj_lif_act_"+act);
+		}
+		return {"data": data, "featureNames": featureNames};
+	}
+	
+	static encodeLifecycleDuration(ocel) {
+		let events = ocel["ocel:events"];
+		let objects = ocel["ocel:objects"];
+		let data = [];
+		let featureNames = ["@@obj_lif_dur"];
+		let objLifecycle = OcelObjectFeatures.getObjectsLifecycle(ocel);
+		for (let objId in objects) {
+			let lif = objLifecycle[objId];
+			let st = lif[0]["ocel:timestamp"].getTime();
+			let et = lif[lif.length - 1]["ocel:timestamp"].getTime();
+			data.push([(et-st)/1000.0]);
+		}
+		return {"data": data, "featureNames": featureNames};
+	}
+	
+	static encodeLifecycleLength(ocel) {
+		let events = ocel["ocel:events"];
+		let objects = ocel["ocel:objects"];
+		let data = [];
+		let featureNames = ["@@obj_lif_length"];
+		let objLifecycle = OcelObjectFeatures.getObjectsLifecycle(ocel);
+		for (let objId in objects) {
+			let lif = objLifecycle[objId];
+			data.push([lif.length]);
+		}
+		return {"data": data, "featureNames": featureNames};
+	}
+	
+	static encodeOverallObjectGraphs(ocel) {
+		let interactionGraph = OcelGraphs.objectInteractionGraph(ocel);
+		let descendantsGraph = OcelGraphs.objectDescendantsGraph(ocel);
+		let cobirthGraph = OcelGraphs.objectCobirthGraph(ocel);
+		let codeathGraph = OcelGraphs.objectCodeathGraph(ocel);
+		let inheritanceGraph = OcelGraphs.objectInheritanceGraph(ocel);
+		let objects = ocel["ocel:objects"];
+		let data = [];
+		let featureNames = ["@@object_overall_interactions", "@@object_overall_descendants", "@@object_overall_cobirth", "@@object_overall_codeath", "@@object_overall_inheritance"];
+		for (let objId in objects) {
+			let interactions = 0;
+			let descendants = 0;
+			let cobirth = 0;
+			let codeath = 0;
+			let inheritance = 0;
+			if (objId in interactionGraph) {
+				interactions = interactionGraph[objId].length;
+			}
+			if (objId in descendantsGraph) {
+				descendants = descendantsGraph[objId].length;
+			}
+			if (objId in cobirthGraph) {
+				cobirth = cobirthGraph[objId].length;
+			}
+			if (objId in codeathGraph) {
+				codeath = codeathGraph[objId].length;
+			}
+			if (objId in inheritanceGraph) {
+				inheritance = inheritanceGraph[objId].length;
+			}
+			data.push([interactions, descendants, cobirth, codeath, inheritance]);
+		}
+		return {"data": data, "featureNames": featureNames};
+	}
+	
+	static encodeInteractionGraphOt(ocel) {
+		let interactionGraph = OcelGraphs.objectInteractionGraph(ocel);
+		let objects = ocel["ocel:objects"];
+		let objOt = {};
+		let objectTypes = {};
+		for (let objId in objects) {
+			let obj = objects[objId];
+			objOt[objId] = obj["ocel:type"];
+			objectTypes[obj["ocel:type"]] = 0;
+		}
+		objectTypes = Object.keys(objectTypes);
+		let data = [];
+		let featureNames = [];
+		for (let ot of objectTypes) {
+			featureNames.push("@@object_interaction_ot_" + ot);
+		}
+		for (let objId in objects) {
+			let interactions = interactionGraph[objId];
+			let arr = [];
+			for (let ot of objectTypes) {
+				let count = 0;
+				for (let objId2 of interactions) {
+					if (objOt[objId2] == ot) {
+						count = count + 1
+					}
+				}
+				arr.push(count);
+			}
+			data.push(arr);
+		}
+		return {"data": data, "featureNames": featureNames};
+	}
+	
+	static encodeWip(ocel) {
+		let tree = OcelIntervalTree.buildObjectLifecycleTimestampIntervalTree(ocel);
+		let objLifecycle = OcelObjectFeatures.getObjectsLifecycle(ocel);
+		let data = [];
+		let featureNames = ["@@object_wip"];
+		let objects = ocel["ocel:objects"];
+		for (let objId in objects) {
+			let obj = objects[objId];
+			let lif = objLifecycle[objId];
+			let st = lif[0]["ocel:timestamp"].getTime() / 1000.0;
+			let et = lif[lif.length - 1]["ocel:timestamp"].getTime() / 1000.0;
+			let afterIntersectingObjects0 = tree.queryAfterPoint(st);
+			let beforeIntersectingObjects0 = tree.queryBeforePoint(et);
+			let afterIntersectingObjects = [];
+			let beforeIntersectingObjects = [];
+			for (let obj of afterIntersectingObjects0) {
+				afterIntersectingObjects.push(obj);
+			}
+			for (let obj of beforeIntersectingObjects0) {
+				beforeIntersectingObjects.push(obj);
+			}
+			let intersectionAfterBefore = [];
+			for (let obj of afterIntersectingObjects) {
+				if (beforeIntersectingObjects.includes(obj)) {
+					intersectionAfterBefore.push(obj);
+				}
+			}
+			data.push([intersectionAfterBefore.length]);
+		}
+		return {"data": data, "featureNames": featureNames};
+	}
+}
+
+try {
+	require('../../pm4js.js');
+	module.exports = {OcelObjectFeatures: OcelObjectFeatures};
+	global.OcelObjectFeatures = OcelObjectFeatures;
+}
+catch (err) {
+	// not in node
+	//console.log(err);
+}
+
+
+class EventLogToStream {
+	static shallowCopy(eve0) {
+		let eve = new Event();
+		for (let attr in eve0.attributes) {
+			eve.attributes[attr] = eve0.attributes[attr];
+		}
+		return eve;
+	}
+	
+	static apply(eventLog, sortingAttribute="time:timestamp", casePrefix="case:") {
+		let stream = [];
+		for (let trace of eventLog.traces) {
+			for (let eve0 of trace.events) {
+				let eve = EventLogToStream.shallowCopy(eve0);
+				for (let traceAttr in trace.attributes) {
+					let traceAttrValue = trace.attributes[traceAttr];
+					eve.attributes[casePrefix+traceAttr] = traceAttrValue;
+				}
+				stream.push(eve);
+			}
+		}
+		stream.sort((a, b) => { return a.attributes[sortingAttribute].value - b.attributes[sortingAttribute].value });
+		return stream;
+	}
+}
+
+try {
+	require('../../../pm4js.js');
+	module.exports = {EventLogToStream: EventLogToStream};
+	global.EventLogToStream = EventLogToStream;
+}
+catch (err) {
+	// not in node
+	//console.log(err);
+}
+
+
+class StreamAttrWrapper {
+	static accessAttribute(eve, attribute) {
+		if (eve.constructor.name == "Event") {
+			// EventLog Event
+			if (attribute in eve.attributes) {
+				return eve.attributes[attribute].value;
+			}
+		}
+		else {
+			// OCEL
+			if (attribute == "ocel:activity" || attribute == "ocel:timestamp") {
+				return eve[attribute];
+			}
+			else if (attribute in eve["ocel:vmap"]) {
+				return eve["ocel:vmap"][attribute];
+			}
+		}
+		return null;
+	}
+	
+	static attributesList(stream) {
+		let attList = {};
+		if (stream.length > 0) {
+			if (stream[0].constructor.name == "Event") {
+				// EventLog Event
+				for (let eve of stream) {
+					for (let attr in eve.attributes) {
+						attList[attr] = 0;
+					}
+				}
+			}
+			else {
+				// OCEL
+				attList["ocel:activity"] = 0;
+				attList["ocel:timestamp"] = 0;
+				for (let eve of stream) {
+					for (let attr in eve["ocel:vmap"]) {
+						attList[attr] = 0;
+					}
+				}
+			}
+		}
+		return Object.keys(attList);
+	}
+	
+	static defaultTimestamp(eve) {
+		if (eve.constructor.name == "Event") {
+			// EventLog Event
+			return eve.attributes["time:timestamp"].value;
+		}
+		else {
+			// OCEL
+			return eve["ocel:timestamp"];
+		}
+	}
+}
+
+try {
+	require('../../pm4js.js');
+	module.exports = {StreamAttrWrapper: StreamAttrWrapper};
+	global.StreamAttrWrapper = StreamAttrWrapper;
+}
+catch (err) {
+	// not in node
+	//console.log(err);
+}
+
+
+class OcelLinkAnalysis {
+	static linkEventsWithObjGraph(ocel, objGraph) {
+		let relEvs = {};
+		let events = ocel["ocel:events"];
+		for (let evId in events) {
+			let eve = events[evId];
+			for (let objId of eve["ocel:omap"]) {
+				if (!(objId in relEvs)) {
+					relEvs[objId] = [];
+				}
+				relEvs[objId].push(evId);
+			}
+		}
+		let links = {};
+		for (let k in objGraph) {
+			for (let k2 of objGraph[k]) {
+				for (let e1 of relEvs[k]) {
+					for (let e2 of relEvs[k2]) {
+						if (!(e1 in links)) {
+							links[e1] = {};
+						}
+						links[e1][e2] = 0;
+					}
+				}
+			}
+		}
+		for (let k in links) {
+			links[k] = Object.keys(links[k]);
+		}
+		return links;
+	}
+	
+	static linkAnalysisAttributeOutIn(ocel, outAttribute, inAttribute) {
+		let outAttributeValuesEvents = {};
+		let inAttributeValuesEvents = {};
+		let linkedEventsPos = {};
+		let events = ocel["ocel:events"];
+		for (let evId in events) {
+			let eve = events[evId];
+			let val = StreamAttrWrapper.accessAttribute(eve, outAttribute);
+			if (val != null) {
+				if (!(val in outAttributeValuesEvents)) {
+					outAttributeValuesEvents[val] = [];
+				}
+				outAttributeValuesEvents[val].push(evId);
+			}
+			val = StreamAttrWrapper.accessAttribute(eve, inAttribute);
+			if (val != null) {
+				if (!(val in inAttributeValuesEvents)) {
+					inAttributeValuesEvents[val] = [];
+				}
+				inAttributeValuesEvents[val].push(evId);
+			}
+		}
+		for (let val in outAttributeValuesEvents) {
+			if (val in inAttributeValuesEvents) {
+				for (let i1 of outAttributeValuesEvents[val]) {
+					if (!(i1 in linkedEventsPos)) {
+						linkedEventsPos[i1] = {};
+					}
+					for (let i2 of inAttributeValuesEvents[val]) {
+						linkedEventsPos[i1][i2] = 0;
+					}
+				}
+			}
+		}
+		for (let idx in linkedEventsPos) {
+			linkedEventsPos[idx] = Object.keys(linkedEventsPos[idx]);
+		}
+		return linkedEventsPos;
+	}
+	
+	static filterLinksByTimestamp(ocel, eveLinks) {
+		let links = {};
+		let events = ocel["ocel:events"];
+		for (let k in eveLinks) {
+			let tk = events[k]["ocel:timestamp"];
+			for (let k2 of eveLinks[k]) {
+				let tk2 = events[k2]["ocel:timestamp"];
+				if (tk < tk2) {
+					if (!(k in links)) {
+						links[k] = [];
+					}
+					links[k].push(k2);
+				}
+			}
+		}
+		return links;
+	}
+	
+	static filterFirstLink(ocel, eveLinks) {
+		let links = {};
+		for (let k in eveLinks) {
+			links[k] = [eveLinks[k][0]];
+		}
+		return links;
+	}
+	
+	static expandLinks(stream, links0) {
+		let links = {};
+		for (let k in links0) {
+			links[k] = {};
+			for (let k2 of links0[k]) {
+				links[k][k2] = 0;
+			}
+		}
+		let toVisit = {};
+		let invGraph = {};
+		for (let k in links) {
+			if (!(k in invGraph)) {
+				invGraph[k] = [];
+			}
+			for (let k2 in links[k]) {
+				if (!(k2 in invGraph)) {
+					invGraph[k2] = {};
+				}
+				invGraph[k2][k] = 0;
+			}
+		}
+		for (let k in links) {
+			toVisit[k] = 0;
+		}
+		while (true) {
+			let newToVisit = {};
+			for (let k2 in toVisit) {
+				for (let k in invGraph[k2]) {
+					let newGraph = Object.assign({}, links[k]);
+					for (let k3 in links[k2]) {
+						newGraph[k3] = 0;
+					}
+					if (Object.keys(newGraph).length > Object.keys(links[k]).length) {
+						links[k] = newGraph;
+						newToVisit[k] = 0;
+					}
+				}
+			}
+			if (Object.keys(newToVisit).length == 0) {
+				break;
+			}
+			toVisit = newToVisit;
+		}
+		for (let k in links) {
+			links[k] = Object.keys(links[k]);
+		}
+		return links;
+	}
+	
+	static linksToFinalForm(ocel, eveLinks) {
+		let links = [];
+		let events = ocel["ocel:events"];
+		for (let k in eveLinks) {
+			for (let k2 of eveLinks[k]) {
+				links.push([events[k], events[k2]]);
+			}
+		}
+		return links;
+	}
+}
+
+try {
+	require('../../pm4js.js');
+	module.exports = {OcelLinkAnalysis: OcelLinkAnalysis};
+	global.OcelLinkAnalysis = OcelLinkAnalysis;
+}
+catch (err) {
+	// not in node
+	//console.log(err);
+}
+
+
+class LogLinksAnalysis {
+	static linkAnalysisAttributeOutIn(stream, outAttribute, inAttribute) {
+		let outAttributeValuesEvents = {};
+		let inAttributeValuesEvents = {};
+		let linkedEventsPos = {};
+		let i = 0;
+		while (i < stream.length) {
+			let eve = stream[i];
+			let val = StreamAttrWrapper.accessAttribute(eve, outAttribute);
+			if (val != null) {
+				if (!(val in outAttributeValuesEvents)) {
+					outAttributeValuesEvents[val] = [];
+				}
+				outAttributeValuesEvents[val].push(i);
+			}
+			val = StreamAttrWrapper.accessAttribute(eve, inAttribute);
+			if (val != null) {
+				if (!(val in inAttributeValuesEvents)) {
+					inAttributeValuesEvents[val] = [];
+				}
+				inAttributeValuesEvents[val].push(i);
+			}
+			i = i + 1;
+		}
+		for (let val in outAttributeValuesEvents) {
+			if (val in inAttributeValuesEvents) {
+				for (let i1 of outAttributeValuesEvents[val]) {
+					if (!(i1 in linkedEventsPos)) {
+						linkedEventsPos[i1] = {};
+					}
+					for (let i2 of inAttributeValuesEvents[val]) {
+						linkedEventsPos[i1][i2] = 0;
+					}
+				}
+			}
+		}
+		for (let idx in linkedEventsPos) {
+			linkedEventsPos[idx] = Object.keys(linkedEventsPos[idx]);
+		}
+		return linkedEventsPos;
+	}
+	
+	static filterLinksByTimestamp(stream, oldLinks) {
+		let links = {};
+		for (let k1 in oldLinks) {
+			let n1 = parseInt(k1);
+			for (let k2 of oldLinks[k1]) {
+				let n2 = parseInt(k2);
+				if (n2 > n1) {
+					if (!(k1 in links)) {
+						links[k1] = [];
+					}
+					links[k1].push(k2);
+				}
+			}
+		}
+		return links;
+	}
+	
+	static filterFirstLink(stream, oldLinks) {
+		let links = {};
+		for (let k1 in oldLinks) {
+			links[k1] = [oldLinks[k1][0]];
+		}
+		return links;
+	}
+	
+	static expandLinks(stream, links0) {
+		let links = {};
+		for (let k in links0) {
+			links[k] = {};
+			for (let k2 of links0[k]) {
+				links[k][k2] = 0;
+			}
+		}
+		let toVisit = {};
+		let invGraph = {};
+		for (let k in links) {
+			if (!(k in invGraph)) {
+				invGraph[k] = [];
+			}
+			for (let k2 in links[k]) {
+				if (!(k2 in invGraph)) {
+					invGraph[k2] = {};
+				}
+				invGraph[k2][k] = 0;
+			}
+		}
+		for (let k in links) {
+			toVisit[k] = 0;
+		}
+		while (true) {
+			let newToVisit = {};
+			for (let k2 in toVisit) {
+				for (let k in invGraph[k2]) {
+					let newGraph = Object.assign({}, links[k]);
+					for (let k3 in links[k2]) {
+						newGraph[k3] = 0;
+					}
+					if (Object.keys(newGraph).length > Object.keys(links[k]).length) {
+						links[k] = newGraph;
+						newToVisit[k] = 0;
+					}
+				}
+			}
+			if (Object.keys(newToVisit).length == 0) {
+				break;
+			}
+			toVisit = newToVisit;
+		}
+		for (let k in links) {
+			links[k] = Object.keys(links[k]);
+		}
+		return links;
+	}
+	
+	static linksToFinalForm(stream, oldLinks) {
+		let links = [];
+		for (let k1 in oldLinks) {
+			let n1 = parseInt(k1);
+			for (let k2 of oldLinks[k1]) {
+				let n2 = parseInt(k2);
+				links.push([stream[n1], stream[n2]]);
+			}
+		}
+		return links;
+	}
+}
+
+try {
+	require('../../pm4js.js');
+	module.exports = {LogLinksAnalysis: LogLinksAnalysis};
+	global.LogLinksAnalysis = LogLinksAnalysis;
+}
+catch (err) {
+	// not in node
+	//console.log(err);
+}
+
+
+class NetworkAnalysisResult {
+	constructor(nodes, multiEdges) {
+		this.nodes = nodes;
+		this.multiEdges = multiEdges;
+	}
+}
+
+class NetworkAnalysis {
+	static apply(links, sourceNodeAgg, targetNodeAgg, edgeAgg, source=true) {
+		let nodes = {};
+		let multiEdges = {};
+		for (let el of links) {
+			let se = el[0];
+			let te = el[1];
+			let sn = StreamAttrWrapper.accessAttribute(se, sourceNodeAgg);
+			let tn = StreamAttrWrapper.accessAttribute(te, targetNodeAgg);
+			let eg = null;
+			if (source) {
+				eg = StreamAttrWrapper.accessAttribute(se, edgeAgg);
+			}
+			else {
+				eg = StreamAttrWrapper.accessAttribute(te, edgeAgg);
+			}
+			
+			if (sn != null && tn != null && eg != null) {
+				eg = [sn, tn, eg];
+				
+				let st = StreamAttrWrapper.defaultTimestamp(se).getTime();
+				let tt = StreamAttrWrapper.defaultTimestamp(te).getTime();
+				let diff = (tt - st) / 1000.0;
+				
+				if (!(sn in nodes)) {
+					nodes[sn] = {"IN": 0, "OUT": 0};
+				}
+				if (!(tn in nodes)) {
+					nodes[tn] = {"IN": 0, "OUT": 0};
+				}
+				if (!(eg in multiEdges)) {
+					multiEdges[eg] = {"count": 0, "timeDiff": []};
+				}
+				nodes[sn]["OUT"] += 1;
+				nodes[tn]["IN"] += 1;
+				multiEdges[eg]["count"] += 1;
+				multiEdges[eg]["timeDiff"].push(diff);
+			}
+		}
+		return new NetworkAnalysisResult(nodes, multiEdges);
+	}
+}
+
+try {
+	require('../../../pm4js.js');
+	module.exports = {NetworkAnalysis: NetworkAnalysis};
+	global.NetworkAnalysis = NetworkAnalysis;
+}
+catch (err) {
+	// not in node
+	//console.log(err);
+}
+
+
+class NetworkAnalysisGraphvizVisualizer {
+	static uuidv4() {
+	  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+		var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+		return v.toString(16);
+	  });
+	}
+	
+	static nodeUuid() {
+		let uuid = NetworkAnalysisGraphvizVisualizer.uuidv4();
+		return "n"+uuid.replace(/-/g, "");
+	}
+	
+	static calculateAverage(times) {
+		if (times.length > 0) {
+			let sum = 0;
+			for (let el of times) {
+				sum += el;
+			}
+			return sum / times.length;
+		}
+		return 0;
+	}
+	
+	
+	static apply(networkAnalysis, performance=false) {
+		let ret = [];
+		ret.push("digraph G {");
+		let nodesMap = {};
+		for (let nk in networkAnalysis.nodes) {
+			let nstats = networkAnalysis.nodes[nk];
+			let nuid = NetworkAnalysisGraphvizVisualizer.nodeUuid();
+			nodesMap[nk] = nuid;
+			ret.push(nuid+" [shape=ellipse, label=\""+nk+"\nIN="+nstats["IN"]+"\nOUT="+nstats["OUT"]+"\"]");
+		}
+		for (let eg in networkAnalysis.multiEdges) {
+			let estats = networkAnalysis.multiEdges[eg];
+			let egs = eg.split(",");
+			let sn = egs[0];
+			let tn = egs[1];
+			let ml = egs[2];
+			let label = ml+"\n";
+			if (performance) {
+				let perf = NetworkAnalysisGraphvizVisualizer.calculateAverage(estats["timeDiff"]);
+				label += humanizeDuration(Math.round(perf*1000));
+			}
+			else {
+				label += "(" + estats["count"]+")";
+			}
+			ret.push(nodesMap[sn]+" -> "+nodesMap[tn]+" [label=\""+label+"\"]");
+		}
+		ret.push("}");
+		return ret.join("\n");
+	}
+}
+
+try {
+	require('../../pm4js.js');
+	module.exports = {NetworkAnalysisGraphvizVisualizer: NetworkAnalysisGraphvizVisualizer};
+	global.NetworkAnalysisGraphvizVisualizer = NetworkAnalysisGraphvizVisualizer;
+}
+catch (err) {
+	// not in node
+}
+
+
+class GeneralOcelStatistics {
+	static eventsPerActivityCount(ocel) {
+		let dct = {};
+		let events = ocel["ocel:events"];
+		for (let evId in events) {
+			let eve = events[evId];
+			let act = eve["ocel:activity"];
+			if (!(act in dct)) {
+				dct[act] = 1;
+			}
+			else {
+				dct[act] += 1;
+			}
+		}
+		return dct;
+	}
+	
+	static objectsPerTypeCount(ocel) {
+		let dct = {};
+		let objects = ocel["ocel:objects"];
+		for (let objId in objects) {
+			let obj = objects[objId];
+			let type = obj["ocel:type"];
+			if (!(type in dct)) {
+				dct[type] = 1;
+			}
+			else {
+				dct[type] += 1;
+			}
+		}
+		return dct;
+	}
+	
+	static eventsRelatedPerObjectTypeCount(ocel) {
+		let objects = ocel["ocel:objects"];
+		let objType = {};
+		let dct = {};
+		for (let objId in objects) {
+			let obj = objects[objId];
+			let type = obj["ocel:type"];
+			objType[objId] = type;
+		}
+		let events = ocel["ocel:events"];
+		for (let evId in events) {
+			let eve = events[evId];
+			let relatedTypes = {};
+			for (let objId of eve["ocel:omap"]) {
+				relatedTypes[objType[objId]] = 0;
+			}
+			for (let otype in relatedTypes) {
+				if (!(otype in dct)) {
+					dct[otype] = 1;
+				}
+				else {
+					dct[otype] += 1;
+				}
+			}
+		}
+		return dct;
+	}
+	
+	static objectsPerTypePerActivity(ocel) {
+		// convergence problem
+		let objects = ocel["ocel:objects"];
+		let objType = {};
+		let dct = {};
+		for (let objId in objects) {
+			let obj = objects[objId];
+			let type = obj["ocel:type"];
+			objType[objId] = type;
+		}
+		let events = ocel["ocel:events"];
+		for (let evId in events) {
+			let eve = events[evId];
+			if (eve["ocel:omap"].length > 0) {
+				let evAct = eve["ocel:activity"];
+				if (!(evAct in dct)) {
+					dct[evAct] = {};
+				}
+				let relatedTypes = {};
+				for (let objId of eve["ocel:omap"]) {
+					let otype = objType[objId];
+					if (!(otype in relatedTypes)) {
+						relatedTypes[otype] = 1;
+					}
+					else {
+						relatedTypes[otype] += 1;
+					}
+				}
+				for (let otype in relatedTypes) {
+					if (!(otype in dct[evAct])) {
+						dct[evAct][otype] = {};
+					}
+					if (!(relatedTypes[otype] in dct[evAct][otype])) {
+						dct[evAct][otype][relatedTypes[otype]] = 0;
+					}
+					dct[evAct][otype][relatedTypes[otype]] += 1;
+				}
+			}
+		}
+		return dct;
+	}
+	
+	static getObjectsLifecycle(ocel) {
+		let lif = {};
+		let events = ocel["ocel:events"];
+		for (let evId in events) {
+			let eve = events[evId];
+			for (let objId of eve["ocel:omap"]) {
+				if (!(objId in lif)) {
+					lif[objId] = [];
+				}
+				lif[objId].push(eve);
+			}
+		}
+		return lif;
+	}
+	
+	static eventsPerTypePerActivity(ocel) {
+		let objects = ocel["ocel:objects"];
+		let otObjects = {};
+		let objType = {};
+		for (let objId in objects) {
+			let obj = objects[objId];
+			let ot = obj["ocel:type"];
+			objType[objId] = ot;
+			if (!(ot in otObjects)) {
+				otObjects[ot] = [];
+			}
+			otObjects[ot].push(objId);
+		}
+		let objectTypes = Object.keys(otObjects);
+		let lifecycle = GeneralOcelStatistics.getObjectsLifecycle(ocel);
+		let dct = {};
+		for (let ot of objectTypes) {
+			dct[ot] = {};
+			for (let objId of otObjects[ot]) {
+				let lif = lifecycle[objId];
+				let temp = {};
+				let i = 0;
+				while (i < lif.length) {
+					let act = lif[i]["ocel:activity"];
+					if (!(act in temp)) {
+						temp[act] = 1;
+					}
+					else {
+						temp[act] += 1;
+					}
+					i = i + 1
+				}
+				for (let act in temp) {
+					if (!(act in dct[ot])) {
+						dct[ot][act] = {};
+					}
+					if (!(temp[act] in dct[ot][act])) {
+						dct[ot][act][temp[act]] = 1;
+					}
+					else {
+						dct[ot][act][temp[act]] += 1;
+					}
+				}
+			}
+		}
+		return dct;
+	}
+}
+
+try {
+	require('../../pm4js.js');
+	module.exports = {GeneralOcelStatistics: GeneralOcelStatistics};
+	global.GeneralOcelStatistics = GeneralOcelStatistics;
+}
+catch (err) {
+	// not in node
+	//console.log(err);
 }
 
 
