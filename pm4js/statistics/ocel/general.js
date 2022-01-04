@@ -59,7 +59,7 @@ class GeneralOcelStatistics {
 		return dct;
 	}
 	
-	static eventsPerTypePerActivity(ocel) {
+	static objectsPerTypePerActivity(ocel) {
 		let objects = ocel["ocel:objects"];
 		let objType = {};
 		let dct = {};
