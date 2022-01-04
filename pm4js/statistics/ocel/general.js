@@ -58,6 +58,57 @@ class GeneralOcelStatistics {
 		}
 		return dct;
 	}
+	
+	static eventsPerTypePerActivity(ocel) {
+		let objects = ocel["ocel:objects"];
+		let objType = {};
+		let dct = {};
+		for (let objId in objects) {
+			let obj = objects[objId];
+			let type = obj["ocel:type"];
+			objType[objId] = type;
+		}
+		let events = ocel["ocel:events"];
+		for (let evId in events) {
+			let eve = events[evId];
+			if (eve["ocel:omap"].length > 0) {
+				let evAct = eve["ocel:activity"];
+				if (!(evAct in dct)) {
+					dct[evAct] = {};
+				}
+				let relatedTypes = {};
+				for (let objId of eve["ocel:omap"]) {
+					let otype = objType[objId];
+					if (!(otype in relatedTypes)) {
+						relatedTypes[otype] = 1;
+					}
+					else {
+						relatedTypes[otype] += 1;
+					}
+				}
+				for (let otype in relatedTypes) {
+					if (!(otype in dct[evAct])) {
+						dct[evAct][otype] = {};
+					}
+					if (!(relatedTypes[otype] in dct[evAct][otype])) {
+						dct[evAct][otype][relatedTypes[otype]] = 0;
+					}
+					dct[evAct][otype][relatedTypes[otype]] += 1;
+				}
+			}
+		}
+		for (let act in dct) {
+			for (let ot in dct[act]) {
+				dct[act][ot] = Object.keys(dct[act][ot]);
+				let i = 0;
+				while (i < dct[act][ot].length) {
+					dct[act][ot][i] = parseInt(dct[act][ot][i]);
+					i++;
+				}
+			}
+		}
+		return dct;
+	}
 }
 
 try {
