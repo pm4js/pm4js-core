@@ -98,6 +98,19 @@ class GeneralOcelStatistics {
 				}
 			}
 		}
+		for (let evAct in dct) {
+			for (let otype in dct[evAct]) {
+				let count = 0;
+				let sum = 0;
+				for (let sc in dct[evAct][otype]) {
+					let nc = parseInt(sc);
+					let cc = dct[evAct][otype][sc];
+					count += cc;
+					sum += nc * cc;
+				}
+				dct[evAct][otype] = sum / count;
+			}
+		}
 		return dct;
 	}
 	
@@ -159,6 +172,19 @@ class GeneralOcelStatistics {
 						dct[ot][act][temp[act]] += 1;
 					}
 				}
+			}
+		}
+		for (let ot in dct) {
+			for (let act in dct[ot]) {
+				let count = 0;
+				let sum = 0;
+				for (let sc in dct[ot][act]) {
+					let nc = parseInt(sc);
+					let cc = dct[ot][act][sc];
+					count += cc;
+					sum += nc * cc;
+				}
+				dct[ot][act] = sum / count;
 			}
 		}
 		return dct;
