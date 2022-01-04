@@ -96,6 +96,55 @@ class OcelLinkAnalysis {
 		return links;
 	}
 	
+	static expandLinks(stream, links0) {
+		let links = {};
+		for (let k in links0) {
+			links[k] = {};
+			for (let k2 of links0[k]) {
+				links[k][k2] = 0;
+			}
+		}
+		let toVisit = {};
+		let invGraph = {};
+		for (let k in links) {
+			if (!(k in invGraph)) {
+				invGraph[k] = [];
+			}
+			for (let k2 in links[k]) {
+				if (!(k2 in invGraph)) {
+					invGraph[k2] = {};
+				}
+				invGraph[k2][k] = 0;
+			}
+		}
+		for (let k in links) {
+			toVisit[k] = 0;
+		}
+		while (true) {
+			let newToVisit = {};
+			for (let k2 in toVisit) {
+				for (let k in invGraph[k2]) {
+					let newGraph = Object.assign({}, links[k]);
+					for (let k3 in links[k2]) {
+						newGraph[k3] = 0;
+					}
+					if (Object.keys(newGraph).length > Object.keys(links[k]).length) {
+						links[k] = newGraph;
+						newToVisit[k] = 0;
+					}
+				}
+			}
+			if (Object.keys(newToVisit).length == 0) {
+				break;
+			}
+			toVisit = newToVisit;
+		}
+		for (let k in links) {
+			links[k] = Object.keys(links[k]);
+		}
+		return links;
+	}
+	
 	static linksToFinalForm(ocel, eveLinks) {
 		let links = [];
 		let events = ocel["ocel:events"];
