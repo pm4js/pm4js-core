@@ -2,15 +2,20 @@ class StreamAttrWrapper {
 	static accessAttribute(eve, attribute) {
 		if (eve.constructor.name == "Event") {
 			// EventLog Event
-			return eve.attributes[attribute].value;
+			if (attribute in eve.attributes) {
+				return eve.attributes[attribute].value;
+			}
 		}
 		else {
 			// OCEL
 			if (attribute == "ocel:activity" || attribute == "ocel:timestamp") {
 				return eve[attribute];
 			}
-			return eve["ocel:vmap"][attribute];
+			else if (attribute in eve["ocel:vmap"]) {
+				return eve["ocel:vmap"][attribute];
+			}
 		}
+		return null;
 	}
 	
 	static attributesList(stream) {

@@ -84,4 +84,5 @@ require('./pm4js/algo/transformation/ocel_object_features.js');
 require('./pm4js/objects/log/util/log_to_stream.js');
 require('./pm4js/utils/stream/stream_attr_wrapper.js');
 require('./pm4js/algo/transformation/ocel_links.js');
+require('./pm4js/algo/transformation/log_links.js');
 require('./pm4js/algo/organizational/network_analysis/algorithm.js');
