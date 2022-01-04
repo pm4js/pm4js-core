@@ -60,6 +60,7 @@ class GeneralOcelStatistics {
 	}
 	
 	static objectsPerTypePerActivity(ocel) {
+		// convergence problem
 		let objects = ocel["ocel:objects"];
 		let objType = {};
 		let dct = {};
@@ -97,13 +98,66 @@ class GeneralOcelStatistics {
 				}
 			}
 		}
-		for (let act in dct) {
-			for (let ot in dct[act]) {
-				dct[act][ot] = Object.keys(dct[act][ot]);
+		return dct;
+	}
+	
+	static getObjectsLifecycle(ocel) {
+		let lif = {};
+		let events = ocel["ocel:events"];
+		for (let evId in events) {
+			let eve = events[evId];
+			for (let objId of eve["ocel:omap"]) {
+				if (!(objId in lif)) {
+					lif[objId] = [];
+				}
+				lif[objId].push(eve);
+			}
+		}
+		return lif;
+	}
+	
+	static eventsPerTypePerActivity(ocel) {
+		let objects = ocel["ocel:objects"];
+		let otObjects = {};
+		let objType = {};
+		for (let objId in objects) {
+			let obj = objects[objId];
+			let ot = obj["ocel:type"];
+			objType[objId] = ot;
+			if (!(ot in otObjects)) {
+				otObjects[ot] = [];
+			}
+			otObjects[ot].push(objId);
+		}
+		let objectTypes = Object.keys(otObjects);
+		let lifecycle = GeneralOcelStatistics.getObjectsLifecycle(ocel);
+		let dct = {};
+		for (let ot of objectTypes) {
+			dct[ot] = {};
+			for (let objId of otObjects[ot]) {
+				let lif = lifecycle[objId];
+				let temp = {};
 				let i = 0;
-				while (i < dct[act][ot].length) {
-					dct[act][ot][i] = parseInt(dct[act][ot][i]);
-					i++;
+				while (i < lif.length) {
+					let act = lif[i]["ocel:activity"];
+					if (!(act in temp)) {
+						temp[act] = 1;
+					}
+					else {
+						temp[act] += 1;
+					}
+					i = i + 1
+				}
+				for (let act in temp) {
+					if (!(act in dct[ot])) {
+						dct[ot][act] = {};
+					}
+					if (!(temp[act] in dct[ot][act])) {
+						dct[ot][act][temp[act]] = 1;
+					}
+					else {
+						dct[ot][act][temp[act]] += 1;
+					}
 				}
 			}
 		}
