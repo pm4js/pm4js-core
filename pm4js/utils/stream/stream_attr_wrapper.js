@@ -30,6 +30,7 @@ class StreamAttrWrapper {
 				}
 			}
 			else {
+				// OCEL
 				attList["ocel:activity"] = 0;
 				attList["ocel:timestamp"] = 0;
 				for (let eve of stream) {
@@ -40,6 +41,17 @@ class StreamAttrWrapper {
 			}
 		}
 		return Object.keys(attList);
+	}
+	
+	static defaultTimestamp(eve) {
+		if (eve.constructor.name == "Event") {
+			// EventLog Event
+			return eve.attributes["time:timestamp"].value;
+		}
+		else {
+			// OCEL
+			return eve["ocel:timestamp"];
+		}
 	}
 }
 
