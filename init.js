@@ -86,3 +86,4 @@ require('./pm4js/utils/stream/stream_attr_wrapper.js');
 require('./pm4js/algo/transformation/ocel_links.js');
 require('./pm4js/algo/transformation/log_links.js');
 require('./pm4js/algo/organizational/network_analysis/algorithm.js');
+require('./pm4js/visualization/network_analysis/graphviz.js');
