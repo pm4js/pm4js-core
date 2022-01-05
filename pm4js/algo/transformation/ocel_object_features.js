@@ -19,6 +19,25 @@ class OcelObjectFeatures {
 		return ocel;
 	}
 	
+	static produceTable(ocel, fea) {
+		let featureNames = [...fea["featureNames"]];
+		let data = [];
+		let objects = Object.keys(ocel["ocel:objects"]);
+		let i = 0;
+		while (i < fea["data"].length) {
+			data.push([...fea["data"][i]]);
+			data[i].unshift(objects[i]);
+			i = i + 1;
+		}
+		featureNames.unshift("OBJECT_ID");
+		i = 0;
+		while (i < featureNames.length) {
+			featureNames[i] = featureNames[i].replace(new RegExp("@@", 'g'), "").replace(new RegExp("#", 'g'), "");
+			i = i + 1;
+		}
+		return {"data": data, "featureNames": featureNames};
+	}
+	
 	static apply(ocel, strAttributes=null, numAttributes=null) {
 		let objStrAttr = OcelObjectFeatures.encodeObjStrAttr(ocel, strAttributes);
 		let objNumAttr = OcelObjectFeatures.encodeObjNumAttr(ocel, numAttributes);
