@@ -91,7 +91,12 @@ class OcelObjectFeatures {
 			}
 			i = 0;
 			while (i < fea["data"].length) {
-				fea["data"][i][j] = (fea["data"][i][j] - minValue)/(maxValue - minValue);
+				if (minValue != maxValue) {
+					fea["data"][i][j] = (fea["data"][i][j] - minValue)/(maxValue - minValue);
+				}
+				else {
+					fea["data"][i][j] = 1;
+				}
 				i++;
 			}
 			j++;
