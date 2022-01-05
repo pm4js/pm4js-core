@@ -24,13 +24,14 @@ class OcelIntervalTree {
 	
 	static getObjectsLifecycle(ocel) {
 		let lif = {};
+		let objects = ocel["ocel:objects"];
+		for (let objId in objects) {
+			lif[objId] = [];
+		}
 		let events = ocel["ocel:events"];
 		for (let evId in events) {
 			let eve = events[evId];
 			for (let objId of eve["ocel:omap"]) {
-				if (!(objId in lif)) {
-					lif[objId] = [];
-				}
 				lif[objId].push(eve);
 			}
 		}
@@ -44,9 +45,13 @@ class OcelIntervalTree {
 		for (let objId in objects) {
 			let obj = objects[objId];
 			let lif = objLifecycle[objId];
-			let st = lif[0]["ocel:timestamp"].getTime() / 1000.0;
-			let et = lif[lif.length - 1]["ocel:timestamp"].getTime() / 1000.0;
-			tree.insert(st-0.00001, et+0.00001, [obj, lif]);
+			if (lif.length > 0) {
+				let st = lif[0]["ocel:timestamp"].getTime() / 1000.0;
+				let et = lif[lif.length - 1]["ocel:timestamp"].getTime() / 1000.0;
+				if (et > st) {
+					tree.insert(st-0.00001, et+0.00001, [obj, lif]);
+				}
+			}
 		}
 		let mintime = null;
 		for (let n of tree.ascending()) {

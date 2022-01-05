@@ -32,7 +32,7 @@ class OcelEventFeatures {
 		featureNames.unshift("EVENT_ID");
 		i = 0;
 		while (i < featureNames.length) {
-			featureNames[i] = featureNames[i].replace(new RegExp("@@", 'g'), "").replace(new RegExp("#", 'g'), "");
+			featureNames[i] = featureNames[i].replace(new RegExp("@@", 'g'), "").replace(new RegExp("#", 'g'), "_").replace(new RegExp(" ", 'g'), "_");
 			i = i + 1;
 		}
 		return {"data": data, "featureNames": featureNames};

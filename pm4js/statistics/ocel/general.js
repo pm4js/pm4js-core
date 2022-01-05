@@ -116,13 +116,14 @@ class GeneralOcelStatistics {
 	
 	static getObjectsLifecycle(ocel) {
 		let lif = {};
+		let objects = ocel["ocel:objects"];
+		for (let objId in objects) {
+			lif[objId] = [];
+		}
 		let events = ocel["ocel:events"];
 		for (let evId in events) {
 			let eve = events[evId];
 			for (let objId of eve["ocel:omap"]) {
-				if (!(objId in lif)) {
-					lif[objId] = [];
-				}
 				lif[objId].push(eve);
 			}
 		}

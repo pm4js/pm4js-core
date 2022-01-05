@@ -32,7 +32,7 @@ class OcelObjectFeatures {
 		featureNames.unshift("OBJECT_ID");
 		i = 0;
 		while (i < featureNames.length) {
-			featureNames[i] = featureNames[i].replace(new RegExp("@@", 'g'), "").replace(new RegExp("#", 'g'), "");
+			featureNames[i] = featureNames[i].replace(new RegExp("@@", 'g'), "").replace(new RegExp("#", 'g'), "_").replace(new RegExp(" ", 'g'), "_");
 			i = i + 1;
 		}
 		return {"data": data, "featureNames": featureNames};
@@ -129,13 +129,14 @@ class OcelObjectFeatures {
 	
 	static getObjectsLifecycle(ocel) {
 		let lif = {};
+		let objects = ocel["ocel:objects"];
+		for (let objId in objects) {
+			lif[objId] = [];
+		}
 		let events = ocel["ocel:events"];
 		for (let evId in events) {
 			let eve = events[evId];
 			for (let objId of eve["ocel:omap"]) {
-				if (!(objId in lif)) {
-					lif[objId] = [];
-				}
 				lif[objId].push(eve);
 			}
 		}
@@ -180,9 +181,14 @@ class OcelObjectFeatures {
 		let objLifecycle = OcelObjectFeatures.getObjectsLifecycle(ocel);
 		for (let objId in objects) {
 			let lif = objLifecycle[objId];
-			let st = lif[0]["ocel:timestamp"].getTime();
-			let et = lif[lif.length - 1]["ocel:timestamp"].getTime();
-			data.push([(et-st)/1000.0]);
+			if (lif.length > 0) {
+				let st = lif[0]["ocel:timestamp"].getTime();
+				let et = lif[lif.length - 1]["ocel:timestamp"].getTime();
+				data.push([(et-st)/1000.0]);
+			}
+			else {
+				data.push([0]);
+			}
 		}
 		return {"data": data, "featureNames": featureNames};
 	}
@@ -256,9 +262,11 @@ class OcelObjectFeatures {
 			let arr = [];
 			for (let ot of objectTypes) {
 				let count = 0;
-				for (let objId2 of interactions) {
-					if (objOt[objId2] == ot) {
-						count = count + 1
+				if (interactions != null) {
+					for (let objId2 of interactions) {
+						if (objOt[objId2] == ot) {
+							count = count + 1
+						}
 					}
 				}
 				arr.push(count);
@@ -277,25 +285,30 @@ class OcelObjectFeatures {
 		for (let objId in objects) {
 			let obj = objects[objId];
 			let lif = objLifecycle[objId];
-			let st = lif[0]["ocel:timestamp"].getTime() / 1000.0;
-			let et = lif[lif.length - 1]["ocel:timestamp"].getTime() / 1000.0;
-			let afterIntersectingObjects0 = tree.queryAfterPoint(st);
-			let beforeIntersectingObjects0 = tree.queryBeforePoint(et);
-			let afterIntersectingObjects = [];
-			let beforeIntersectingObjects = [];
-			for (let obj of afterIntersectingObjects0) {
-				afterIntersectingObjects.push(obj);
-			}
-			for (let obj of beforeIntersectingObjects0) {
-				beforeIntersectingObjects.push(obj);
-			}
-			let intersectionAfterBefore = [];
-			for (let obj of afterIntersectingObjects) {
-				if (beforeIntersectingObjects.includes(obj)) {
-					intersectionAfterBefore.push(obj);
+			if (lif.length > 0) {
+				let st = lif[0]["ocel:timestamp"].getTime() / 1000.0;
+				let et = lif[lif.length - 1]["ocel:timestamp"].getTime() / 1000.0;
+				let afterIntersectingObjects0 = tree.queryAfterPoint(st);
+				let beforeIntersectingObjects0 = tree.queryBeforePoint(et);
+				let afterIntersectingObjects = [];
+				let beforeIntersectingObjects = [];
+				for (let obj of afterIntersectingObjects0) {
+					afterIntersectingObjects.push(obj);
 				}
+				for (let obj of beforeIntersectingObjects0) {
+					beforeIntersectingObjects.push(obj);
+				}
+				let intersectionAfterBefore = [];
+				for (let obj of afterIntersectingObjects) {
+					if (beforeIntersectingObjects.includes(obj)) {
+						intersectionAfterBefore.push(obj);
+					}
+				}
+				data.push([intersectionAfterBefore.length]);
 			}
-			data.push([intersectionAfterBefore.length]);
+			else {
+				data.push([0]);
+			}
 		}
 		return {"data": data, "featureNames": featureNames};
 	}
