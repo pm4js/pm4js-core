@@ -1,4 +1,70 @@
 class OcelEventFeatures {
+	static filterOnIndexes(fea, idxs) {
+		let filteredFea = {"featureNames": [], "data": []};
+		let j = 0;
+		while (j < idxs.length) {
+			filteredFea["featureNames"].push(fea["featureNames"][idxs[j]]);
+			j++;
+		}
+		let i = 0;
+		while (i < fea["data"].length) {
+			let arr = [];
+			j = 0;
+			while (j < idxs.length) {
+				arr.push(fea["data"][i][idxs[j]]);
+				j++;
+			}
+			filteredFea["data"].push(arr);
+			i++;
+		}
+		return filteredFea;
+	}
+	
+	static variancePerFea(data) {
+		let ret = [];
+		let j = 0;
+		while (j < data[0].length) {
+			let avg = 0.0;
+			let i = 0;
+			while (i < data.length) {
+				avg += data[i][j];
+				i++;
+			}
+			avg = avg / data.length;
+			let vr = 0.0;
+			i = 0;
+			while (i < data.length) {
+				vr += (data[i][j] - avg)*(data[i][j] - avg)
+				i++;
+			}
+			vr = vr / data.length;
+			ret.push(vr);
+			j++;
+		}
+		return ret;
+	}
+	
+	static scaling(fea) {
+		let j = 0;
+		while (j < fea["featureNames"].length) {
+			let minValue = 99999999999;
+			let maxValue = -99999999999;
+			let i = 0;
+			while (i < fea["data"].length) {
+				minValue = Math.min(minValue, fea["data"][i][j]);
+				maxValue = Math.max(maxValue, fea["data"][i][j]);
+				i++;
+			}
+			i = 0;
+			while (i < fea["data"].length) {
+				fea["data"][i][j] = (fea["data"][i][j] - minValue)/(maxValue - minValue);
+				i++;
+			}
+			j++;
+		}
+		return fea;
+	}
+	
 	static enrichEventLogWithEventFeatures(ocel, strAttributes=null, numAttributes=null) {
 		let fea = OcelEventFeatures.apply(ocel, strAttributes, numAttributes);
 		let data = fea["data"];
