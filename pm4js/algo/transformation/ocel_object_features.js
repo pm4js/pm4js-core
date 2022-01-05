@@ -1,4 +1,38 @@
 class OcelObjectFeatures {
+	static apply(ocel, strAttributes=null, numAttributes=null) {
+		let objStrAttr = OcelObjectFeatures.encodeObjStrAttr(ocel, strAttributes);
+		let objNumAttr = OcelObjectFeatures.encodeObjNumAttr(ocel, numAttributes);
+		let objLifecycleActivities = OcelObjectFeatures.encodeLifecycleActivities(ocel);
+		let objLifecycleDuration = OcelObjectFeatures.encodeLifecycleDuration(ocel);
+		let objLifecycleLength = OcelObjectFeatures.encodeLifecycleLength(ocel);
+		let overallObjectGraphs = OcelObjectFeatures.encodeOverallObjectGraphs(ocel);
+		let interactionGraphOt = OcelObjectFeatures.encodeInteractionGraphOt(ocel);
+		let wip = OcelObjectFeatures.encodeWip(ocel);
+		let featureNames = [...objStrAttr["featureNames"], ...objNumAttr["featureNames"], ...objLifecycleActivities["featureNames"], ...objLifecycleDuration["featureNames"], ...objLifecycleLength["featureNames"], ...overallObjectGraphs["featureNames"], ...interactionGraphOt["featureNames"], ...wip["featureNames"]];
+		let data = [];
+		let objects = ocel["ocel:objects"];
+		let count = 0;
+		for (let objId in objects) {
+			data.push([...objStrAttr["data"][count], ...objNumAttr["data"][count], ...objLifecycleActivities["data"][count], ...objLifecycleDuration["data"][count], ...objLifecycleLength["data"][count], ...overallObjectGraphs["data"][count], ...interactionGraphOt["data"][count], ...wip["data"][count]]);
+			count = count + 1;
+		}
+		return {"data": data, "featureNames": featureNames};
+	}
+	
+	static filterOnVariance(fea, threshold) {
+		let varPerFea = OcelObjectFeatures.variancePerFea(fea["data"]);
+		let filteredIdxs = [];
+		let j = 0;
+		while (j < varPerFea.length) {
+			if (varPerFea[j] >= 0.1) {
+				filteredIdxs.push(j);
+			}
+			j = j + 1;
+		}
+		let filteredFea = OcelObjectFeatures.filterOnIndexes(fea, filteredIdxs);
+		return filteredFea;
+	}
+	
 	static filterOnIndexes(fea, idxs) {
 		let filteredFea = {"featureNames": [], "data": []};
 		let j = 0;
@@ -100,26 +134,6 @@ class OcelObjectFeatures {
 		while (i < featureNames.length) {
 			featureNames[i] = featureNames[i].replace(new RegExp("@@", 'g'), "").replace(new RegExp("#", 'g'), "_").replace(new RegExp(" ", 'g'), "_");
 			i = i + 1;
-		}
-		return {"data": data, "featureNames": featureNames};
-	}
-	
-	static apply(ocel, strAttributes=null, numAttributes=null) {
-		let objStrAttr = OcelObjectFeatures.encodeObjStrAttr(ocel, strAttributes);
-		let objNumAttr = OcelObjectFeatures.encodeObjNumAttr(ocel, numAttributes);
-		let objLifecycleActivities = OcelObjectFeatures.encodeLifecycleActivities(ocel);
-		let objLifecycleDuration = OcelObjectFeatures.encodeLifecycleDuration(ocel);
-		let objLifecycleLength = OcelObjectFeatures.encodeLifecycleLength(ocel);
-		let overallObjectGraphs = OcelObjectFeatures.encodeOverallObjectGraphs(ocel);
-		let interactionGraphOt = OcelObjectFeatures.encodeInteractionGraphOt(ocel);
-		let wip = OcelObjectFeatures.encodeWip(ocel);
-		let featureNames = [...objStrAttr["featureNames"], ...objNumAttr["featureNames"], ...objLifecycleActivities["featureNames"], ...objLifecycleDuration["featureNames"], ...objLifecycleLength["featureNames"], ...overallObjectGraphs["featureNames"], ...interactionGraphOt["featureNames"], ...wip["featureNames"]];
-		let data = [];
-		let objects = ocel["ocel:objects"];
-		let count = 0;
-		for (let objId in objects) {
-			data.push([...objStrAttr["data"][count], ...objNumAttr["data"][count], ...objLifecycleActivities["data"][count], ...objLifecycleDuration["data"][count], ...objLifecycleLength["data"][count], ...overallObjectGraphs["data"][count], ...interactionGraphOt["data"][count], ...wip["data"][count]]);
-			count = count + 1;
 		}
 		return {"data": data, "featureNames": featureNames};
 	}
