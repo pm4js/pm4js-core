@@ -59,7 +59,7 @@ class Pm4JS {
 	}
 }
 
-Pm4JS.VERSION = "0.0.17";
+Pm4JS.VERSION = "0.0.18";
 Pm4JS.registrationEnabled = false;
 Pm4JS.objects = [];
 Pm4JS.algorithms = [];
@@ -12647,6 +12647,82 @@ class CaseFeaturesOutput {
 		this.data = data;
 		this.features = features;
 	}
+	
+	scaling(fea) {
+		let j = 0;
+		while (j < this.features.length) {
+			let minValue = 99999999999;
+			let maxValue = -99999999999;
+			let i = 0;
+			while (i < this.data.length) {
+				minValue = Math.min(minValue, this.data[i][j]);
+				maxValue = Math.max(maxValue, this.data[i][j]);
+				i++;
+			}
+			i = 0;
+			while (i < this.data.length) {
+				if (minValue != maxValue) {
+					this.data[i][j] = (this.data[i][j] - minValue)/(maxValue - minValue);
+				}
+				else {
+					this.data[i][j] = 1;
+				}
+				i++;
+			}
+			j++;
+		}
+	}
+	
+	variancePerFea() {
+		let ret = [];
+		let j = 0;
+		while (j < this.data[0].length) {
+			let avg = 0.0;
+			let i = 0;
+			while (i < this.data.length) {
+				avg += this.data[i][j];
+				i++;
+			}
+			avg = avg / this.data.length;
+			let vr = 0.0;
+			i = 0;
+			while (i < this.data.length) {
+				vr += (this.data[i][j] - avg)*(this.data[i][j] - avg)
+				i++;
+			}
+			vr = vr / this.data.length;
+			ret.push(vr);
+			j++;
+		}
+		return ret;
+	}
+	
+	filterOnVariance(threshold) {
+		let varPerFea = OcelObjectFeatures.variancePerFea(this.data);
+		let data = [];
+		let featureNames = [];
+		let i = 0;
+		while (i < this.features.length) {
+			if (varPerFea[i] > threshold) {
+				featureNames.push(this.features[i]);
+			}
+			i++;
+		}
+		i = 0;
+		while (i < this.data.length) {
+			let j = 0;
+			let arr = [];
+			while (j < this.data[i].length) {
+				if (varPerFea[j] > threshold) {
+					arr.push(this.data[i][j]);
+				}
+				j++;
+			}
+			data.push(arr);
+			i++;
+		}
+		return new CaseFeaturesOutput(data, featureNames);
+	}
 }
 
 class CaseFeatures {
@@ -17786,13 +17862,14 @@ class OcelIntervalTree {
 	
 	static getObjectsLifecycle(ocel) {
 		let lif = {};
+		let objects = ocel["ocel:objects"];
+		for (let objId in objects) {
+			lif[objId] = [];
+		}
 		let events = ocel["ocel:events"];
 		for (let evId in events) {
 			let eve = events[evId];
 			for (let objId of eve["ocel:omap"]) {
-				if (!(objId in lif)) {
-					lif[objId] = [];
-				}
 				lif[objId].push(eve);
 			}
 		}
@@ -17806,9 +17883,13 @@ class OcelIntervalTree {
 		for (let objId in objects) {
 			let obj = objects[objId];
 			let lif = objLifecycle[objId];
-			let st = lif[0]["ocel:timestamp"].getTime() / 1000.0;
-			let et = lif[lif.length - 1]["ocel:timestamp"].getTime() / 1000.0;
-			tree.insert(st-0.00001, et+0.00001, [obj, lif]);
+			if (lif.length > 0) {
+				let st = lif[0]["ocel:timestamp"].getTime() / 1000.0;
+				let et = lif[lif.length - 1]["ocel:timestamp"].getTime() / 1000.0;
+				if (et > st) {
+					tree.insert(st-0.00001, et+0.00001, [obj, lif]);
+				}
+			}
 		}
 		let mintime = null;
 		for (let n of tree.ascending()) {
@@ -17837,6 +17918,109 @@ catch (err) {
 }
 
 class OcelEventFeatures {
+	static apply(ocel, strAttributes=null, numAttributes=null) {
+		let activitiesEncoding = OcelEventFeatures.encodeActivity(ocel);
+		let timestampEncoding = OcelEventFeatures.encodeTimestamp(ocel);
+		let numRelObjEncoding = OcelEventFeatures.encodeNumRelObj(ocel);
+		let numRelObjStartEncoding = OcelEventFeatures.encodeNumRelObjStart(ocel);
+		let numRelObjEndEncoding = OcelEventFeatures.encodeNumRelObjEnd(ocel);
+		let strAttrEncoding = OcelEventFeatures.encodeStrAttrEv(ocel, strAttributes);
+		let numAttrEncoding = OcelEventFeatures.encodeNumAttrEv(ocel, numAttributes);
+		let featureNames = [...activitiesEncoding["featureNames"], ...timestampEncoding["featureNames"], ...numRelObjEncoding["featureNames"], ...numRelObjStartEncoding["featureNames"], ...numRelObjEndEncoding["featureNames"], ...strAttrEncoding["featureNames"], ...numAttrEncoding["featureNames"]];
+		let data = [];
+		let count = 0;
+		for (let evId in ocel["ocel:events"]) {
+			data.push([...activitiesEncoding["data"][count], ...timestampEncoding["data"][count], ...numRelObjEncoding["data"][count], ...numRelObjStartEncoding["data"][count], ...numRelObjEndEncoding["data"][count], ...strAttrEncoding["data"][count], ...numAttrEncoding["data"][count]]);
+			count = count + 1;
+		}
+		return {"data": data, "featureNames": featureNames};
+	}
+	
+	static filterOnVariance(fea, threshold) {
+		let varPerFea = OcelEventFeatures.variancePerFea(fea["data"]);
+		let filteredIdxs = [];
+		let j = 0;
+		while (j < varPerFea.length) {
+			if (varPerFea[j] >= 0.1) {
+				filteredIdxs.push(j);
+			}
+			j = j + 1;
+		}
+		let filteredFea = OcelEventFeatures.filterOnIndexes(fea, filteredIdxs);
+		return filteredFea;
+	}
+	
+	static filterOnIndexes(fea, idxs) {
+		let filteredFea = {"featureNames": [], "data": []};
+		let j = 0;
+		while (j < idxs.length) {
+			filteredFea["featureNames"].push(fea["featureNames"][idxs[j]]);
+			j++;
+		}
+		let i = 0;
+		while (i < fea["data"].length) {
+			let arr = [];
+			j = 0;
+			while (j < idxs.length) {
+				arr.push(fea["data"][i][idxs[j]]);
+				j++;
+			}
+			filteredFea["data"].push(arr);
+			i++;
+		}
+		return filteredFea;
+	}
+	
+	static variancePerFea(data) {
+		let ret = [];
+		let j = 0;
+		while (j < data[0].length) {
+			let avg = 0.0;
+			let i = 0;
+			while (i < data.length) {
+				avg += data[i][j];
+				i++;
+			}
+			avg = avg / data.length;
+			let vr = 0.0;
+			i = 0;
+			while (i < data.length) {
+				vr += (data[i][j] - avg)*(data[i][j] - avg)
+				i++;
+			}
+			vr = vr / data.length;
+			ret.push(vr);
+			j++;
+		}
+		return ret;
+	}
+	
+	static scaling(fea) {
+		let j = 0;
+		while (j < fea["featureNames"].length) {
+			let minValue = 99999999999;
+			let maxValue = -99999999999;
+			let i = 0;
+			while (i < fea["data"].length) {
+				minValue = Math.min(minValue, fea["data"][i][j]);
+				maxValue = Math.max(maxValue, fea["data"][i][j]);
+				i++;
+			}
+			i = 0;
+			while (i < fea["data"].length) {
+				if (minValue != maxValue) {
+					fea["data"][i][j] = (fea["data"][i][j] - minValue)/(maxValue - minValue);
+				}
+				else {
+					fea["data"][i][j] = 1;
+				}
+				i++;
+			}
+			j++;
+		}
+		return fea;
+	}
+	
 	static enrichEventLogWithEventFeatures(ocel, strAttributes=null, numAttributes=null) {
 		let fea = OcelEventFeatures.apply(ocel, strAttributes, numAttributes);
 		let data = fea["data"];
@@ -17857,20 +18041,21 @@ class OcelEventFeatures {
 		return ocel;
 	}
 	
-	static apply(ocel, strAttributes=null, numAttributes=null) {
-		let activitiesEncoding = OcelEventFeatures.encodeActivity(ocel);
-		let timestampEncoding = OcelEventFeatures.encodeTimestamp(ocel);
-		let numRelObjEncoding = OcelEventFeatures.encodeNumRelObj(ocel);
-		let numRelObjStartEncoding = OcelEventFeatures.encodeNumRelObjStart(ocel);
-		let numRelObjEndEncoding = OcelEventFeatures.encodeNumRelObjEnd(ocel);
-		let strAttrEncoding = OcelEventFeatures.encodeStrAttrEv(ocel, strAttributes);
-		let numAttrEncoding = OcelEventFeatures.encodeNumAttrEv(ocel, numAttributes);
-		let featureNames = [...activitiesEncoding["featureNames"], ...timestampEncoding["featureNames"], ...numRelObjEncoding["featureNames"], ...numRelObjStartEncoding["featureNames"], ...numRelObjEndEncoding["featureNames"], ...strAttrEncoding["featureNames"], ...numAttrEncoding["featureNames"]];
+	static produceTable(ocel, fea) {
+		let featureNames = [...fea["featureNames"]];
 		let data = [];
-		let count = 0;
-		for (let evId in ocel["ocel:events"]) {
-			data.push([...activitiesEncoding["data"][count], ...timestampEncoding["data"][count], ...numRelObjEncoding["data"][count], ...numRelObjStartEncoding["data"][count], ...numRelObjEndEncoding["data"][count], ...strAttrEncoding["data"][count], ...numAttrEncoding["data"][count]]);
-			count = count + 1;
+		let events = Object.keys(ocel["ocel:events"]);
+		let i = 0;
+		while (i < fea["data"].length) {
+			data.push([...fea["data"][i]]);
+			data[i].unshift(events[i]);
+			i = i + 1;
+		}
+		featureNames.unshift("EVENT_ID");
+		i = 0;
+		while (i < featureNames.length) {
+			featureNames[i] = featureNames[i].replace(new RegExp("@@", 'g'), "").replace(new RegExp("#", 'g'), "_").replace(new RegExp(" ", 'g'), "_");
+			i = i + 1;
 		}
 		return {"data": data, "featureNames": featureNames};
 	}
@@ -17897,7 +18082,7 @@ class OcelEventFeatures {
 		}
 		let featureNames = [];
 		for (let act of activities) {
-			featureNames.push("@@ev_act_" + act);
+			featureNames.push("@@ev_act_" + act.replace(/[\W_]+/g," "));
 		}
 		return {"data": data, "featureNames": featureNames};
 	}
@@ -17942,7 +18127,7 @@ class OcelEventFeatures {
 		}
 		let featureNames = ["@@ev_rel_objs_abs"];
 		for (let objType of objectTypes) {
-			featureNames.push("@@ev_rel_objs_ot_"+objType);
+			featureNames.push("@@ev_rel_objs_ot_"+objType.replace(/[\W_]+/g," "));
 		}
 		return {"data": data, "featureNames": featureNames};
 	}
@@ -17981,7 +18166,7 @@ class OcelEventFeatures {
 		}
 		let featureNames = [];
 		for (let objType of objectTypes) {
-			featureNames.push("@@ev_rel_objs_start_ot_"+objType);
+			featureNames.push("@@ev_rel_objs_start_ot_"+objType.replace(/[\W_]+/g," "));
 		}
 		return {"data": data, "featureNames": featureNames};
 	}
@@ -18027,7 +18212,7 @@ class OcelEventFeatures {
 		}
 		let featureNames = [];
 		for (let objType of objectTypes) {
-			featureNames.push("@@ev_rel_objs_end_ot_"+objType);
+			featureNames.push("@@ev_rel_objs_end_ot_"+objType.replace(/[\W_]+/g," "));
 		}
 		return {"data": data, "featureNames": featureNames};
 	}
@@ -18054,7 +18239,7 @@ class OcelEventFeatures {
 			diffValues = Object.keys(diffValues);
 			let zeroArr = [];
 			for (let val of diffValues) {
-				featureNames.push("@@ev_attr_"+attr+"_"+val);
+				featureNames.push("@@ev_attr_"+attr.replace(/[\W_]+/g," ")+"_"+val.replace(/[\W_]+/g," "));
 				zeroArr.push(0);
 			}
 			let count = 0;
@@ -18094,7 +18279,7 @@ class OcelEventFeatures {
 				}
 				count = count + 1;
 			}
-			featureNames.push("@@ev_num_attr_"+attr);
+			featureNames.push("@@ev_num_attr_"+attr.replace(/[\W_]+/g," "));
 		}
 		return {"data": data, "featureNames": featureNames};
 	}
@@ -18112,6 +18297,111 @@ catch (err) {
 
 
 class OcelObjectFeatures {
+	static apply(ocel, strAttributes=null, numAttributes=null) {
+		let objStrAttr = OcelObjectFeatures.encodeObjStrAttr(ocel, strAttributes);
+		let objNumAttr = OcelObjectFeatures.encodeObjNumAttr(ocel, numAttributes);
+		let objLifecycleActivities = OcelObjectFeatures.encodeLifecycleActivities(ocel);
+		let objLifecycleDuration = OcelObjectFeatures.encodeLifecycleDuration(ocel);
+		let objLifecycleLength = OcelObjectFeatures.encodeLifecycleLength(ocel);
+		let overallObjectGraphs = OcelObjectFeatures.encodeOverallObjectGraphs(ocel);
+		let interactionGraphOt = OcelObjectFeatures.encodeInteractionGraphOt(ocel);
+		let wip = OcelObjectFeatures.encodeWip(ocel);
+		let featureNames = [...objStrAttr["featureNames"], ...objNumAttr["featureNames"], ...objLifecycleActivities["featureNames"], ...objLifecycleDuration["featureNames"], ...objLifecycleLength["featureNames"], ...overallObjectGraphs["featureNames"], ...interactionGraphOt["featureNames"], ...wip["featureNames"]];
+		let data = [];
+		let objects = ocel["ocel:objects"];
+		let count = 0;
+		for (let objId in objects) {
+			data.push([...objStrAttr["data"][count], ...objNumAttr["data"][count], ...objLifecycleActivities["data"][count], ...objLifecycleDuration["data"][count], ...objLifecycleLength["data"][count], ...overallObjectGraphs["data"][count], ...interactionGraphOt["data"][count], ...wip["data"][count]]);
+			count = count + 1;
+		}
+		return {"data": data, "featureNames": featureNames};
+	}
+	
+	static filterOnVariance(fea, threshold) {
+		let varPerFea = OcelObjectFeatures.variancePerFea(fea["data"]);
+		let filteredIdxs = [];
+		let j = 0;
+		while (j < varPerFea.length) {
+			if (varPerFea[j] >= 0.1) {
+				filteredIdxs.push(j);
+			}
+			j = j + 1;
+		}
+		let filteredFea = OcelObjectFeatures.filterOnIndexes(fea, filteredIdxs);
+		return filteredFea;
+	}
+	
+	static filterOnIndexes(fea, idxs) {
+		let filteredFea = {"featureNames": [], "data": []};
+		let j = 0;
+		while (j < idxs.length) {
+			filteredFea["featureNames"].push(fea["featureNames"][idxs[j]]);
+			j++;
+		}
+		let i = 0;
+		while (i < fea["data"].length) {
+			let arr = [];
+			j = 0;
+			while (j < idxs.length) {
+				arr.push(fea["data"][i][idxs[j]]);
+				j++;
+			}
+			filteredFea["data"].push(arr);
+			i++;
+		}
+		return filteredFea;
+	}
+	
+	static variancePerFea(data) {
+		let ret = [];
+		let j = 0;
+		while (j < data[0].length) {
+			let avg = 0.0;
+			let i = 0;
+			while (i < data.length) {
+				avg += data[i][j];
+				i++;
+			}
+			avg = avg / data.length;
+			let vr = 0.0;
+			i = 0;
+			while (i < data.length) {
+				vr += (data[i][j] - avg)*(data[i][j] - avg)
+				i++;
+			}
+			vr = vr / data.length;
+			ret.push(vr);
+			j++;
+		}
+		return ret;
+	}
+	
+	static scaling(fea) {
+		let j = 0;
+		while (j < fea["featureNames"].length) {
+			let minValue = 99999999999;
+			let maxValue = -99999999999;
+			let i = 0;
+			while (i < fea["data"].length) {
+				minValue = Math.min(minValue, fea["data"][i][j]);
+				maxValue = Math.max(maxValue, fea["data"][i][j]);
+				i++;
+			}
+			i = 0;
+			while (i < fea["data"].length) {
+				if (minValue != maxValue) {
+					fea["data"][i][j] = (fea["data"][i][j] - minValue)/(maxValue - minValue);
+				}
+				else {
+					fea["data"][i][j] = 1;
+				}
+				i++;
+			}
+			j++;
+		}
+		return fea;
+	}
+	
 	static enrichEventLogWithObjectFeatures(ocel, strAttributes=null, numAttributes=null) {
 		let fea = OcelObjectFeatures.apply(ocel, strAttributes, numAttributes);
 		let data = fea["data"];
@@ -18132,22 +18422,21 @@ class OcelObjectFeatures {
 		return ocel;
 	}
 	
-	static apply(ocel, strAttributes=null, numAttributes=null) {
-		let objStrAttr = OcelObjectFeatures.encodeObjStrAttr(ocel, strAttributes);
-		let objNumAttr = OcelObjectFeatures.encodeObjNumAttr(ocel, numAttributes);
-		let objLifecycleActivities = OcelObjectFeatures.encodeLifecycleActivities(ocel);
-		let objLifecycleDuration = OcelObjectFeatures.encodeLifecycleDuration(ocel);
-		let objLifecycleLength = OcelObjectFeatures.encodeLifecycleLength(ocel);
-		let overallObjectGraphs = OcelObjectFeatures.encodeOverallObjectGraphs(ocel);
-		let interactionGraphOt = OcelObjectFeatures.encodeInteractionGraphOt(ocel);
-		let wip = OcelObjectFeatures.encodeWip(ocel);
-		let featureNames = [...objStrAttr["featureNames"], ...objNumAttr["featureNames"], ...objLifecycleActivities["featureNames"], ...objLifecycleDuration["featureNames"], ...objLifecycleLength["featureNames"], ...overallObjectGraphs["featureNames"], ...interactionGraphOt["featureNames"], ...wip["featureNames"]];
+	static produceTable(ocel, fea) {
+		let featureNames = [...fea["featureNames"]];
 		let data = [];
-		let objects = ocel["ocel:objects"];
-		let count = 0;
-		for (let objId in objects) {
-			data.push([...objStrAttr["data"][count], ...objNumAttr["data"][count], ...objLifecycleActivities["data"][count], ...objLifecycleDuration["data"][count], ...objLifecycleLength["data"][count], ...overallObjectGraphs["data"][count], ...interactionGraphOt["data"][count], ...wip["data"][count]]);
-			count = count + 1;
+		let objects = Object.keys(ocel["ocel:objects"]);
+		let i = 0;
+		while (i < fea["data"].length) {
+			data.push([...fea["data"][i]]);
+			data[i].unshift(objects[i]);
+			i = i + 1;
+		}
+		featureNames.unshift("OBJECT_ID");
+		i = 0;
+		while (i < featureNames.length) {
+			featureNames[i] = featureNames[i].replace(new RegExp("@@", 'g'), "").replace(new RegExp("#", 'g'), "_").replace(new RegExp(" ", 'g'), "_");
+			i = i + 1;
 		}
 		return {"data": data, "featureNames": featureNames};
 	}
@@ -18174,7 +18463,7 @@ class OcelObjectFeatures {
 			diffValues = Object.keys(diffValues);
 			let zeroArr = [];
 			for (let val of diffValues) {
-				featureNames.push("@@obj_attr_"+attr+"_"+val);
+				featureNames.push("@@obj_attr_"+attr.replace(/[\W_]+/g," ")+"_"+val.replace(/[\W_]+/g," "));
 				zeroArr.push(0);
 			}
 			let count = 0;
@@ -18216,20 +18505,21 @@ class OcelObjectFeatures {
 				}
 				count = count + 1;
 			}
-			featureNames.push("@@obj_num_attr_"+attr);
+			featureNames.push("@@obj_num_attr_"+attr.replace(/[\W_]+/g," "));
 		}
 		return {"data": data, "featureNames": featureNames};
 	}
 	
 	static getObjectsLifecycle(ocel) {
 		let lif = {};
+		let objects = ocel["ocel:objects"];
+		for (let objId in objects) {
+			lif[objId] = [];
+		}
 		let events = ocel["ocel:events"];
 		for (let evId in events) {
 			let eve = events[evId];
 			for (let objId of eve["ocel:omap"]) {
-				if (!(objId in lif)) {
-					lif[objId] = [];
-				}
 				lif[objId].push(eve);
 			}
 		}
@@ -18261,7 +18551,7 @@ class OcelObjectFeatures {
 		}
 		let featureNames = [];
 		for (let act of diffActivities) {
-			featureNames.push("@@obj_lif_act_"+act);
+			featureNames.push("@@obj_lif_act_"+act.replace(/[\W_]+/g," "));
 		}
 		return {"data": data, "featureNames": featureNames};
 	}
@@ -18274,9 +18564,14 @@ class OcelObjectFeatures {
 		let objLifecycle = OcelObjectFeatures.getObjectsLifecycle(ocel);
 		for (let objId in objects) {
 			let lif = objLifecycle[objId];
-			let st = lif[0]["ocel:timestamp"].getTime();
-			let et = lif[lif.length - 1]["ocel:timestamp"].getTime();
-			data.push([(et-st)/1000.0]);
+			if (lif.length > 0) {
+				let st = lif[0]["ocel:timestamp"].getTime();
+				let et = lif[lif.length - 1]["ocel:timestamp"].getTime();
+				data.push([(et-st)/1000.0]);
+			}
+			else {
+				data.push([0]);
+			}
 		}
 		return {"data": data, "featureNames": featureNames};
 	}
@@ -18343,16 +18638,18 @@ class OcelObjectFeatures {
 		let data = [];
 		let featureNames = [];
 		for (let ot of objectTypes) {
-			featureNames.push("@@object_interaction_ot_" + ot);
+			featureNames.push("@@object_interaction_ot_" + ot.replace(/[\W_]+/g," "));
 		}
 		for (let objId in objects) {
 			let interactions = interactionGraph[objId];
 			let arr = [];
 			for (let ot of objectTypes) {
 				let count = 0;
-				for (let objId2 of interactions) {
-					if (objOt[objId2] == ot) {
-						count = count + 1
+				if (interactions != null) {
+					for (let objId2 of interactions) {
+						if (objOt[objId2] == ot) {
+							count = count + 1
+						}
 					}
 				}
 				arr.push(count);
@@ -18371,25 +18668,30 @@ class OcelObjectFeatures {
 		for (let objId in objects) {
 			let obj = objects[objId];
 			let lif = objLifecycle[objId];
-			let st = lif[0]["ocel:timestamp"].getTime() / 1000.0;
-			let et = lif[lif.length - 1]["ocel:timestamp"].getTime() / 1000.0;
-			let afterIntersectingObjects0 = tree.queryAfterPoint(st);
-			let beforeIntersectingObjects0 = tree.queryBeforePoint(et);
-			let afterIntersectingObjects = [];
-			let beforeIntersectingObjects = [];
-			for (let obj of afterIntersectingObjects0) {
-				afterIntersectingObjects.push(obj);
-			}
-			for (let obj of beforeIntersectingObjects0) {
-				beforeIntersectingObjects.push(obj);
-			}
-			let intersectionAfterBefore = [];
-			for (let obj of afterIntersectingObjects) {
-				if (beforeIntersectingObjects.includes(obj)) {
-					intersectionAfterBefore.push(obj);
+			if (lif.length > 0) {
+				let st = lif[0]["ocel:timestamp"].getTime() / 1000.0;
+				let et = lif[lif.length - 1]["ocel:timestamp"].getTime() / 1000.0;
+				let afterIntersectingObjects0 = tree.queryAfterPoint(st);
+				let beforeIntersectingObjects0 = tree.queryBeforePoint(et);
+				let afterIntersectingObjects = [];
+				let beforeIntersectingObjects = [];
+				for (let obj of afterIntersectingObjects0) {
+					afterIntersectingObjects.push(obj);
 				}
+				for (let obj of beforeIntersectingObjects0) {
+					beforeIntersectingObjects.push(obj);
+				}
+				let intersectionAfterBefore = [];
+				for (let obj of afterIntersectingObjects) {
+					if (beforeIntersectingObjects.includes(obj)) {
+						intersectionAfterBefore.push(obj);
+					}
+				}
+				data.push([intersectionAfterBefore.length]);
 			}
-			data.push([intersectionAfterBefore.length]);
+			else {
+				data.push([0]);
+			}
 		}
 		return {"data": data, "featureNames": featureNames};
 	}
@@ -19048,18 +19350,32 @@ class GeneralOcelStatistics {
 				}
 			}
 		}
+		for (let evAct in dct) {
+			for (let otype in dct[evAct]) {
+				let count = 0;
+				let sum = 0;
+				for (let sc in dct[evAct][otype]) {
+					let nc = parseInt(sc);
+					let cc = dct[evAct][otype][sc];
+					count += cc;
+					sum += nc * cc;
+				}
+				dct[evAct][otype] = sum / count;
+			}
+		}
 		return dct;
 	}
 	
 	static getObjectsLifecycle(ocel) {
 		let lif = {};
+		let objects = ocel["ocel:objects"];
+		for (let objId in objects) {
+			lif[objId] = [];
+		}
 		let events = ocel["ocel:events"];
 		for (let evId in events) {
 			let eve = events[evId];
 			for (let objId of eve["ocel:omap"]) {
-				if (!(objId in lif)) {
-					lif[objId] = [];
-				}
 				lif[objId].push(eve);
 			}
 		}
@@ -19109,6 +19425,19 @@ class GeneralOcelStatistics {
 						dct[ot][act][temp[act]] += 1;
 					}
 				}
+			}
+		}
+		for (let ot in dct) {
+			for (let act in dct[ot]) {
+				let count = 0;
+				let sum = 0;
+				for (let sc in dct[ot][act]) {
+					let nc = parseInt(sc);
+					let cc = dct[ot][act][sc];
+					count += cc;
+					sum += nc * cc;
+				}
+				dct[ot][act] = sum / count;
 			}
 		}
 		return dct;
