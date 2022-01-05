@@ -80,7 +80,7 @@ class OcelObjectFeatures {
 			diffValues = Object.keys(diffValues);
 			let zeroArr = [];
 			for (let val of diffValues) {
-				featureNames.push("@@obj_attr_"+attr+"_"+val);
+				featureNames.push("@@obj_attr_"+attr.replace(/[\W_]+/g," ")+"_"+val.replace(/[\W_]+/g," "));
 				zeroArr.push(0);
 			}
 			let count = 0;
@@ -122,7 +122,7 @@ class OcelObjectFeatures {
 				}
 				count = count + 1;
 			}
-			featureNames.push("@@obj_num_attr_"+attr);
+			featureNames.push("@@obj_num_attr_"+attr.replace(/[\W_]+/g," "));
 		}
 		return {"data": data, "featureNames": featureNames};
 	}
@@ -168,7 +168,7 @@ class OcelObjectFeatures {
 		}
 		let featureNames = [];
 		for (let act of diffActivities) {
-			featureNames.push("@@obj_lif_act_"+act);
+			featureNames.push("@@obj_lif_act_"+act.replace(/[\W_]+/g," "));
 		}
 		return {"data": data, "featureNames": featureNames};
 	}
@@ -255,7 +255,7 @@ class OcelObjectFeatures {
 		let data = [];
 		let featureNames = [];
 		for (let ot of objectTypes) {
-			featureNames.push("@@object_interaction_ot_" + ot);
+			featureNames.push("@@object_interaction_ot_" + ot.replace(/[\W_]+/g," "));
 		}
 		for (let objId in objects) {
 			let interactions = interactionGraph[objId];

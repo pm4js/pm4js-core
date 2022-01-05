@@ -78,7 +78,7 @@ class OcelEventFeatures {
 		}
 		let featureNames = [];
 		for (let act of activities) {
-			featureNames.push("@@ev_act_" + act);
+			featureNames.push("@@ev_act_" + act.replace(/[\W_]+/g," "));
 		}
 		return {"data": data, "featureNames": featureNames};
 	}
@@ -123,7 +123,7 @@ class OcelEventFeatures {
 		}
 		let featureNames = ["@@ev_rel_objs_abs"];
 		for (let objType of objectTypes) {
-			featureNames.push("@@ev_rel_objs_ot_"+objType);
+			featureNames.push("@@ev_rel_objs_ot_"+objType.replace(/[\W_]+/g," "));
 		}
 		return {"data": data, "featureNames": featureNames};
 	}
@@ -162,7 +162,7 @@ class OcelEventFeatures {
 		}
 		let featureNames = [];
 		for (let objType of objectTypes) {
-			featureNames.push("@@ev_rel_objs_start_ot_"+objType);
+			featureNames.push("@@ev_rel_objs_start_ot_"+objType.replace(/[\W_]+/g," "));
 		}
 		return {"data": data, "featureNames": featureNames};
 	}
@@ -208,7 +208,7 @@ class OcelEventFeatures {
 		}
 		let featureNames = [];
 		for (let objType of objectTypes) {
-			featureNames.push("@@ev_rel_objs_end_ot_"+objType);
+			featureNames.push("@@ev_rel_objs_end_ot_"+objType.replace(/[\W_]+/g," "));
 		}
 		return {"data": data, "featureNames": featureNames};
 	}
@@ -235,7 +235,7 @@ class OcelEventFeatures {
 			diffValues = Object.keys(diffValues);
 			let zeroArr = [];
 			for (let val of diffValues) {
-				featureNames.push("@@ev_attr_"+attr+"_"+val);
+				featureNames.push("@@ev_attr_"+attr.replace(/[\W_]+/g," ")+"_"+val.replace(/[\W_]+/g," "));
 				zeroArr.push(0);
 			}
 			let count = 0;
@@ -275,7 +275,7 @@ class OcelEventFeatures {
 				}
 				count = count + 1;
 			}
-			featureNames.push("@@ev_num_attr_"+attr);
+			featureNames.push("@@ev_num_attr_"+attr.replace(/[\W_]+/g," "));
 		}
 		return {"data": data, "featureNames": featureNames};
 	}
