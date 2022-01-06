@@ -17,6 +17,22 @@ class OcelEventFeatures {
 		return {"data": data, "featureNames": featureNames};
 	}
 	
+	static transformToDct(fea) {
+		let lst = [];
+		let i = 0;
+		while (i < fea["data"].length) {
+			let dct = {};
+			let j = 0;
+			while (j < fea["data"][i].length) {
+				dct[fea["featureNames"][j]] = fea["data"][i][j];
+				j++;
+			}
+			lst.push(dct);
+			i++;
+		}
+		return lst;
+	}
+	
 	static filterOnVariance(fea, threshold) {
 		let varPerFea = OcelEventFeatures.variancePerFea(fea["data"]);
 		let filteredIdxs = [];

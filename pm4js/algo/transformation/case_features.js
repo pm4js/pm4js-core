@@ -4,7 +4,23 @@ class CaseFeaturesOutput {
 		this.features = features;
 	}
 	
-	scaling(fea) {
+	transformToDct() {
+		let lst = [];
+		let i = 0;
+		while (i < this.data.length) {
+			let dct = {};
+			let j = 0;
+			while (j < this.data[i].length) {
+				dct[this.features[j]] = this.data[i][j];
+				j++;
+			}
+			lst.push(dct);
+			i++;
+		}
+		return lst;
+	}
+	
+	scaling() {
 		let j = 0;
 		while (j < this.features.length) {
 			let minValue = 99999999999;

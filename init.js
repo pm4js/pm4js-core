@@ -88,3 +88,4 @@ require('./pm4js/algo/transformation/log_links.js');
 require('./pm4js/algo/organizational/network_analysis/algorithm.js');
 require('./pm4js/visualization/network_analysis/graphviz.js');
 require('./pm4js/statistics/ocel/general.js');
+require('./pm4js/utils/ml/dt_utils.js');
