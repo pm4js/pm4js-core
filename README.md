@@ -2,18 +2,23 @@
 
 ### Process Mining for Javascript - Core Package
 PM4Js is a library for process mining in Javascript. The execution is supported in modern browsers (Chrome, ...) and Node.JS
+
 ### Install
 #### Browser
 Include the script **dist/pm4js_latest.js** in your web page to use the functionalities of PM4Js.
+
 #### Node (package)
 Install pm4js by doing **npm install -g pm4js**. Then, PM4Js can be used in Node by doing:
 **require('pm4js')**.
+
 #### Node (local installation)
 Clone the Git project, and install the required packages by doing **npm install**. Then, PM4Js can be used in Node by doing:
 **require('./init.js')**.
+
 ### Documentation
 Extensive documentation is available [here](./DOCS.md).
 Some examples are included in the **examples/html** folder (HTML pages) and **examples/node** folder (Node.JS examples).
+
 ### Features
 The library currently offers the following set of features:
 
@@ -23,6 +28,7 @@ The library currently offers the following set of features:
         * [Importing CSV logs](./DOCS.md#importing-csv-logs)
         * [Exporting XES logs](./DOCS.md#exporting-xes-logs)
         * [Exporting CSV logs](./DOCS.md#exporting-csv-logs)
+		* [Conversion to Event Stream](./DOCS.md#conversion-to-event-stream)
     * Petri Nets
 	     * [Data Structure](./DOCS.md#petri-nets---data-structure)
 	     * [Creation of a Petri net](./DOCS.md#petri-nets---creation-of-a-petri-net)
@@ -47,6 +53,13 @@ The library currently offers the following set of features:
 		* [Exporting BPMN](./DOCS.md#exporting-bpmn)
 		* [Converting a BPMN to an accepting Petri net](./DOCS.md#converting-a-bpmn-to-an-accepting-petri-net)
 		* [Converting an accepting Petri net to BPMN](./DOCS.md#converting-an-accepting-petri-net-to-bpmn)
+	* OCEL
+		* [Supported Formats](./DOCS.md#supported-formats)
+		* [Importing OCEL](./DOCS.md#importing-ocel)
+		* [Exporting OCEL](./DOCS.md#exporting-ocel)
+		* [Flattening OCEL](./DOCS.md#flattening-ocel)
+		* [Statistics on OCEL](./DOCS.md#statistics-on-ocel)
+	* [Business Hours configuration](./DOCS.md#business-hours-configuration)
 * Algorithms 
 	* Process Discovery
 		* [Inductive Miner](./DOCS.md#inductive-miner)
@@ -68,10 +81,19 @@ The library currently offers the following set of features:
 		* [Sliding Directly Follows Graphs](./DOCS.md#sliding-directly-follows-graphs)
 	* Simulation
 		* [Playout of a DFG](./DOCS.md#playout-of-a-dfg)
-	* [Feature Extraction](./DOCS.md#feature-extraction)
+	* Feature Extraction
+		* [Feature Extraction on Event Logs](./DOCS.md#feature-extraction-on-event-logs)
+		* [Object Based Feature Extraction on Object Centric Event Logs](./DOCS.md#object-based-feature-extraction-on-object-centric-event-logs)
+		* [Event Based Feature Extraction on Object Centric Event Logs](./DOCS.md#event-based-feature-extraction-on-object-centric-event-logs)
+	* [Interval Analysis](./DOCS.md#interval-analysis)
 * Statistics
 	* Log
 		* [General Statistics](./DOCS.md#log---general-statistics)
+* Support for Celonis
+	* [Celonis Connector](./DOCS.md#celonis-connector)
+	* [Traditional Celonis Wrapper](./DOCS.md#traditional-celonis-wrapper)
+	* [Object Centric Celonis Wrapper](./DOCS.md#object-centric-celonis-wrapper)
+
 
 ### Support
 Support is provided by mail at the following mail address: [Alessandro Berti](mailto:a.berti@pads.rwth-aachen.de).
