@@ -8,6 +8,7 @@
         * [Importing CSV logs](#importing-csv-logs)
         * [Exporting XES logs](#exporting-xes-logs)
         * [Exporting CSV logs](#exporting-csv-logs)
+		* [Conversion to Event Stream](#conversion-to-event-stream)
     * Petri Nets
 	     * [Data Structure](#petri-nets---data-structure)
 	     * [Creation of a Petri net](#petri-nets---creation-of-a-petri-net)
@@ -37,7 +38,7 @@
 		* [Importing OCEL](#importing-ocel)
 		* [Exporting OCEL](#exporting-ocel)
 		* [Flattening OCEL](#flattening-ocel)
-		* [Statistics on OCEL](#statistics-ocel)
+		* [Statistics on OCEL](#statistics-on-ocel)
 	* [Business Hours configuration](#business-hours-configuration)
 * Algorithms 
 	* Process Discovery
@@ -158,6 +159,18 @@ Where:
 
 A practical example follows:
 **var csvStri = CsvExporter.apply(eventLog, ",", "\"")**
+
+### Conversion to Event Stream
+
+An event stream is an array of events. This can be useful for some algorithms which require to work on a sequence of events.
+In PM4JS, we offer support for the conversion of an event log to an event stream. Basically, every event of the log is extracted,
+enriched with the attributes at the case level and appended to an array. The array is eventually sorted on the timestamp attribute.
+
+A simple way to call the conversion is the following:
+**let eventStream = EventLogToStream.apply(eventLog);**
+
+It is also possible to provide a custom attribute to sort the stream, and the prefix for the case attributes, as in the following example:
+**let eventStream = EventLogToStream.apply(eventLog, sortingAttribute, casePrefix);**
 
 ## Petri Nets
 
