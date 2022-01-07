@@ -737,6 +737,8 @@ where **numDesideredTraces** is the desidered number of cases of the simulated l
 
 ## Feature Extraction
 
+### Feature Extraction on Event Logs
+
 The conversion of a log to a matrix of numerical features is essential for machine learning purposes. Here, we describe the current implementation in PM4JS, that
 accepts an event log and returns the matrix of the features (where each row is a different case).
 
@@ -765,6 +767,54 @@ Where:
 * **trStrAttr** (if provided) is the list of string attributes at the case level that should be used  for the feature extraction (one-hot encoding). If not provided, the default feature selection is performed for these attributes.
 * **trNumAttr** (if provided) is the list of numeric attributes at the case level that should be used for the feature extraction. If not provided, the default feature selection is performed for these attributes.
 * **evSuccAttr** (if provided) use the paths between the attributes provided in the list as features.
+
+### Object Based Feature Extraction on Object Centric Event Logs
+
+The conversion of an OCEL to a matrix of numerical features is essential for machine learning purposes. Here, we describe an object-based feature extraction.
+Each row of the matrix is a set of features for an object of the OCEL.
+
+The command:
+**let features = OcelObjectFeatures.apply(ocel);***
+performs a basic feature extraction for the objects of an OCEL.
+
+It is also possible to provide a list of string and numeric attributes to encode.
+**let features = OcelObjectFeatures.apply(ocel, strAttributes, numAttributes);**
+
+The feature extraction considers the following properties:
+
+* Lifecycle: length.
+* Lifecycle: one-hot-encoding of the activities.
+* Lifecycle: duration of the lifecycle.
+* Number of connected objects in the objects interaction graph.
+* Number of connected objects in the objects descendants graph.
+* Number of connected objects in the objects inheritance graph.
+* Number of connected objects in the objects cobirth graph.
+* Number of connected objects in the objects codeath graph.
+* (If provided) One-hot-encoding of the string attributes.
+* (If provided) Encoding of the numeric attributes.
+
+### Event Based Feature Extraction on Object Centric Event Logs
+
+The conversion of an OCEL to a matrix of numerical features is essential for machine learning purposes. Here, we describe an event-based feature extraction.
+Each row of the matrix is a set of features for an event of the OCEL.
+
+The command:
+**let features = OcelEventFeatures.apply(ocel);**
+performs a basic feature extraction for the events of an OCEL.
+
+It is also possible to provide a list of string and numeric attributes to encode.
+**let features = OcelEventFeatures.apply(ocel, strAttributes, numAttributes);**
+
+The feature extraction considers the following properties:
+
+* One-hot-encoding of the activity of the event.
+* Encoding of the timestamp (raw timestamp, hour of the day, day of the week, month)
+* Encoding of the number of related objects.
+* Encoding of the number of related objects per type.
+* Encoding of the number of related objects which start their lifecycle with the current event.
+* Encoding of the number of related objects which complete their lifecycle with the current event.
+* (If provided) One-hot-encoding of the string attributes.
+* (If provided) Encoding of the numeric attributes.
 
 ## Interval Analysis
 
