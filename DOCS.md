@@ -54,7 +54,10 @@
 		* [Sliding Directly Follows Graphs](#sliding-directly-follows-graphs)
 	* Simulation
 		* [Playout of a DFG](#playout-of-a-dfg)
-	* [Feature Extraction](#feature-extraction)
+	* [Feature Extraction]
+		* [Feature Extraction on Event Logs](#feature-extraction-on-event-logs)
+		* [Object Based Feature Extraction on Object Centric Event Logs](#object-based-feature-extraction-on-object-centric-event-logs)
+		* [Event Based Feature Extraction on Object Centric Event Logs](#event-based-feature-extraction-on-object-centric-event-logs)
 	* [Interval Analysis](#interval-analysis)
 * Statistics
 	* Log
