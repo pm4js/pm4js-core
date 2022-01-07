@@ -32,6 +32,12 @@
 		* [Exporting BPMN](#exporting-bpmn)
 		* [Converting a BPMN to an accepting Petri net](#converting-a-bpmn-to-an-accepting-petri-net)
 		* [Converting an accepting Petri net to BPMN](#converting-an-accepting-petri-net-to-bpmn)
+	* OCEL
+		* [Supported Formats](#supported-formats)
+		* [Importing OCEL](#importing-ocel)
+		* [Exporting OCEL](#exporting-ocel)
+		* [Flattening OCEL](#flattening-ocel)
+		* [Statistics on OCEL](#statistics-ocel)
 	* [Business Hours configuration](#business-hours-configuration)
 * Algorithms 
 	* Process Discovery
@@ -54,7 +60,7 @@
 		* [Sliding Directly Follows Graphs](#sliding-directly-follows-graphs)
 	* Simulation
 		* [Playout of a DFG](#playout-of-a-dfg)
-	* [Feature Extraction]
+	* Feature Extraction
 		* [Feature Extraction on Event Logs](#feature-extraction-on-event-logs)
 		* [Object Based Feature Extraction on Object Centric Event Logs](#object-based-feature-extraction-on-object-centric-event-logs)
 		* [Event Based Feature Extraction on Object Centric Event Logs](#event-based-feature-extraction-on-object-centric-event-logs)
@@ -445,6 +451,49 @@ To convert a workflow net (a sub-class of Petri nets) to a BPMN diagram, the fol
 **let bpmnGraph = WfNetToBpmnConverter.apply(acceptingPetriNet)**
 
 As important point to mention, the automatic layouting of the BPMN diagrams is still missing from the library.
+
+## OCEL
+
+
+### Supported Formats
+
+The [OCEL standard](http://www.ocel-standard.org/) for object-centric event logs has been proposed with two different implementations:
+
+* The JSONOCEL implementation, which is supported by the JSON format.
+* The XMLOCEL implementation, which is supported by the XML format.
+
+### Importing OCEL
+
+If the contents of an JSONOCEL file are provided, they can be imported in PM4JS by doing:
+**let ocel = JsonOcelImporter.apply(fileContent);**
+
+If the contents of an XMLOCEL file are provided, they can be imported in PM4JS by doing:
+**let ocel = XmlOcelImporter.apply(fileContent);**
+
+### Exporting OCEL
+
+An OCEL can be exported to an JSONOCEL file by doing:
+**let jsonString = JsonOcelExporter.apply(ocel);**
+
+An OCEL can be exported an XMLOCEL file by doing:
+**let xmlString = XmlOcelExporter.apply(ocel);**
+
+### Flattening OCEL
+
+A flattening operation transforms an object-centric event log to a traditional event log after choosing a case notion.
+It can be applied by doing:
+
+**let flattenedLog = OcelFlattening.apply(ocel, objType);**
+
+### Statistics on OCEL
+
+The following statistics are available on OCELs:
+
+* Number of events per activity: **GeneralOcelStatistics.eventsPerActivityCount(ocel);**
+* Number of objects per object type: **GeneralOcelStatistics.objectsPerTypeCount(ocel);**
+* Per object type, number of events having at least one related object of the given type: **GeneralOcelStatistics.eventsRelatedPerObjectTypeCount(ocel);**
+* Per activity, counter of the number of objects per given object type which are related to events of the given activity: **GeneralOcelStatistics.objectsPerTypePerActivity(ocel);**
+* Per activity, counter of the number of events of the given activity which are related to objects of a given object type: **GeneralOcelStatistics.eventsPerTypePerActivity(ocel);**
 
 ## Business Hours configuration
 
