@@ -54,6 +54,62 @@ class BpmnGraph {
 			delete this.nodes[id];
 		}
 	}
+	
+	getOrderedNodes() {
+		let startEvent = null;
+		for (let nodeId in this.nodes) {
+			let node = this.nodes[nodeId];
+			node.level = Number.MAX_SAFE_INTEGER;
+			if (node.type == "startEvent") {
+				startEvent = nodeId;
+				node.level = 0;
+			}
+		}
+		let toVisit = [startEvent];
+		let visited = {};
+		let orderedNodes = [];
+		let outgoingEdges = {};
+		while (toVisit.length > 0) {
+			let el = toVisit.pop();
+			if (!(el in visited)) {
+				visited[el] = 0;
+				orderedNodes.push(el);
+				
+				let thisNode = this.nodes[el];
+				for (let outEdgeId in thisNode.outgoing) {
+					let outEdge = this.edges[outEdgeId];
+					let targetId = outEdge.target.id;
+					let targetNode = this.nodes[targetId];
+					if (!(targetId in visited)) {
+						toVisit.push(targetId);
+						targetNode.level = Math.min(targetNode.level, thisNode.level + 1);
+					}
+					outgoingEdges[[el, targetId]] = 0;
+				}
+			}
+		}
+		for (let nodeId in this.nodes) {
+			if (!(nodeId in visited)) {
+				visited[nodeId] = 0;
+				orderedNodes.push(nodeId);
+			}
+		}
+		orderedNodes.sort((a, b) => {
+			let nodeA = this.nodes[a];
+			let nodeB = this.nodes[b];
+			if (nodeA.level < nodeB.level) {
+				return -1;
+			}
+			else if (nodeA.level > nodeB.level) {
+				return 1;
+			}
+			else {
+				return 0;
+			}
+		});
+		
+		return orderedNodes;
+	}
 }
 
 class BpmnNode {
