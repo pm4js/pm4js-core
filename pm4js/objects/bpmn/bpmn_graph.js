@@ -55,7 +55,7 @@ class BpmnGraph {
 		}
 	}
 	
-	getOrderedNodes() {
+	getOrderedNodesAndEdges() {
 		let startEvent = null;
 		for (let nodeId in this.nodes) {
 			let node = this.nodes[nodeId];
@@ -108,7 +108,16 @@ class BpmnGraph {
 			}
 		});
 		
-		return orderedNodes;
+		let orderedEdges = [];
+		for (let nodeId of orderedNodes) {
+			let node = this.nodes[nodeId];
+			for (let edgeId in node.outgoing) {
+				let edge = this.edges[edgeId];
+				orderedEdges.push([edge.source.id, edge.target.id]);
+			}
+		}
+		
+		return {"nodesId": orderedNodes, "edgesId": orderedEdges};
 	}
 }
 
