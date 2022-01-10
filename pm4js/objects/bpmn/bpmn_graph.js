@@ -109,15 +109,17 @@ class BpmnGraph {
 		});
 		
 		let orderedEdges = [];
+		let invMap = {};
 		for (let nodeId of orderedNodes) {
 			let node = this.nodes[nodeId];
 			for (let edgeId in node.outgoing) {
 				let edge = this.edges[edgeId];
 				orderedEdges.push([edge.source.id, edge.target.id]);
+				invMap[[edge.source.id, edge.target.id]] = edge.id;
 			}
 		}
 		
-		return {"nodesId": orderedNodes, "edgesId": orderedEdges};
+		return {"nodesId": orderedNodes, "edgesId": orderedEdges, "invMap": invMap};
 	}
 }
 
