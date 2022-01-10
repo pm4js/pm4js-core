@@ -62,6 +62,7 @@ class DtUtils {
 		visited.reverse();
 		i = 0;
 		while (i < visited.length) {
+			visited[i].nidx = i;
 			if (visited[i].categories != null) {
 				let cat = Object.keys(visited[i].categories);
 				let mc = cat[0];
@@ -96,6 +97,31 @@ class DtUtils {
 	static nodeUuid() {
 		let uuid = DtUtils.uuidv4();
 		return "n"+uuid.replace(/-/g, "");
+	}
+	
+	static getGvizString(nodes) {
+		let ret = ["digraph G {"];
+		let nodeUuids = {};
+		for (let n of nodes) {
+			let nuid = DtUtils.nodeUuid();
+			nodeUuids[n.nidx] = nuid;
+			let label = "";
+			if (n.attribute != null) {
+				label = n.attribute + " " + n.predicateName + " " + n.pivot + "\nN="+n.matchedCount+n.notMatchedCount+"\ncat = " + n.mainCategory+" ("+Math.round(n.mainCategoryPrevalence * 100, 2)+" %)";
+			}
+			else {
+				label = "cat = "+n.category;
+			}
+			ret.push(nuid+" [label=\""+label+"\", shape=\"box\"];");
+		}
+		for (let n of nodes) {
+			if (n.attribute != null) {
+				ret.push(nodeUuids[n.nidx]+" -> "+nodeUuids[n.match.nidx]+" [label=\"True\"];");
+				ret.push(nodeUuids[n.nidx]+" -> "+nodeUuids[n.notMatch.nidx]+" [label=\"False\"];");
+			}
+		}
+		ret.push("}");
+		return ret.join("\n");
 	}
 }
 
