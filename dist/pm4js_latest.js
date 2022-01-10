@@ -59,7 +59,7 @@ class Pm4JS {
 	}
 }
 
-Pm4JS.VERSION = "0.0.18";
+Pm4JS.VERSION = "0.0.19";
 Pm4JS.registrationEnabled = false;
 Pm4JS.objects = [];
 Pm4JS.algorithms = [];
@@ -12648,7 +12648,23 @@ class CaseFeaturesOutput {
 		this.features = features;
 	}
 	
-	scaling(fea) {
+	transformToDct() {
+		let lst = [];
+		let i = 0;
+		while (i < this.data.length) {
+			let dct = {};
+			let j = 0;
+			while (j < this.data[i].length) {
+				dct[this.features[j]] = this.data[i][j];
+				j++;
+			}
+			lst.push(dct);
+			i++;
+		}
+		return lst;
+	}
+	
+	scaling() {
 		let j = 0;
 		while (j < this.features.length) {
 			let minValue = 99999999999;
@@ -14007,6 +14023,73 @@ class BpmnGraph {
 			}
 			delete this.nodes[id];
 		}
+	}
+	
+	getOrderedNodesAndEdges() {
+		let startEvent = null;
+		for (let nodeId in this.nodes) {
+			let node = this.nodes[nodeId];
+			node.level = Number.MAX_SAFE_INTEGER;
+			if (node.type == "startEvent") {
+				startEvent = nodeId;
+				node.level = 0;
+			}
+		}
+		let toVisit = [startEvent];
+		let visited = {};
+		let orderedNodes = [];
+		let outgoingEdges = {};
+		while (toVisit.length > 0) {
+			let el = toVisit.pop();
+			if (!(el in visited)) {
+				visited[el] = 0;
+				orderedNodes.push(el);
+				
+				let thisNode = this.nodes[el];
+				for (let outEdgeId in thisNode.outgoing) {
+					let outEdge = this.edges[outEdgeId];
+					let targetId = outEdge.target.id;
+					let targetNode = this.nodes[targetId];
+					if (!(targetId in visited)) {
+						toVisit.push(targetId);
+						targetNode.level = Math.min(targetNode.level, thisNode.level + 1);
+					}
+					outgoingEdges[[el, targetId]] = 0;
+				}
+			}
+		}
+		for (let nodeId in this.nodes) {
+			if (!(nodeId in visited)) {
+				visited[nodeId] = 0;
+				orderedNodes.push(nodeId);
+			}
+		}
+		orderedNodes.sort((a, b) => {
+			let nodeA = this.nodes[a];
+			let nodeB = this.nodes[b];
+			if (nodeA.level < nodeB.level) {
+				return -1;
+			}
+			else if (nodeA.level > nodeB.level) {
+				return 1;
+			}
+			else {
+				return 0;
+			}
+		});
+		
+		let orderedEdges = [];
+		let invMap = {};
+		for (let nodeId of orderedNodes) {
+			let node = this.nodes[nodeId];
+			for (let edgeId in node.outgoing) {
+				let edge = this.edges[edgeId];
+				orderedEdges.push([edge.source.id, edge.target.id]);
+				invMap[[edge.source.id, edge.target.id]] = edge.id;
+			}
+		}
+		
+		return {"nodesId": orderedNodes, "edgesId": orderedEdges, "invMap": invMap};
 	}
 }
 
@@ -17936,6 +18019,22 @@ class OcelEventFeatures {
 		return {"data": data, "featureNames": featureNames};
 	}
 	
+	static transformToDct(fea) {
+		let lst = [];
+		let i = 0;
+		while (i < fea["data"].length) {
+			let dct = {};
+			let j = 0;
+			while (j < fea["data"][i].length) {
+				dct[fea["featureNames"][j]] = fea["data"][i][j];
+				j++;
+			}
+			lst.push(dct);
+			i++;
+		}
+		return lst;
+	}
+	
 	static filterOnVariance(fea, threshold) {
 		let varPerFea = OcelEventFeatures.variancePerFea(fea["data"]);
 		let filteredIdxs = [];
@@ -18315,6 +18414,22 @@ class OcelObjectFeatures {
 			count = count + 1;
 		}
 		return {"data": data, "featureNames": featureNames};
+	}
+	
+	static transformToDct(fea) {
+		let lst = [];
+		let i = 0;
+		while (i < fea["data"].length) {
+			let dct = {};
+			let j = 0;
+			while (j < fea["data"][i].length) {
+				dct[fea["featureNames"][j]] = fea["data"][i][j];
+				j++;
+			}
+			lst.push(dct);
+			i++;
+		}
+		return lst;
 	}
 	
 	static filterOnVariance(fea, threshold) {
@@ -19451,6 +19566,205 @@ try {
 }
 catch (err) {
 	// not in node
+	//console.log(err);
+}
+
+
+class DtUtils {
+	static dtToNodes(decisionTree) {
+		let rootNode = decisionTree.root;
+		rootNode.depth = 0;
+		rootNode.categories = {};
+		rootNode.parent = null;
+		let visited = [];
+		let toVisit = [rootNode];
+		while (toVisit.length > 0) {
+			let el = toVisit.pop();
+			visited.push(el);
+			if (el.category == null) {
+				let lst = [el.match, el.notMatch];
+				for (let el2 of lst) {
+					if (el2 != null) {
+						el2.depth = el.depth + 1;
+						el2.categories = {};
+						el2.parent = el;
+						toVisit.push(el2);
+					}
+				}
+			}
+		}
+		visited.reverse();
+		let i = 0;
+		while (i < visited.length) {
+			let el = visited[i];
+			let match = el.match;
+			let notMatch = el.notMatch;
+			if (match != null) {
+				if (match.category != null) {
+					el.categories[match.category] = el.matchedCount;
+				}
+				else {
+					for (let cat in match.categories) {
+						if (!(cat in el.categories)) {
+							el.categories[cat] = match.categories[cat];
+						}
+						else {
+							el.categories[cat] += match.categories[cat];
+						}
+					}
+				}
+			}
+			if (notMatch != null) {
+				if (notMatch.category != null) {
+					el.categories[notMatch.category] = el.notMatchedCount;
+				}
+				else {
+					for (let cat in notMatch.categories) {
+						if (!(cat in el.categories)) {
+							el.categories[cat] = notMatch.categories[cat];
+						}
+						else {
+							el.categories[cat] += notMatch.categories[cat];
+						}
+					}
+				}
+			}
+			i++;
+		}
+		visited.reverse();
+		i = 0;
+		while (i < visited.length) {
+			visited[i].nidx = i;
+			if (visited[i].categories != null) {
+				let cat = Object.keys(visited[i].categories);
+				let mc = cat[0];
+				let mcc = visited[i].categories[mc];
+				let summ = mcc;
+				let j = 1;
+				while (j < cat.length) {
+					let thiscc = visited[i].categories[cat[j]]
+					if (thiscc > mcc) {
+						mc = cat[j];
+						mcc = thiscc;
+					}
+					summ += thiscc;
+					j++;
+				}
+				visited[i].mainCategory = mc;
+				visited[i].mainCategoryCount = mcc;
+				visited[i].mainCategoryPrevalence = mcc / summ;
+			}
+			i++;
+		}
+		return visited;
+	}
+	
+	static uuidv4() {
+	  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+		var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+		return v.toString(16);
+	  });
+	}
+	
+	static nodeUuid() {
+		let uuid = DtUtils.uuidv4();
+		return "n"+uuid.replace(/-/g, "");
+	}
+	
+	static getGvizString(nodes) {
+		let ret = ["digraph G {"];
+		let nodeUuids = {};
+		for (let n of nodes) {
+			let nuid = DtUtils.nodeUuid();
+			nodeUuids[n.nidx] = nuid;
+			let label = "";
+			if (n.attribute != null) {
+				label = n.attribute + " " + n.predicateName + " " + n.pivot + "\nN="+n.matchedCount+n.notMatchedCount+"\ncat = " + n.mainCategory+" ("+Math.round(n.mainCategoryPrevalence * 100, 2)+" %)";
+			}
+			else {
+				label = "cat = "+n.category;
+			}
+			ret.push(nuid+" [label=\""+label+"\", shape=\"box\"];");
+		}
+		for (let n of nodes) {
+			if (n.attribute != null) {
+				ret.push(nodeUuids[n.nidx]+" -> "+nodeUuids[n.match.nidx]+" [label=\"True\"];");
+				ret.push(nodeUuids[n.nidx]+" -> "+nodeUuids[n.notMatch.nidx]+" [label=\"False\"];");
+			}
+		}
+		ret.push("}");
+		return ret.join("\n");
+	}
+}
+
+try {
+	require('../../pm4js.js');
+	module.exports = {DtUtils: DtUtils};
+	global.DtUtils = DtUtils;
+}
+catch (err) {
+	// not in node
+}
+
+
+class DagreBPMNLayouting {
+	static apply(bpmnGraph, targetSvg="svg", targetInner="g") {
+		// works only in browser
+		// works only with Dagre/D3
+		let ordered = bpmnGraph.getOrderedNodesAndEdges();
+		
+		var g = new dagreD3.graphlib.Graph().setGraph({});
+		
+		for (let nodeId of ordered["nodesId"]) {
+			let node = bpmnGraph.nodes[nodeId];
+			g.setNode(node.id, {"label": node.name});				
+		}
+		
+		for (let edge of ordered["edgesId"]) {
+			g.setEdge(edge[0], edge[1], {})
+		}
+		
+		g.graph().rankDir = 'LR';
+
+		let render = new dagreD3.render();
+		
+		let svg = d3.select(targetSvg);
+		let inner = svg.append(targetInner);
+		render(inner, g);
+		
+		for (let nodeId in g._nodes) {
+			let node = g._nodes[nodeId];
+			let elemStr = node.elem.innerHTML;
+			let width = parseInt(elemStr.split('width=\"')[1].split('\"')[0]);
+			let height = parseInt(elemStr.split('height=\"')[1].split('\"')[0]);
+			bpmnGraph.nodes[nodeId].bounds = {"x": node.x - width/2, "y": node.y - height/2, "width": width, "height": height};
+		}
+		
+		
+		for (let edgeId in g._edgeLabels) {
+			let graphEdgeObj = g._edgeObjs[edgeId];
+			graphEdgeObj = [graphEdgeObj.v, graphEdgeObj.w];
+			let graphEdge = g._edgeLabels[edgeId];
+			let edge = g._edgeLabels[edgeId];
+			bpmnGraph.edges[ordered["invMap"][graphEdgeObj]].waypoints = null;
+			bpmnGraph.edges[ordered["invMap"][graphEdgeObj]].waypoints = [];
+			for (let p of edge.points) {
+				bpmnGraph.edges[ordered["invMap"][graphEdgeObj]].waypoints.push([p["x"], p["y"]]);
+			}
+		}
+		
+		return bpmnGraph;
+	}
+}
+
+try {
+	require('../../../pm4js.js');
+	require('../bpmn_graph.js');
+	module.exports = {DagreBPMNLayouting: DagreBPMNLayouting};
+	global.DagreBPMNLayouting = DagreBPMNLayouting;
+}
+catch (err) {
+	// not in Node
 	//console.log(err);
 }
 
