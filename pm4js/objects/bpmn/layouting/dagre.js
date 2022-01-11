@@ -1,5 +1,5 @@
 class DagreBPMNLayouting {
-	static apply(bpmnGraph, targetSvg="svg", targetInner="g") {
+	static apply(bpmnGraph, nodesep=null, edgesep=null, ranksep=null, targetSvg="svg", targetInner="g") {
 		// works only in browser
 		// works only with Dagre/D3
 		let ordered = bpmnGraph.getOrderedNodesAndEdges();
@@ -16,6 +16,15 @@ class DagreBPMNLayouting {
 		}
 		
 		g.graph().rankDir = 'LR';
+		if (nodesep != null) {
+			g.graph().nodesep = nodesep;
+		}
+		if (edgesep != null) {
+			g.graph().edgesep = edgesep;
+		}
+		if (ranksep != null) {
+			g.graph().ranksep = ranksep;
+		}
 
 		let render = new dagreD3.render();
 		
