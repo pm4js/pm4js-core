@@ -1,4 +1,6 @@
 class Pm4JS {
+	// version >= 0.0.20: license BSD-3-Clause
+	
 	static registerObject(obj, description) {
 		if (Pm4JS.registrationEnabled) {
 			if (description == null) {
@@ -59,7 +61,7 @@ class Pm4JS {
 	}
 }
 
-Pm4JS.VERSION = "0.0.19";
+Pm4JS.VERSION = "0.0.20";
 Pm4JS.registrationEnabled = false;
 Pm4JS.objects = [];
 Pm4JS.algorithms = [];

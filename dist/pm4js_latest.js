@@ -1,4 +1,6 @@
 class Pm4JS {
+	// version >= 0.0.20: license BSD-3-Clause
+	
 	static registerObject(obj, description) {
 		if (Pm4JS.registrationEnabled) {
 			if (description == null) {
@@ -59,7 +61,7 @@ class Pm4JS {
 	}
 }
 
-Pm4JS.VERSION = "0.0.19";
+Pm4JS.VERSION = "0.0.20";
 Pm4JS.registrationEnabled = false;
 Pm4JS.objects = [];
 Pm4JS.algorithms = [];
@@ -19708,7 +19710,7 @@ catch (err) {
 
 
 class DagreBPMNLayouting {
-	static apply(bpmnGraph, targetSvg="svg", targetInner="g") {
+	static apply(bpmnGraph, nodesep=null, edgesep=null, ranksep=null, targetSvg="svg", targetInner="g") {
 		// works only in browser
 		// works only with Dagre/D3
 		let ordered = bpmnGraph.getOrderedNodesAndEdges();
@@ -19725,6 +19727,15 @@ class DagreBPMNLayouting {
 		}
 		
 		g.graph().rankDir = 'LR';
+		if (nodesep != null) {
+			g.graph().nodesep = nodesep;
+		}
+		if (edgesep != null) {
+			g.graph().edgesep = edgesep;
+		}
+		if (ranksep != null) {
+			g.graph().ranksep = ranksep;
+		}
 
 		let render = new dagreD3.render();
 		
