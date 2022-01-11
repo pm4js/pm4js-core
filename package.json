@@ -29,7 +29,7 @@
     "pm4js"
   ],
   "author": "Alessandro Berti",
-  "license": "GPL-3.0-or-later",
+  "license": "BSD-3-Clause",
   "bugs": {
     "url": "https://github.com/pm4js/pm4js-core/issues"
   },
