@@ -7,7 +7,6 @@
     "example": "examples"
   },
   "dependencies": {
-    "jsdom": "^16.6.0",
     "retus": "^1.1.2",
     "xmldom": "^0.6.0",
     "xmlserializer": "^0.6.1"

@@ -61,7 +61,7 @@ class Pm4JS {
 	}
 }
 
-Pm4JS.VERSION = "0.0.20";
+Pm4JS.VERSION = "0.0.21";
 Pm4JS.registrationEnabled = false;
 Pm4JS.objects = [];
 Pm4JS.algorithms = [];
