@@ -1,10 +1,16 @@
 class DagreBPMNLayouting {
-	static apply(bpmnGraph, nodesep=null, edgesep=null, ranksep=null, targetSvg="svg", targetInner="g") {
+	static apply(bpmnGraph, nodesep=null, edgesep=null, ranksep=null, targetSvg="svg", targetInner="g", d3Obj=null, dagreD3Obj=null) {
 		// works only in browser
 		// works only with Dagre/D3
+		if (d3Obj == null) {
+			d3Obj = d3;
+		}
+		if (dagreD3Obj == null) {
+			dagreD3Obj = dagreD3;
+		}
 		let ordered = bpmnGraph.getOrderedNodesAndEdges();
 		
-		var g = new dagreD3.graphlib.Graph().setGraph({});
+		var g = new dagreD3Obj.graphlib.Graph().setGraph({});
 		
 		for (let nodeId of ordered["nodesId"]) {
 			let node = bpmnGraph.nodes[nodeId];
@@ -26,9 +32,9 @@ class DagreBPMNLayouting {
 			g.graph().ranksep = ranksep;
 		}
 
-		let render = new dagreD3.render();
+		let render = new dagreD3Obj.render();
 		
-		let svg = d3.select(targetSvg);
+		let svg = d3Obj.select(targetSvg);
 		let inner = svg.append(targetInner);
 		render(inner, g);
 		
