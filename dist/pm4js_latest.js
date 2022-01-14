@@ -61,7 +61,7 @@ class Pm4JS {
 	}
 }
 
-Pm4JS.VERSION = "0.0.22";
+Pm4JS.VERSION = "0.0.23";
 Pm4JS.registrationEnabled = false;
 Pm4JS.objects = [];
 Pm4JS.algorithms = [];
@@ -14386,9 +14386,9 @@ class BpmnExporter {
 		}
 	
 	static apply(bpmnGraph) {
-		let definitions = document.createElementNS("", "definitions");
+		let definitions = document.createElementNS("", "bpmn"+BpmnExporter.DUMMY_SEP+"definitions");
 		let processId = BpmnExporter.nodeUuid();
-		definitions.setAttribute("xmlns", "http://www.omg.org/spec/BPMN/20100524/MODEL");
+		definitions.setAttribute("xmlns:bpmn", "http://www.omg.org/spec/BPMN/20100524/MODEL");
 		definitions.setAttribute("xmlns:bpmndi", "http://www.omg.org/spec/BPMN/20100524/DI");
 		definitions.setAttribute("xmlns:omgdc", "http://www.omg.org/spec/DD/20100524/DC");
 		definitions.setAttribute("xmlns:omgdi", "http://www.omg.org/spec/DD/20100524/DI");
@@ -14449,7 +14449,7 @@ class BpmnExporter {
 			bpmnPlane.appendChild(xmlEdge);
 		}
 		//<process id="id071a1d8d-32e0-4b39-ae20-8ab8c71faec3" isClosed="false" isExecutable="false" processType="None">
-		let process = document.createElementNS("", "process");
+		let process = document.createElementNS("", "bpmn"+BpmnExporter.DUMMY_SEP+"process");
 		process.setAttribute("id", processId);
 		process.setAttribute("isClosed", "false");
 		process.setAttribute("isExecutable", "false");
@@ -14457,19 +14457,19 @@ class BpmnExporter {
 		definitions.appendChild(process);
 		for (let nodeId in bpmnGraph.nodes) {
 			let node = bpmnGraph.nodes[nodeId];
-			let xmlNode = document.createElementNS("", node.type);
+			let xmlNode = document.createElementNS("", "bpmn"+BpmnExporter.DUMMY_SEP+node.type);
 			xmlNode.setAttribute("id", nodeId);
 			xmlNode.setAttribute("name", node.name);
 			for (let prop in node.properties) {
 				xmlNode.setAttribute(prop, node.properties[prop]);
 			}
 			for (let inc in node.incoming) {
-				let xmlInc = document.createElementNS("", "incoming");
+				let xmlInc = document.createElementNS("", "bpmn"+BpmnExporter.DUMMY_SEP+"incoming");
 				xmlInc.textContent = inc;
 				xmlNode.appendChild(xmlInc);
 			}
 			for (let out in node.outgoing) {
-				let xmlOut = document.createElementNS("", "outgoing");
+				let xmlOut = document.createElementNS("", "bpmn"+BpmnExporter.DUMMY_SEP+"outgoing");
 				xmlOut.textContent = out;
 				xmlNode.appendChild(xmlOut);
 			}
@@ -14477,7 +14477,7 @@ class BpmnExporter {
 		}
 		for (let edgeId in bpmnGraph.edges) {
 			let edge = bpmnGraph.edges[edgeId];
-			let xmlEdge = document.createElementNS("", "sequenceFlow");
+			let xmlEdge = document.createElementNS("", "bpmn"+BpmnExporter.DUMMY_SEP+"sequenceFlow");
 			xmlEdge.setAttribute("id", edgeId);
 			xmlEdge.setAttribute("name", edge.name);
 			xmlEdge.setAttribute("sourceRef", edge.source.id);
