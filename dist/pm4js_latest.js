@@ -61,7 +61,7 @@ class Pm4JS {
 	}
 }
 
-Pm4JS.VERSION = "0.0.20";
+Pm4JS.VERSION = "0.0.21";
 Pm4JS.registrationEnabled = false;
 Pm4JS.objects = [];
 Pm4JS.algorithms = [];
@@ -8220,16 +8220,16 @@ class XesExporter {
 }
 
 try {
+	require('../../../../pm4js.js');
+	require('../../log.js');
+	module.exports = {XesExporter: XesExporter};
+	global.XesExporter = XesExporter;
 	const jsdom = require("jsdom");
 	const { JSDOM } = jsdom;
 	global.dom = new JSDOM('<!doctype html><html><body></body></html>');
 	global.window = dom.window;
 	global.document = dom.window.document;
 	global.navigator = global.window.navigator;
-	require('../../../../pm4js.js');
-	require('../../log.js');
-	module.exports = {XesExporter: XesExporter};
-	global.XesExporter = XesExporter;
 }
 catch (err) {
 	// not in node
@@ -8895,16 +8895,16 @@ class PnmlExporter {
 }
 
 try {
+	require('../../../pm4js.js');
+	require('../petri_net.js');
+	module.exports = {PnmlExporter: PnmlExporter};
+	global.PnmlExporter = PnmlExporter;
 	const jsdom = require("jsdom");
 	const { JSDOM } = jsdom;
 	global.dom = new JSDOM('<!doctype html><html><body></body></html>');
 	global.window = dom.window;
 	global.document = dom.window.document;
 	global.navigator = global.window.navigator;
-	require('../../../pm4js.js');
-	require('../petri_net.js');
-	module.exports = {PnmlExporter: PnmlExporter};
-	global.PnmlExporter = PnmlExporter;
 }
 catch (err) {
 	// not in node
@@ -14501,16 +14501,16 @@ class BpmnExporter {
 BpmnExporter.DUMMY_SEP = "AIOEWFRIUOERWQIO";
 
 try {
+	require('../../../pm4js.js');
+	require('../bpmn_graph.js');
+	module.exports = {BpmnExporter: BpmnExporter};
+	global.BpmnExporter = BpmnExporter;
 	const jsdom = require("jsdom");
 	const { JSDOM } = jsdom;
 	global.dom = new JSDOM('<!doctype html><html><body></body></html>');
 	global.window = dom.window;
 	global.document = dom.window.document;
 	global.navigator = global.window.navigator;
-	require('../../../pm4js.js');
-	require('../bpmn_graph.js');
-	module.exports = {BpmnExporter: BpmnExporter};
-	global.BpmnExporter = BpmnExporter;
 }
 catch (err) {
 	// not in node
@@ -14904,15 +14904,15 @@ class PtmlExporter {
 PtmlExporter.DUMMY_SEP = "AIOEWFRIUOERWQIO";
 
 try {
+	require('../../../pm4js.js');
+	global.PtmlExporter = PtmlExporter;
+	module.exports = {PtmlExporter: PtmlExporter};
 	const jsdom = require("jsdom");
 	const { JSDOM } = jsdom;
 	global.dom = new JSDOM('<!doctype html><html><body></body></html>');
 	global.window = dom.window;
 	global.document = dom.window.document;
 	global.navigator = global.window.navigator;
-	require('../../../pm4js.js');
-	global.PtmlExporter = PtmlExporter;
-	module.exports = {PtmlExporter: PtmlExporter};
 }
 catch (err) {
 	// not in node
@@ -16269,15 +16269,15 @@ class XmlOcelExporter {
 }
 
 try {
+	require('../../../../pm4js.js');
+	module.exports = {XmlOcelExporter: XmlOcelExporter};
+	global.XmlOcelExporter = XmlOcelExporter;
 	const jsdom = require("jsdom");
 	const { JSDOM } = jsdom;
 	global.dom = new JSDOM('<!doctype html><html><body></body></html>');
 	global.window = dom.window;
 	global.document = dom.window.document;
 	global.navigator = global.window.navigator;
-	require('../../../../pm4js.js');
-	module.exports = {XmlOcelExporter: XmlOcelExporter};
-	global.XmlOcelExporter = XmlOcelExporter;
 }
 catch (err) {
 	// not in node
@@ -19710,12 +19710,18 @@ catch (err) {
 
 
 class DagreBPMNLayouting {
-	static apply(bpmnGraph, nodesep=null, edgesep=null, ranksep=null, targetSvg="svg", targetInner="g") {
+	static apply(bpmnGraph, nodesep=null, edgesep=null, ranksep=null, targetSvg="svg", targetInner="g", d3Obj=null, dagreD3Obj=null) {
 		// works only in browser
 		// works only with Dagre/D3
+		if (d3Obj == null) {
+			d3Obj = d3;
+		}
+		if (dagreD3Obj == null) {
+			dagreD3Obj = dagreD3;
+		}
 		let ordered = bpmnGraph.getOrderedNodesAndEdges();
 		
-		var g = new dagreD3.graphlib.Graph().setGraph({});
+		var g = new dagreD3Obj.graphlib.Graph().setGraph({});
 		
 		for (let nodeId of ordered["nodesId"]) {
 			let node = bpmnGraph.nodes[nodeId];
@@ -19737,9 +19743,9 @@ class DagreBPMNLayouting {
 			g.graph().ranksep = ranksep;
 		}
 
-		let render = new dagreD3.render();
+		let render = new dagreD3Obj.render();
 		
-		let svg = d3.select(targetSvg);
+		let svg = d3Obj.select(targetSvg);
 		let inner = svg.append(targetInner);
 		render(inner, g);
 		
