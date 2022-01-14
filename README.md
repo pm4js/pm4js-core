@@ -66,11 +66,13 @@ The library currently offers the following set of features:
 		* [Inductive Miner Directly Follows](./DOCS.md#inductive-miner-directly-follows)
 		* [Log Skeleton](./DOCS.md#log-skeleton)
 		* [Directly Follows Graphs](./DOCS.md#directly-follows-graphs)
+		* [Temporal Profile Discovery](#temporal-profile-discovery)
 	* Conformance Checking
 		* [Token-Based Replay](./DOCS.md#token-based-replay)
 		* [Alignments on Petri nets](./DOCS.md#alignments-on-petri-nets)
 		* [Alignments on Directly Follows Graphs](./DOCS.md#alignments-on-directly-follows-graphs)
 		* [Conformance Checking using the Log Skeleton](./DOCS.md#conformance-checking-using-the-log-skeleton)
+		* [Temporal Profile Conformance Checking](#temporal-profile-conformance-checking)
 	* Evaluation
 		* [Replay Fitness of Petri nets](./DOCS.md#replay-fitness-of-petri-nets)
 		* [ETConformance precision of Petri nets](./DOCS.md#etconformance-precision-of-petri-nets)
