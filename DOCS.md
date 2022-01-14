@@ -46,11 +46,13 @@
 		* [Inductive Miner Directly Follows](#inductive-miner-directly-follows)
 		* [Log Skeleton](#log-skeleton)
 		* [Directly Follows Graphs](#directly-follows-graphs)
+		* [Temporal Profile Discovery](#temporal-profile-discovery)
 	* Conformance Checking
 		* [Token-Based Replay](#token-based-replay)
 		* [Alignments on Petri nets](#alignments-on-petri-nets)
 		* [Alignments on Directly Follows Graphs](#alignments-on-directly-follows-graphs)
 		* [Conformance Checking using the Log Skeleton](#conformance-checking-using-the-log-skeleton)
+		* [Temporal Profile Conformance Checking](#temporal-profile-conformance-checking)
 	* Evaluation
 		* [Replay Fitness of Petri nets](#replay-fitness-of-petri-nets)
 		* [ETConformance precision of Petri nets](#etconformance-precision-of-petri-nets)
@@ -584,6 +586,20 @@ To discover a performance directly-follows graph, the following command can be u
 The Graphviz code of the performance DFG visualization could be obtained doing:
 **let gv = PerformanceDfgGraphvizVisualizer.apply(performanceDfg);**
 
+### Temporal Profile Discovery
+
+A temporal profile is a process model hosting the average and the standard deviation of the times between any two activities happening in an eventually follows relation.
+This can be useful to define some bounds (=deviations) for the time behavior of the process.
+
+A basilar application of temporal profile discovery is the following:
+**let temporalProfile = TemporalProfileDiscovery.apply(eventLog);**
+
+A more advanced application of temporal profile discovery is the following:
+**let temporalProfile = TemporalProfileDiscovery.apply(eventLog, $activityKey$, $timestampKey$, $startTimestampKey$);**
+
+where **activityKey** can be replaced with the activity attribute, **timestampKey** can be replaced with the complete timestamp attribute,
+and **startTimestampKey** can be replaced with the start timestamp attribute.
+
 ## Conformance Checking
 
 ### Token Based Replay
@@ -682,6 +698,19 @@ The returned object is of type *LogSkeletonConformanceCheckingResult*, and inclu
 * **deviationsRecord**: dictionary that associates to each type of deviation the list of indexes of the cases for which the deviation happen.
 * **totalTraces**: total number of traces of the event log.
 * **fitTraces**: number of traces of the event log which are fit according to the log skeleton model.
+
+### Temporal Profile Conformance Checking
+
+The conformance checking based on the temporal profile compares the behavior of the event log against the temporal profile to find couples of occurrences
+for which the time between them is significantly different in comparison to the standard behavior.
+
+Given an event log and a temporal profile, the conformance checking is operated as follows:
+**let conformanceChecking = TemporalProfileConformance.apply(eventLog, temporalProfile, zeta);**
+
+Where **zeta** is the number of standard deviations that is tolerated from the average. Every occurrence of the activities couples which is lower than
+** mu - zeta std ** or higher than ** mu + zeta std ** is signaled as exception.
+
+The output of the method is an array collecting, for each case of the log, the corresponding deviations according to the temporal profile.
 
 ## Evaluation
 
