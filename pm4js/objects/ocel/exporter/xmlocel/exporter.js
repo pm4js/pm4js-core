@@ -153,15 +153,15 @@ class XmlOcelExporter {
 }
 
 try {
+	require('../../../../pm4js.js');
+	module.exports = {XmlOcelExporter: XmlOcelExporter};
+	global.XmlOcelExporter = XmlOcelExporter;
 	const jsdom = require("jsdom");
 	const { JSDOM } = jsdom;
 	global.dom = new JSDOM('<!doctype html><html><body></body></html>');
 	global.window = dom.window;
 	global.document = dom.window.document;
 	global.navigator = global.window.navigator;
-	require('../../../../pm4js.js');
-	module.exports = {XmlOcelExporter: XmlOcelExporter};
-	global.XmlOcelExporter = XmlOcelExporter;
 }
 catch (err) {
 	// not in node

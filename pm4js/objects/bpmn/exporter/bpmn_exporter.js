@@ -127,16 +127,16 @@ class BpmnExporter {
 BpmnExporter.DUMMY_SEP = "AIOEWFRIUOERWQIO";
 
 try {
+	require('../../../pm4js.js');
+	require('../bpmn_graph.js');
+	module.exports = {BpmnExporter: BpmnExporter};
+	global.BpmnExporter = BpmnExporter;
 	const jsdom = require("jsdom");
 	const { JSDOM } = jsdom;
 	global.dom = new JSDOM('<!doctype html><html><body></body></html>');
 	global.window = dom.window;
 	global.document = dom.window.document;
 	global.navigator = global.window.navigator;
-	require('../../../pm4js.js');
-	require('../bpmn_graph.js');
-	module.exports = {BpmnExporter: BpmnExporter};
-	global.BpmnExporter = BpmnExporter;
 }
 catch (err) {
 	// not in node
