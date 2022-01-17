@@ -389,22 +389,7 @@ class OcelObjectFeatures {
 			if (lif.length > 0) {
 				let st = lif[0]["ocel:timestamp"].getTime() / 1000.0;
 				let et = lif[lif.length - 1]["ocel:timestamp"].getTime() / 1000.0;
-				let afterIntersectingObjects0 = tree.queryAfterPoint(st);
-				let beforeIntersectingObjects0 = tree.queryBeforePoint(et);
-				let afterIntersectingObjects = [];
-				let beforeIntersectingObjects = [];
-				for (let obj of afterIntersectingObjects0) {
-					afterIntersectingObjects.push(obj);
-				}
-				for (let obj of beforeIntersectingObjects0) {
-					beforeIntersectingObjects.push(obj);
-				}
-				let intersectionAfterBefore = [];
-				for (let obj of afterIntersectingObjects) {
-					if (beforeIntersectingObjects.includes(obj)) {
-						intersectionAfterBefore.push(obj);
-					}
-				}
+				let intersectionAfterBefore = IntervalTreeAlgorithms.queryInterval(tree, st, et);
 				data.push([intersectionAfterBefore.length]);
 			}
 			else {

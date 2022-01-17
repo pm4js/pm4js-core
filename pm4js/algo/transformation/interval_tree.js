@@ -89,6 +89,26 @@ class IntervalTreeAlgorithms {
 		}
 		return returned;
 	}
+	
+	static queryInterval(tree, st, et) {
+		let afterIntersectingObjects0 = tree.queryAfterPoint(st);
+		let beforeIntersectingObjects0 = tree.queryBeforePoint(et);
+		let afterIntersectingObjects = [];
+		let beforeIntersectingObjects = [];
+		for (let obj of afterIntersectingObjects0) {
+			afterIntersectingObjects.push(obj);
+		}
+		for (let obj of beforeIntersectingObjects0) {
+			beforeIntersectingObjects.push(obj);
+		}
+		let intersectionAfterBefore = [];
+		for (let obj of afterIntersectingObjects) {
+			if (beforeIntersectingObjects.includes(obj)) {
+				intersectionAfterBefore.push(obj);
+			}
+		}
+		return intersectionAfterBefore;
+	}
 }
 
 try {

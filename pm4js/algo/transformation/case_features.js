@@ -479,6 +479,27 @@ class CaseFeatures {
 		}
 		return [data, features];
 	}
+	
+	static workInProgress(log, timestampKey="time:timestamp", caseIdKey="concept:name") {
+		let tree = IntervalTreeBuilder.apply(log, timestampKey);
+		let features = ["@@case_wip"];
+		let data = [];
+		let i = 0;
+		while (i < log.traces.length) {
+			let inte = {};
+			if (log.traces[i].events.length > 0) {
+				let st = log.traces[i].events[0].attributes[timestampKey].value / 1000.0;
+				let et = log.traces[i].events[log.traces[i].events.length - 1].attributes[timestampKey].value / 1000.0;
+				let intersectionAfterBefore = IntervalTreeAlgorithms.queryInterval(tree, st, et);
+				for (let el of intersectionAfterBefore) {
+					inte[el.value[0].attributes[caseIdKey].value] = 0;
+				}
+			}
+			data.push([Object.keys(inte).length]);
+			i++;
+		}
+		return [data, features];
+	}
 }
 
 try {
