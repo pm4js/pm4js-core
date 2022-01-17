@@ -98,7 +98,7 @@ class CaseFeaturesOutput {
 }
 
 class CaseFeatures {
-	static apply(eventLog, activityKey="concept:name", caseIdKey="concept:name", evStrAttr=null, evNumAttr=null, trStrAttr=null, trNumAttr=null, evSuccStrAttr=null, timestampKey="time:timestamp") {
+	static apply(eventLog, activityKey="concept:name", caseIdKey="concept:name", evStrAttr=null, evNumAttr=null, trStrAttr=null, trNumAttr=null, evSuccStrAttr=null, timestampKey="time:timestamp", includeWorkInProgress=CaseFeatures.INCLUDE_WIP) {
 		let vect = null;
 		if (evStrAttr == null || evNumAttr == null || trStrAttr == null || trNumAttr == null || evSuccStrAttr == null) {
 			vect = CaseFeatures.automaticFeatureSelection(eventLog, activityKey);
@@ -212,6 +212,17 @@ class CaseFeatures {
 			i++;
 		}
 		features = [...features, ...activityMinMaxIdx[1], ...activityMinMaxTimeFromStart[1], ...activityMinMaxTimeToEnd[1], ...pathDuration[1]];
+		
+		if (includeWorkInProgress) {
+			let wip = CaseFeatures.workInProgress(eventLog, timestampKey, caseIdKey);
+			i = 0;
+			while (i < data.length) {
+				data[i] = [...data[i], ...wip[0][i]];
+				i++;
+			}
+			features = [...features, ...wip[1]];
+		}
+		
 		return new CaseFeaturesOutput(data, features);
 	}
 	
@@ -502,6 +513,7 @@ class CaseFeatures {
 	}
 }
 
+CaseFeatures.INCLUDE_WIP = false;
 try {
 	require('../../pm4js.js');
 	require('../discovery/dfg/algorithm.js');
