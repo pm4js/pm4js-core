@@ -204,13 +204,14 @@ class CaseFeatures {
 		let activityMinMaxIdx = CaseFeatures.activityMinMaxIndex(eventLog, activityKey);
 		let activityMinMaxTimeFromStart = CaseFeatures.activityMinMaxTimeFromStart(eventLog, activityKey, timestampKey);
 		let activityMinMaxTimeToEnd = CaseFeatures.activityMinMaxTimeToEnd(eventLog, activityKey, timestampKey);
+		let pathDuration = CaseFeatures.pathDuration(eventLog, activityKey, timestampKey);
 		
 		let i = 0;
 		while (i < data.length) {
-			data[i] = [...data[i], ...activityMinMaxIdx[0][i], ...activityMinMaxTimeFromStart[0][i], ...activityMinMaxTimeToEnd[0][i]];
+			data[i] = [...data[i], ...activityMinMaxIdx[0][i], ...activityMinMaxTimeFromStart[0][i], ...activityMinMaxTimeToEnd[0][i], ...pathDuration[0][i]];
 			i++;
 		}
-		features = [...features, ...activityMinMaxIdx[1], ...activityMinMaxTimeFromStart[1], ...activityMinMaxTimeToEnd[1]];
+		features = [...features, ...activityMinMaxIdx[1], ...activityMinMaxTimeFromStart[1], ...activityMinMaxTimeToEnd[1], ...pathDuration[1]];
 		return new CaseFeaturesOutput(data, features);
 	}
 	
@@ -321,8 +322,9 @@ class CaseFeatures {
 			let maxIdx = {};
 			let i = 0;
 			while (i < trace.events.length) {
-				let act = trace.events[i].attributes[activityKey].value;
+				let act = trace.events[i].attributes[activityKey];
 				if (act != null) {
+					act = act.value;
 					if (!(act in minIdx)) {
 						minIdx[act] = i;
 					}
@@ -359,12 +361,16 @@ class CaseFeatures {
 				consideredTime = trace.events[0].attributes[timestampKey].value / 1000.0;
 			}
 			while (i < trace.events.length) {
-				let act = trace.events[i].attributes[activityKey].value;
-				let thisTime = trace.events[i].attributes[timestampKey].value / 1000.0;
-				if (!(act in minTime)) {
-					minTime[act] = thisTime - consideredTime;
+				let act = trace.events[i].attributes[activityKey];
+				let thisTime = trace.events[i].attributes[timestampKey];
+				if (act != null && thisTime != null) {
+					act = act.value;
+					thisTime = thisTime.value / 1000.0;
+					if (!(act in minTime)) {
+						minTime[act] = thisTime - consideredTime;
+					}
+					maxTime[act] = thisTime - consideredTime;
 				}
-				maxTime[act] = thisTime - consideredTime;
 				i++;
 			}
 			let arr = [];			
@@ -397,12 +403,16 @@ class CaseFeatures {
 				consideredTime = trace.events[trace.events.length - 1].attributes[timestampKey].value / 1000.0;
 			}
 			while (i < trace.events.length) {
-				let act = trace.events[i].attributes[activityKey].value;
-				let thisTime = trace.events[i].attributes[timestampKey].value / 1000.0;
-				if (!(act in maxTime)) {
-					maxTime[act] = consideredTime - thisTime;
+				let act = trace.events[i].attributes[activityKey];
+				let thisTime = trace.events[i].attributes[timestampKey];
+				if (act != null && thisTime != null) {
+					act = act.value;
+					thisTime = thisTime.value / 1000.0;
+					if (!(act in maxTime)) {
+						maxTime[act] = consideredTime - thisTime;
+					}
+					minTime[act] = consideredTime - thisTime;
 				}
-				minTime[act] = consideredTime - thisTime;
 				i++;
 			}
 			let arr = [];			
@@ -418,7 +428,55 @@ class CaseFeatures {
 			}
 			data.push(arr);
 		}
-		
+		return [data, features];
+	}
+	
+	static pathDuration(log, activityKey="concept:name", timestampKey="time:timestamp", naRep=-1) {
+		let paths = Object.keys(FrequencyDfgDiscovery.apply(log, activityKey).pathsFrequency);
+		let data = [];
+		let features = [];
+		for (let path of paths) {
+			features.push("@@path_duration_min_"+path);
+			features.push("@@path_duration_max_"+path);
+		}
+		for (let trace of log.traces) {
+			let minPathDuration = {};
+			let maxPathDuration = {};
+			let i = 0;
+			while (i < trace.events.length - 1) {
+				let acti = trace.events[i].attributes[activityKey];
+				let actj = trace.events[i+1].attributes[activityKey];
+				let timei = trace.events[i].attributes[timestampKey];
+				let timej = trace.events[i+1].attributes[timestampKey];
+				if (acti != null && actj != null && timei != null && timej != null) {
+					acti = acti.value;
+					actj = actj.value;
+					timei = timei.value / 1000;
+					timej = timej.value / 1000;
+					let path = acti + "," + actj;
+					let thisdiff = timej - timei;
+					if (!(path in minPathDuration)) {
+						minPathDuration[path] = thisdiff;
+						maxPathDuration[path] = thisdiff;
+					}
+					minPathDuration[path] = Math.min(thisdiff, minPathDuration[path]);
+					maxPathDuration[path] = Math.max(thisdiff, maxPathDuration[path]);
+				}
+				let arr = [];
+				for (let path of paths) {
+					if (path in minPathDuration) {
+						arr.push(minPathDuration[path]);
+						arr.push(maxPathDuration[path]);
+					}
+					else {
+						arr.push(naRep);
+						arr.push(naRep);
+					}
+				}
+				data.push(arr);
+				i++;
+			}
+		}
 		return [data, features];
 	}
 }
