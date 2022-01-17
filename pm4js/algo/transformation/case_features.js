@@ -98,7 +98,7 @@ class CaseFeaturesOutput {
 }
 
 class CaseFeatures {
-	static apply(eventLog, activityKey="concept:name", caseIdKey="concept:name", evStrAttr=null, evNumAttr=null, trStrAttr=null, trNumAttr=null, evSuccStrAttr=null) {
+	static apply(eventLog, activityKey="concept:name", caseIdKey="concept:name", evStrAttr=null, evNumAttr=null, trStrAttr=null, trNumAttr=null, evSuccStrAttr=null, timestampKey="time:timestamp") {
 		let vect = null;
 		if (evStrAttr == null || evNumAttr == null || trStrAttr == null || trNumAttr == null || evSuccStrAttr == null) {
 			vect = CaseFeatures.automaticFeatureSelection(eventLog, activityKey);
@@ -201,6 +201,16 @@ class CaseFeatures {
 			}
 			data.push(vect);
 		}
+		let activityMinMaxIdx = CaseFeatures.activityMinMaxIndex(eventLog, activityKey);
+		let activityMinMaxTimeFromStart = CaseFeatures.activityMinMaxTimeFromStart(eventLog, activityKey, timestampKey);
+		let activityMinMaxTimeToEnd = CaseFeatures.activityMinMaxTimeToEnd(eventLog, activityKey, timestampKey);
+		
+		let i = 0;
+		while (i < data.length) {
+			data[i] = [...data[i], ...activityMinMaxIdx[0][i], ...activityMinMaxTimeFromStart[0][i], ...activityMinMaxTimeToEnd[0][i]];
+			i++;
+		}
+		features = [...features, ...activityMinMaxIdx[1], ...activityMinMaxTimeFromStart[1], ...activityMinMaxTimeToEnd[1]];
 		return new CaseFeaturesOutput(data, features);
 	}
 	
@@ -300,6 +310,116 @@ class CaseFeatures {
 			}
 		}
 		return true;
+	}
+	
+	static activityMinMaxIndex(log, activityKey="concept:name", naRep=-1) {
+		let features = ["@@act_min_idx", "@@act_max_idx"];
+		let data = [];
+		let activities = Object.keys(GeneralLogStatistics.getAttributeValues(log, activityKey));
+		for (let trace of log.traces) {
+			let minIdx = {};
+			let maxIdx = {};
+			let i = 0;
+			while (i < trace.events.length) {
+				let act = trace.events[i].attributes[activityKey].value;
+				if (act != null) {
+					if (!(act in minIdx)) {
+						minIdx[act] = i;
+					}
+					maxIdx[act] = i;
+				}
+				i++;
+			}
+			let arr = [];			
+			for (let act of activities) {
+				if (act in minIdx) {
+					arr.push(minIdx[act]);
+					arr.push(maxIdx[act]);
+				}
+				else {
+					arr.push(naRep);
+					arr.push(naRep);
+				}
+			}
+			data.push(arr);
+		}
+		return [data, features];
+	}
+	
+	static activityMinMaxTimeFromStart(log, activityKey="concept:name", timestampKey="time:timestamp", naRep=-1) {
+		let features = ["@@act_min_time_from_start", "@@act_max_time_from_start"];
+		let data = [];
+		let activities = Object.keys(GeneralLogStatistics.getAttributeValues(log, activityKey));
+		for (let trace of log.traces) {
+			let minTime = {};
+			let maxTime = {};
+			let i = 0;
+			let consideredTime = 0;
+			if (trace.events.length > 0) {
+				consideredTime = trace.events[0].attributes[timestampKey].value / 1000.0;
+			}
+			while (i < trace.events.length) {
+				let act = trace.events[i].attributes[activityKey].value;
+				let thisTime = trace.events[i].attributes[timestampKey].value / 1000.0;
+				if (!(act in minTime)) {
+					minTime[act] = thisTime - consideredTime;
+				}
+				maxTime[act] = thisTime - consideredTime;
+				i++;
+			}
+			let arr = [];			
+			for (let act of activities) {
+				if (act in minTime) {
+					arr.push(minTime[act]);
+					arr.push(maxTime[act]);
+				}
+				else {
+					arr.push(naRep);
+					arr.push(naRep);
+				}
+			}
+			data.push(arr);
+		}
+		
+		return [data, features];
+	}
+	
+	static activityMinMaxTimeToEnd(log, activityKey="concept:name", timestampKey="time:timestamp", naRep=-1) {
+		let features = ["@@act_min_time_to_end", "@@act_max_time_to_end"];
+		let data = [];
+		let activities = Object.keys(GeneralLogStatistics.getAttributeValues(log, activityKey));
+		for (let trace of log.traces) {
+			let minTime = {};
+			let maxTime = {};
+			let i = 0;
+			let consideredTime = 0;
+			if (trace.events.length > 0) {
+				consideredTime = trace.events[trace.events.length - 1].attributes[timestampKey].value / 1000.0;
+			}
+			while (i < trace.events.length) {
+				let act = trace.events[i].attributes[activityKey].value;
+				let thisTime = trace.events[i].attributes[timestampKey].value / 1000.0;
+				if (!(act in maxTime)) {
+					maxTime[act] = consideredTime - thisTime;
+				}
+				minTime[act] = consideredTime - thisTime;
+				i++;
+			}
+			let arr = [];			
+			for (let act of activities) {
+				if (act in minTime) {
+					arr.push(minTime[act]);
+					arr.push(maxTime[act]);
+				}
+				else {
+					arr.push(naRep);
+					arr.push(naRep);
+				}
+			}
+			data.push(arr);
+		}
+		
+		return [data, features];
 	}
 }
 
