@@ -864,6 +864,21 @@ Where:
 * **trNumAttr** (if provided) is the list of numeric attributes at the case level that should be used for the feature extraction. If not provided, the default feature selection is performed for these attributes.
 * **evSuccAttr** (if provided) use the paths between the attributes provided in the list as features.
 
+The following additional features are automatically extracted from the cases of the event log:
+
+* Minimum and maximum index of events having a given activity inside a case.
+* Minimum and maximum difference from the timestamp of the start event of the events having a given activity.
+* Minimum and maximum difference from the timestamp of the last event of the events having a given activity.
+* Minimum and maximum duration of a path between directly-following events in a log (2 feature for every path).
+
+The following methods are also available on the **CaseFeaturesOutput** object:
+
+* **.transformToDct()**: transforms the object into an array of dictionaries. For every case, every feature is the key of the dictionary, and the corresponding value is reported.
+* **.scaling()**: scales all the features values to a number between 0 and 1 (with 0 being corresponded to the minimum value of the feature and 1 being corresponded to the maximum value of the feature). The
+result is another **CaseFeaturesOutput** object.
+* **.variancePerFea()**: returns for every (scaled) feature the variance of its values.
+* **.filterOnVariance(threshold)**: filters the features based on their variance given the specified threshold. The result is another **CaseFeaturesOutput** object.
+
 ### Object Based Feature Extraction on Object Centric Event Logs
 
 The conversion of an OCEL to a matrix of numerical features is essential for machine learning purposes. Here, we describe an object-based feature extraction.
