@@ -324,6 +324,24 @@ class GeneralLogStatistics {
 		}
 		return occurrences;
 	}
+	
+	static projectOnAttributeValues(eventLog, attributeKey="concept:name") {
+		let ret = [];
+		for (let trace of eventLog.traces) {
+			let arr = [];
+			for (let eve of trace.events) {
+				let val = eve.attributes[attributeKey];
+				if (val != null) {
+					arr.push(val.value);
+				}
+				else {
+					arr.push(null);
+				}
+			}
+			ret.push(arr);
+		}
+		return ret;
+	}
 }
 
 try {
