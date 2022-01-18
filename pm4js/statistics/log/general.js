@@ -206,6 +206,35 @@ class GeneralLogStatistics {
 		}
 		return {"resActPatt": resActPatt, "activities": activities};
 	}
+	
+	static subcontracting(eventLog, resourceKey="org:resource") {
+		let subc = {};
+		for (let trace of eventLog.traces) {
+			let i = 0;
+			while (i < trace.events.length - 2) {
+				let ri = trace.events[i].attributes[resourceKey];
+				let ri1 = trace.events[i+1].attributes[resourceKey];
+				let ri2 = trace.events[i+2].attributes[resourceKey];
+				if (ri != null && ri1 != null && ri2 != null) {
+					ri = ri.value;
+					ri1 = ri1.value;
+					ri2 = ri2.value;
+					if (ri != ri1 && ri == ri2) {
+						// subcontracting happens
+						if (!(ri in subc)) {
+							subc[ri] = {};
+						}
+						if (!(ri1 in subc[ri])) {
+							subc[ri][ri1] = [];
+						}
+						subc[ri][ri1].push([trace, i, i+2]);
+					}
+				}
+				i++;
+			}
+		}
+		return subc;
+	}
 }
 
 try {
