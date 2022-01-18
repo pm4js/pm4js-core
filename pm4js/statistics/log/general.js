@@ -184,9 +184,9 @@ class GeneralLogStatistics {
 	}
 	
 	static resourceActivityPattern(eventLog, activityKey="concept:name", resourceKey="org:resource") {
-		let resActPatt = {};
 		let activities = Object.keys(GeneralLogStatistics.getAttributeValues(eventLog, activityKey));
 		let resources = Object.keys(GeneralLogStatistics.getAttributeValues(eventLog, resourceKey));
+		let resActPatt = {};
 		for (let res of resources) {
 			resActPatt[res] = [];
 			for (let act of activities) {
@@ -205,6 +205,30 @@ class GeneralLogStatistics {
 			}
 		}
 		return {"resActPatt": resActPatt, "activities": activities};
+	}
+	
+	static activityResourcePattern(eventLog, activityKey="concept:name", resourceKey="org:resource") {
+		let activities = Object.keys(GeneralLogStatistics.getAttributeValues(eventLog, activityKey));
+		let resources = Object.keys(GeneralLogStatistics.getAttributeValues(eventLog, resourceKey));
+		let actResPatt = {};
+		for (let act of activities) {
+			actResPatt[act] = [];
+			for (let res of resources) {
+				actResPatt[act].push(0);
+			}
+		}
+		for (let trace of eventLog.traces) {
+			for (let eve of trace.events) {
+				let act = eve.attributes[activityKey];
+				let res = eve.attributes[resourceKey];
+				if (act != null && res != null) {
+					act = act.value;
+					res = res.value;
+					actResPatt[act][resources.indexOf(res)] += 1;
+				}
+			}
+		}
+		return {"actResPatt": actResPatt, "resources": resources}
 	}
 	
 	static subcontracting(eventLog, resourceKey="org:resource") {
