@@ -98,7 +98,7 @@ class CaseFeaturesOutput {
 }
 
 class CaseFeatures {
-	static apply(eventLog, activityKey="concept:name", caseIdKey="concept:name", evStrAttr=null, evNumAttr=null, trStrAttr=null, trNumAttr=null, evSuccStrAttr=null, timestampKey="time:timestamp", includeWorkInProgress=CaseFeatures.INCLUDE_WIP) {
+	static apply(eventLog, activityKey="concept:name", caseIdKey="concept:name", evStrAttr=null, evNumAttr=null, trStrAttr=null, trNumAttr=null, evSuccStrAttr=null, timestampKey="time:timestamp", resourceKey="org:resource", includeWorkInProgress=CaseFeatures.INCLUDE_WIP, includeResourceWorkload=CaseFeatures.INCLUDE_RESOURCE_WORKLOAD) {
 		let vect = null;
 		if (evStrAttr == null || evNumAttr == null || trStrAttr == null || trNumAttr == null || evSuccStrAttr == null) {
 			vect = CaseFeatures.automaticFeatureSelection(eventLog, activityKey);
@@ -222,7 +222,15 @@ class CaseFeatures {
 			}
 			features = [...features, ...wip[1]];
 		}
-		
+		if (includeResourceWorkload) {
+			let resWorkload = CaseFeatures.resourceWorkload(eventLog, timestampKey, resourceKey);
+			i = 0;
+			while (i < data.length) {
+				data[i] = [...data[i], ...resWorkload[0][i]];
+				i++;
+			}
+			features = [...features, ...resWorkload[1]];
+		}
 		return new CaseFeaturesOutput(data, features);
 	}
 	
@@ -511,9 +519,49 @@ class CaseFeatures {
 		}
 		return [data, features];
 	}
+	
+	static resourceWorkload(log, timestampKey="time:timestamp", resourceKey="org:resource") {
+		let tree = IntervalTreeBuilder.apply(log, timestampKey);
+		let resources = Object.keys(GeneralLogStatistics.getAttributeValues(log, resourceKey));
+		let features = [];
+		let data = [];
+		for (let res of resources) {
+			features.push("@@res_work_"+res);
+		}
+		let i = 0;
+		while (i < log.traces.length) {
+			let inte = {};
+			if (log.traces[i].events.length > 0) {
+				let st = log.traces[i].events[0].attributes[timestampKey].value / 1000.0;
+				let et = log.traces[i].events[log.traces[i].events.length - 1].attributes[timestampKey].value / 1000.0;
+				let intersectionAfterBefore = IntervalTreeAlgorithms.queryInterval(tree, st, et);
+				for (let el of intersectionAfterBefore) {
+					let eve = el.value[0].events[el.value[1]];
+					let res = eve.attributes[resourceKey].value;
+					if (!(res in inte)) {
+						inte[res] = 0;
+					}
+					inte[res] += 1;
+				}
+			}
+			let arr = [];
+			for (let res of resources) {
+				if (res in inte) {
+					arr.push(inte[res]);
+				}
+				else {
+					arr.push(0);
+				}
+			}
+			data.push(arr);
+			i++;
+		}
+		return [data, features];
+	}
 }
 
 CaseFeatures.INCLUDE_WIP = false;
+CaseFeatures.INCLUDE_RESOURCE_WORKLOAD = false;
 try {
 	require('../../pm4js.js');
 	require('../discovery/dfg/algorithm.js');
