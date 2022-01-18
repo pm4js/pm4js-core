@@ -88,6 +88,9 @@ The library currently offers the following set of features:
 		* [Object Based Feature Extraction on Object Centric Event Logs](./DOCS.md#object-based-feature-extraction-on-object-centric-event-logs)
 		* [Event Based Feature Extraction on Object Centric Event Logs](./DOCS.md#event-based-feature-extraction-on-object-centric-event-logs)
 	* [Interval Analysis](./DOCS.md#interval-analysis)
+	* Network Analysis
+		* [Link Analysis on Event Logs](./DOCS.md#link-analysis-on-event-logs)
+		* [Network Analysis Algorithm](./DOCS.md#network-analysis-algorithm)
 * Statistics
 	* Log
 		* [General Statistics](./DOCS.md#log---general-statistics)

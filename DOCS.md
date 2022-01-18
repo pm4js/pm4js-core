@@ -70,7 +70,7 @@
 	* [Interval Analysis](#interval-analysis)
 	* Network Analysis
 		* [Link Analysis on Event Logs](#link-analysis-on-event-logs)
-		* [Network Analysis Algorithm](#network-analysis-algorithm)		
+		* [Network Analysis Algorithm](#network-analysis-algorithm)
 * Statistics
 	* Log
 		* [General Statistics](#log---general-statistics)
