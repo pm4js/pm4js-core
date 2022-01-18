@@ -794,6 +794,8 @@ specified in **timestampKey**.
 falls in the specified range. Setting positive to false, it keeps the cases having no event for which the value for the attribute falls in the specified range.
 * **LogGeneralFiltering.filterEventsHavingEventAttributeValues(log, valuesArray, $positive$, $attributeKey$)**: filters the events (trimming the cases) having the specified value for the attribute.
 Setting positive to false, it keeps the events for which the value for the attribute do not fall in the specified range.
+* **LogGeneralFiltering.filterRework(log, activity, minOccurrences, $activityKey$)**: filters the cases of the log where the given activity appears at least for the specified number of occurrences.
+* **LogGeneralFiltering.filterBetween(log, activity1, activity2, $activityKey$)**: gets all the sub-cases of the original log which starts in **activity1** and ends in **activity2**.
 
 The following logical-temporal filters are also implemented:
 * **LogGeneralFiltering.fourEyesPrinciple(log, activity1, activity2, $positive$)**: if positive=false, filters the cases of the event log which violate the four eyes principle (activity1 and activity2 are done by the same resource); if positive=true, filters the cases of the event log which satisfy the four eyes principle.
