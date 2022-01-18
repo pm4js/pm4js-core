@@ -182,6 +182,30 @@ class GeneralLogStatistics {
 		}
 		return sojTime;
 	}
+	
+	static resourceActivityPattern(eventLog, activityKey="concept:name", resourceKey="org:resource") {
+		let resActPatt = {};
+		let activities = Object.keys(GeneralLogStatistics.getAttributeValues(eventLog, activityKey));
+		let resources = Object.keys(GeneralLogStatistics.getAttributeValues(eventLog, resourceKey));
+		for (let res of resources) {
+			resActPatt[res] = [];
+			for (let act of activities) {
+				resActPatt[res].push(0);
+			}
+		}
+		for (let trace of eventLog.traces) {
+			for (let eve of trace.events) {
+				let act = eve.attributes[activityKey];
+				let res = eve.attributes[resourceKey];
+				if (act != null && res != null) {
+					act = act.value;
+					res = res.value;
+					resActPatt[res][activities.indexOf(act)] += 1;
+				}
+			}
+		}
+		return {"resActPatt": resActPatt, "activities": activities};
+	}
 }
 
 try {
