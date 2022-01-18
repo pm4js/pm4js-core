@@ -125,6 +125,36 @@ class LogGeneralFiltering {
 		}
 		return filteredLog;
 	}
+	
+	static filterBetween(log, activity1, activity2, activityKey="concept:name") {
+		let filteredLog = new EventLog();
+		for (let trace of log.traces) {
+			let a1Idx = -1;
+			let i = 0;
+			while (i < trace.events.length) {
+				let eve = trace.events[i];
+				let act = eve.attributes[activityKey];
+				if (act != null) {
+					act = act.value;
+					if (act == activity1) {
+						a1Idx = i;
+					}
+					else if (act == activity2 && a1Idx > -1) {
+						let newTrace = new Trace();
+						let j = a1Idx;
+						while (j <= i) {
+							newTrace.events.push(trace.events[j]);
+							j++;
+						}
+						filteredLog.traces.push(newTrace);
+						a1Idx = -1;
+					}
+				}
+				i++;
+			}
+		}
+		return filteredLog;
+	}
 }
 
 try {
