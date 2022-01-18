@@ -68,6 +68,8 @@
 		* [Object Based Feature Extraction on Object Centric Event Logs](#object-based-feature-extraction-on-object-centric-event-logs)
 		* [Event Based Feature Extraction on Object Centric Event Logs](#event-based-feature-extraction-on-object-centric-event-logs)
 	* [Interval Analysis](#interval-analysis)
+	* Network Analysis
+		* [Link Analysis on Event Logs](#link-analysis-event-logs)
 * Statistics
 	* Log
 		* [General Statistics](#log---general-statistics)
@@ -951,6 +953,57 @@ After the calculation of the interval tree, several algorithms can be applied:
 * **IntervalTreeAlgorithms.sourceActivityWorkload(tree, pointOfTime)**: returns a dictionary with the number of events exiting an activity (and waiting to reach another act.) at a given point in time.
 
 The information of the interval tree can be used, for example, to populate the token-flow in a process map.
+
+## Network Analysis
+
+### Link Analysis on Event Logs
+
+The link analysis connects events in a stream based based on the equality of a couple of attributes.
+In particular, an OUT-attribute of the source event should be equal to the IN-attribute of the target event.
+To perform a link analysis, the following command can be used after converting the event log to a stream:
+
+**let initialLinks = LogLinksAnalysis.linkAnalysisAttributeOutIn(stream, OUTAttribute, INAttribute);**
+**let finalLinks = LogLinksAnalysis.linksToFinalForm(stream, initialLinks);**
+
+This links all the couples for which the OUT-attribute of the source is identical to the IN-attribute of the target.
+If the couples should be considered according to the timestamp (the timestamp of the second event of the couple should be greater than the timestmap of the first event of the couple),
+the following additional instruction can be provided:
+
+**let initialLinks = LogLinksAnalysis.linkAnalysisAttributeOutIn(stream, OUTAttribute, INAttribute);**
+**let filteredTimestampLinks = LogLinksAnalysis.filterLinksByTimestamp(stream, initialLinks);**
+**let finalLinks = LogLinksAnalysis.linksToFinalForm(stream, filteredTimestampLinks);**
+
+If only the first occurrence of the given link should be kept (e.g. considering the directly-follows instead of the eventually-follows relationship), the following command is useful to keep only the first link:
+
+**let initialLinks = LogLinksAnalysis.linkAnalysisAttributeOutIn(stream, OUTAttribute, INAttribute);**
+**let filteredTimestampLinks = LogLinksAnalysis.filterLinksByTimestamp(stream, initialLinks);**
+**let filteredFirstLink = LogLinksAnalysis.filterFirstLink(stream, filteredTimestampLinks);**
+**let finalLinks = LogLinksAnalysis.linksToFinalForm(stream, filteredFirstLink);**
+
+With the last chain of commands, the initial link analysis is filtered first by the timestamp of the events of the couples, then keeping the first outgoing link,
+and then converting to the final form in which the links are expressed.
+The final form is just an array of couples of events (class **Event**) which are put in relationship by the link analysis.
+
+## Network Analysis
+
+The network analysis takes as input the output of the link analysis (e.g. an array of couples of events), a dimension/attribute on top of which the source events are aggregated,
+a dimension/attribute on top of which the target events are aggregated,
+a dimension/attribute on top of which the entire couple is aggregated on an edge
+(can be calculated on top of the source / target event).
+
+It can be applied by doing:
+
+**let networkAnalysis = NetworkAnalysis.apply(finalLinks, sourceNodeAgg, targetNodeAgg, edgeAgg, edgeAggOnSource);**
+
+where **edgeAggOnSource** is a boolean value that establish where **edgeAgg** is applied on the source / target event of the couple (true=source, false=target).
+
+The result is an object of type **NetworkAnalysisResult**. The properties of this object are two:
+* **nodes**: the nodes of the multigraph (aggregation of the source/target events).
+* **multiEdges**: the edges of the multigraph (calculated as aggregations on the couples).
+
+In particular, since a multigraph is considered, different edges between the nodes can be included (with a different label).
+A node is associated to the following properties: **OUT** = out-degree of the node; **IN** = in-degree of the node.
+A multiedge is associated to the following properties: **count** = number of occurrences of the edge; **timeDiff** = collection (as array) of the times of the realizations of the edge.
 
 # Statistics
 
