@@ -69,7 +69,8 @@
 		* [Event Based Feature Extraction on Object Centric Event Logs](#event-based-feature-extraction-on-object-centric-event-logs)
 	* [Interval Analysis](#interval-analysis)
 	* Network Analysis
-		* [Link Analysis on Event Logs](#link-analysis-event-logs)
+		* [Link Analysis on Event Logs](#link-analysis-on-event-logs)
+		* [Network Analysis Algorithm](#network-analysis-algorithm)		
 * Statistics
 	* Log
 		* [General Statistics](#log---general-statistics)
@@ -984,7 +985,7 @@ With the last chain of commands, the initial link analysis is filtered first by 
 and then converting to the final form in which the links are expressed.
 The final form is just an array of couples of events (class **Event**) which are put in relationship by the link analysis.
 
-## Network Analysis
+### Network Analysis Algorithm
 
 The network analysis takes as input the output of the link analysis (e.g. an array of couples of events), a dimension/attribute on top of which the source events are aggregated,
 a dimension/attribute on top of which the target events are aggregated,
