@@ -294,6 +294,36 @@ class GeneralLogStatistics {
 		}
 		return wt;
 	}
+	
+	static activitiesOccurrencesPerCase(eventLog, activityKey="concept:name") {
+		let activities = Object.keys(GeneralLogStatistics.getAttributeValues(eventLog, activityKey));
+		let occurrences = {};
+		for (let act of activities) {
+			occurrences[act] = [];
+		}
+		for (let trace of eventLog.traces) {
+			let occ = {};
+			for (let eve of trace.events) {
+				let activity = eve.attributes[activityKey];
+				if (activity != null) {
+					activity = activity.value;
+					if (!(activity in occ)) {
+						occ[activity] = 0;
+					}
+					occ[activity] += 1;
+				}
+			}
+			for (let act of activities) {
+				if (act in occ) {
+					occurrences[act].push(occ[act]);
+				}
+				else {
+					occurrences[act].push(0);
+				}
+			}
+		}
+		return occurrences;
+	}
 }
 
 try {
