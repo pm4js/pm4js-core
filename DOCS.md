@@ -952,6 +952,12 @@ PM4JS offers some general log [statistics](./pm4js/statistics/log/general.js). T
 * Retrieval of the typed dictionary of attributes at the trace level starting from an event log: **GeneralLogStatistics.getTraceAttributesWithType(eventLog)**
 * Retrieval of the average sojourn time for each activity of the event log: **GeneralLogStatistics.getAverageSojournTime(eventLog, "concept:name", "time:timestamp", "time:timestamp")** (the arguments are the event log, the activity key, the timestamp key, the start timestamp key).
 * Retrieval of the number of events the log: **GeneralLogStatistics.numEvents(eventLog)**.
+* Retrieval for each resource of his/her activity pattern (dictionary of activities with occurrences): **GeneralLogStatistics.resourceActivityPattern(eventLog)**. As optional parameters, the activity and resource attributes can be provided.
+* Retrieval for each activity of its resource pattern (dictionary of resources with occurrences): **GeneralLogStatistics.activityResourcePattern(eventLog)**. As optional parameters, the activity and resource attributes can be provided.
+* Retrieval of the S.N.A. subcontracting: **GeneralLogStatistics.subcontracting(eventLog)**. As optional parameter, the resource attribute can be provided.
+* Retrieval of the S.N.A. working together: **GeneralLogStatistics.workingTogether(eventLog)**. As optional parameter, the resource attribute can be provided.
+* Retrieval for every activities, of its number of occurrences in a case: **GeneralLogStatistics.activitiesOccurrencesPerCase(eventLog)**. As optional parameter, the activity attribute can be provided.
+* Projection of the events of the traces into a given attribute: **GeneralLogStatistics.projectOnAttributeValues(eventLog, attributeKey)**. If an event has not a valid value for the given attribute, a **null** is returned as output.
 
 # Support for Celonis
 
