@@ -104,6 +104,27 @@ class LogGeneralFiltering {
 		}
 		return filteredLog;
 	}
+	
+	static filterRework(log, activity, minOccurrences, activityKey="concept:name") {
+		let filteredLog = new EventLog();
+		for (let trace of log.traces) {
+			let actOcc = {};
+			for (let eve of trace.events) {
+				let act = eve.attributes[activityKey];
+				if (act != null) {
+					act = act.value;
+					if (!(act in actOcc)) {
+						actOcc[act] = 0;
+					}
+					actOcc[act] += 1;
+				}
+			}
+			if (activity in actOcc && actOcc[activity] >= minOccurrences) {
+				filteredLog.traces.push(trace);
+			}
+		}
+		return filteredLog;
+	}
 }
 
 try {
