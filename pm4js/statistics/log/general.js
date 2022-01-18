@@ -235,6 +235,41 @@ class GeneralLogStatistics {
 		}
 		return subc;
 	}
+	
+	static workingTogether(eventLog, resourceKey="org:resource") {
+		let wt = {};
+		for (let trace of eventLog.traces) {
+			let originators = {};
+			for (let eve of trace.events) {
+				let res = eve.attributes[resourceKey];
+				if (res != null) {
+					res = res.value;
+					originators[res] = 0;
+				}
+			}
+			for (let res1 in originators) {
+				for (let res2 in originators) {
+					if (res1 != res2) {
+						if (!(res1 in wt)) {
+							wt[res1] = {};
+						}
+						if (!(res2 in wt)) {
+							wt[res2] = {};
+						}
+						if (!(res2 in wt[res1])) {
+							wt[res1][res2] = 0;
+						}
+						if (!(res1 in wt[res2])) {
+							wt[res2][res1] = 0;
+						}
+						wt[res1][res2] += 1;
+						wt[res2][res1] += 1;
+					}
+				}
+			}
+		}
+		return wt;
+	}
 }
 
 try {
