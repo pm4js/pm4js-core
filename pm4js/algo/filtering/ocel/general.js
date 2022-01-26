@@ -1,4 +1,66 @@
 class OcelGeneralFiltering {
+	static filterRelatedEvents(ocel, relObj) {
+		let filteredOcel = {};
+		filteredOcel["ocel:global-event"] = ocel["ocel:global-event"];
+		filteredOcel["ocel:global-object"] = ocel["ocel:global-object"];
+		filteredOcel["ocel:global-log"] = {};
+		filteredOcel["ocel:global-log"]["ocel:attribute-names"] = ocel["ocel:global-log"]["ocel:attribute-names"];
+		filteredOcel["ocel:global-log"]["ocel:object-types"] = ocel["ocel:global-log"]["ocel:object-types"];
+		filteredOcel["ocel:objects"] = {};
+		filteredOcel["ocel:events"] = {};
+		for (let eveId in ocel["ocel:events"]) {
+			let eve = ocel["ocel:events"][eveId];
+			let inte = [];
+			for (let objId of eve["ocel:omap"]) {
+				if (relObjs.includes(objId)) {
+					inte.push(objId);
+				}
+			}
+			if (inte.length > 0) {
+				for (let objId of eve["ocel:omap"]) {
+					if (!(objId in filteredOcel["ocel:objects"])) {
+						filteredOcel["ocel:objects"][objId] = ocel["ocel:objects"][objId];
+					}
+				}
+				filteredOcel["ocel:events"][eveId] = eve;
+			}
+		}
+		return filteredOcel;
+	}
+	
+	static filterNonRelatedEvents(ocel, relObj) {
+		let filteredOcel = {};
+		filteredOcel["ocel:global-event"] = ocel["ocel:global-event"];
+		filteredOcel["ocel:global-object"] = ocel["ocel:global-object"];
+		filteredOcel["ocel:global-log"] = {};
+		filteredOcel["ocel:global-log"]["ocel:attribute-names"] = ocel["ocel:global-log"]["ocel:attribute-names"];
+		filteredOcel["ocel:global-log"]["ocel:object-types"] = ocel["ocel:global-log"]["ocel:object-types"];
+		filteredOcel["ocel:objects"] = {};
+		filteredOcel["ocel:events"] = {};
+		for (let eveId in ocel["ocel:events"]) {
+			let eve = ocel["ocel:events"][eveId];
+			let inte = [];
+			let inte2 = [];
+			for (let objId of eve["ocel:omap"]) {
+				if (positive.includes(objId)) {
+					inte.push(objId);
+				}
+				if (negative.includes(objId)) {
+					inte2.push(objId);
+				}
+			}
+			if (inte.length > 0 && inte2.length == 0) {
+				for (let objId of eve["ocel:omap"]) {
+					if (!(objId in filteredOcel["ocel:objects"])) {
+						filteredOcel["ocel:objects"][objId] = ocel["ocel:objects"][objId];
+					}
+				}
+				filteredOcel["ocel:events"][eveId] = eve;
+			}
+		}
+		return filteredOcel;
+	}
+	
 	static filterObjectTypes(ocel, objTypes) {
 		let filteredOcel = {};
 		filteredOcel["ocel:global-event"] = ocel["ocel:global-event"];
