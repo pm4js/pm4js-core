@@ -247,6 +247,37 @@ class OcelGeneralFiltering {
 		
 		return filteredOcel;
 	}
+	
+	static filterConnComp(ocel, connComp, selectedConnCompIdx) {
+		let cc = connComp[selectedConnCompIdx];
+		
+		let filteredOcel = {};
+		filteredOcel["ocel:global-event"] = ocel["ocel:global-event"];
+		filteredOcel["ocel:global-object"] = ocel["ocel:global-object"];
+		filteredOcel["ocel:global-log"] = {};
+		filteredOcel["ocel:global-log"]["ocel:attribute-names"] = ocel["ocel:global-log"]["ocel:attribute-names"];
+		filteredOcel["ocel:global-log"]["ocel:object-types"] = ocel["ocel:global-log"]["ocel:object-types"];
+		filteredOcel["ocel:objects"] = {};
+		filteredOcel["ocel:events"] = {};
+		
+		for (let evId in ocel["ocel:events"]) {
+			if (cc.includes(evId)) {
+				let eve = ocel["ocel:events"][evId];
+				filteredOcel["ocel:events"][evId] = eve;
+				for (let objId of eve["ocel:omap"]) {
+					filteredOcel["ocel:objects"][objId] = ocel["ocel:objects"][objId];
+				}
+			}
+		}
+		
+		return filteredOcel;
+	}
+	
+	static sampleEventLog(ocel, connComp) {
+		let keys = Object.keys(connComp);
+		let selectedKey = keys[ keys.length * Math.random() << 0];
+		return OcelGeneralFiltering.filterConnComp(ocel, connComp, selectedKey);
+	}
 }
 
 try {

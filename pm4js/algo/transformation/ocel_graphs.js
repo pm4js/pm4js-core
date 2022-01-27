@@ -1,4 +1,42 @@
 class OcelGraphs {
+	static getObjectsLifecycle(ocel) {
+		let lif = {};
+		let objects = ocel["ocel:objects"];
+		for (let objId in objects) {
+			lif[objId] = [];
+		}
+		let events = ocel["ocel:events"];
+		for (let evId in events) {
+			let eve = events[evId];
+			for (let objId of eve["ocel:omap"]) {
+				lif[objId].push(evId);
+			}
+		}
+		return lif;
+	}
+	
+	static eventsRelationGraph(ocel) {
+		let lif = OcelGraphs.getObjectsLifecycle(ocel);
+		let eveRelGraph = {};
+		for (let evId in ocel["ocel:events"]) {
+			eveRelGraph[evId] = {};
+		}
+		for (let objId in lif) {
+			let objLif = lif[objId];
+			let i = 0;
+			while (i < objLif.length - 1) {
+				let j = i + 1;
+				while (j < objLif.length) {
+					eveRelGraph[objLif[i]][objLif[j]] = 0;
+					eveRelGraph[objLif[j]][objLif[i]] = 0;
+					j++;
+				}
+				i++;
+			}
+		}
+		return eveRelGraph;
+	}
+	
 	static objectInteractionGraph(ocel) {
 		let ret = {};
 		let events = ocel["ocel:events"];
