@@ -59,7 +59,7 @@ class GeneralOcelStatistics {
 		return dct;
 	}
 	
-	static objectsPerTypePerActivity(ocel) {
+	static objectsPerTypePerActivity(ocel, retSum=false) {
 		// convergence problem
 		let objects = ocel["ocel:objects"];
 		let objType = {};
@@ -108,7 +108,12 @@ class GeneralOcelStatistics {
 					count += cc;
 					sum += nc * cc;
 				}
-				dct[evAct][otype] = sum / count;
+				if (retSum) {
+					dct[evAct][otype] = sum;
+				}
+				else {
+					dct[evAct][otype] = sum / count;
+				}
 			}
 		}
 		return dct;
@@ -130,7 +135,7 @@ class GeneralOcelStatistics {
 		return lif;
 	}
 	
-	static eventsPerTypePerActivity(ocel) {
+	static eventsPerTypePerActivity(ocel, retSum=false) {
 		let objects = ocel["ocel:objects"];
 		let otObjects = {};
 		let objType = {};
@@ -185,7 +190,12 @@ class GeneralOcelStatistics {
 					count += cc;
 					sum += nc * cc;
 				}
-				dct[ot][act] = sum / count;
+				if (retSum) {
+					dct[ot][act] = sum;
+				}
+				else {
+					dct[ot][act] = sum / count;
+				}
 			}
 		}
 		return dct;
