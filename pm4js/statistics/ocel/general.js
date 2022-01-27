@@ -200,6 +200,51 @@ class GeneralOcelStatistics {
 		}
 		return dct;
 	}
+	
+	static getEssentialEventsWithCategorization(ocel) {
+		let essEvents = {};
+		let ocelEvents = Object.keys(ocel["ocel:events"]);
+		let ocelEventsReversed = Object.keys(ocel["ocel:events"]);
+		ocelEventsReversed.reverse();
+		let lastEventPerLifecycle = {};
+		for (let evId of ocelEventsReversed) {
+			let eve = ocel["ocel:events"][evId];
+			for (let objId of eve["ocel:omap"]) {
+				if (!(objId in lastEventPerLifecycle)) {
+					lastEventPerLifecycle[objId] = evId;
+				}
+			}
+		}
+		let seenObjects = {};
+		let relations = {};
+		for (let evId of ocelEvents) {
+			let eve = ocel["ocel:events"][evId];
+			let isFirstLifecycle = 0;
+			let isLastLifecycle = 0;
+			let newRelationsOccured = 0;
+			for (let objId of eve["ocel:omap"]) {
+				if (!(objId in seenObjects)) {
+					seenObjects[objId] = evId;
+					isFirstLifecycle += 1;
+				}
+				if (lastEventPerLifecycle[objId] == evId) {
+					isLastLifecycle += 1;
+				}
+				for (let objId2 of eve["ocel:omap"]) {
+					if (objId < objId2) {
+						if (!([objId, objId2] in relations)) {
+							relations[[objId, objId2]] = 0;
+							newRelationsOccured += 1;
+						}
+					}
+				}
+			}
+			if (isFirstLifecycle > 0 || isLastLifecycle > 0 || newRelationsOccured > 0) {
+				essEvents[evId] = {"isFirstLifecycle": isFirstLifecycle, "isLastLifecycle": isLastLifecycle, "newRelationsOccured": newRelationsOccured};
+			}
+		}
+		return essEvents;
+	}
 }
 
 try {
