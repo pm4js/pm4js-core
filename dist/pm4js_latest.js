@@ -61,7 +61,7 @@ class Pm4JS {
 	}
 }
 
-Pm4JS.VERSION = "0.0.24";
+Pm4JS.VERSION = "0.0.25";
 Pm4JS.registrationEnabled = false;
 Pm4JS.objects = [];
 Pm4JS.algorithms = [];
@@ -18161,6 +18161,44 @@ catch (err) {
 
 
 class OcelGraphs {
+	static getObjectsLifecycle(ocel) {
+		let lif = {};
+		let objects = ocel["ocel:objects"];
+		for (let objId in objects) {
+			lif[objId] = [];
+		}
+		let events = ocel["ocel:events"];
+		for (let evId in events) {
+			let eve = events[evId];
+			for (let objId of eve["ocel:omap"]) {
+				lif[objId].push(evId);
+			}
+		}
+		return lif;
+	}
+	
+	static eventsRelationGraph(ocel) {
+		let lif = OcelGraphs.getObjectsLifecycle(ocel);
+		let eveRelGraph = {};
+		for (let evId in ocel["ocel:events"]) {
+			eveRelGraph[evId] = {};
+		}
+		for (let objId in lif) {
+			let objLif = lif[objId];
+			let i = 0;
+			while (i < objLif.length - 1) {
+				let j = i + 1;
+				while (j < objLif.length) {
+					eveRelGraph[objLif[i]][objLif[j]] = 0;
+					eveRelGraph[objLif[j]][objLif[i]] = 0;
+					j++;
+				}
+				i++;
+			}
+		}
+		return eveRelGraph;
+	}
+	
 	static objectInteractionGraph(ocel) {
 		let ret = {};
 		let events = ocel["ocel:events"];
@@ -18405,6 +18443,53 @@ try {
 	require('../../pm4js.js');
 	module.exports = {OcelGraphs: OcelGraphs};
 	global.OcelGraphs = OcelGraphs;
+}
+catch (err) {
+	// not in node
+	//console.log(err);
+}
+
+class OcelConnectedComponents {
+	static findConnCompEvIds(ocel) {
+		let evRelGraph = OcelGraphs.eventsRelationGraph(ocel);
+		let connComp = {};
+		let count = 0;
+		for (let evId in ocel["ocel:events"]) {
+			connComp[evId] = count;
+			count++;
+		}
+		let cont = true;
+		while (cont) {
+			cont = false;
+			for (let evId in evRelGraph) {
+				for (let evId2 in evRelGraph[evId]) {
+					if (connComp[evId] != connComp[evId2]) {
+						let cc = Math.min(connComp[evId], connComp[evId2]);
+						connComp[evId] = cc;
+						connComp[evId2] = cc;
+						cont = true;
+					}
+				}
+			}
+		}
+		let connComp1 = {};
+		for (let evId in connComp) {
+			let cc = connComp[evId];
+			if (!(cc in connComp1)) {
+				connComp1[cc] = [];
+			}
+			connComp1[cc].push(evId);
+		}
+		return connComp1;
+	}
+	
+	
+}
+
+try {
+	require('../../pm4js.js');
+	module.exports = {OcelConnectedComponents: OcelConnectedComponents};
+	global.OcelConnectedComponents = OcelConnectedComponents;
 }
 catch (err) {
 	// not in node
@@ -19903,7 +19988,7 @@ class GeneralOcelStatistics {
 		return dct;
 	}
 	
-	static objectsPerTypePerActivity(ocel) {
+	static objectsPerTypePerActivity(ocel, retSum=false) {
 		// convergence problem
 		let objects = ocel["ocel:objects"];
 		let objType = {};
@@ -19952,7 +20037,12 @@ class GeneralOcelStatistics {
 					count += cc;
 					sum += nc * cc;
 				}
-				dct[evAct][otype] = sum / count;
+				if (retSum) {
+					dct[evAct][otype] = sum;
+				}
+				else {
+					dct[evAct][otype] = sum / count;
+				}
 			}
 		}
 		return dct;
@@ -19974,7 +20064,7 @@ class GeneralOcelStatistics {
 		return lif;
 	}
 	
-	static eventsPerTypePerActivity(ocel) {
+	static eventsPerTypePerActivity(ocel, retSum=false) {
 		let objects = ocel["ocel:objects"];
 		let otObjects = {};
 		let objType = {};
@@ -20029,10 +20119,60 @@ class GeneralOcelStatistics {
 					count += cc;
 					sum += nc * cc;
 				}
-				dct[ot][act] = sum / count;
+				if (retSum) {
+					dct[ot][act] = sum;
+				}
+				else {
+					dct[ot][act] = sum / count;
+				}
 			}
 		}
 		return dct;
+	}
+	
+	static getEssentialEventsWithCategorization(ocel) {
+		let essEvents = {};
+		let ocelEvents = Object.keys(ocel["ocel:events"]);
+		let ocelEventsReversed = Object.keys(ocel["ocel:events"]);
+		ocelEventsReversed.reverse();
+		let lastEventPerLifecycle = {};
+		for (let evId of ocelEventsReversed) {
+			let eve = ocel["ocel:events"][evId];
+			for (let objId of eve["ocel:omap"]) {
+				if (!(objId in lastEventPerLifecycle)) {
+					lastEventPerLifecycle[objId] = evId;
+				}
+			}
+		}
+		let seenObjects = {};
+		let relations = {};
+		for (let evId of ocelEvents) {
+			let eve = ocel["ocel:events"][evId];
+			let isFirstLifecycle = 0;
+			let isLastLifecycle = 0;
+			let newRelationsOccured = 0;
+			for (let objId of eve["ocel:omap"]) {
+				if (!(objId in seenObjects)) {
+					seenObjects[objId] = evId;
+					isFirstLifecycle += 1;
+				}
+				if (lastEventPerLifecycle[objId] == evId) {
+					isLastLifecycle += 1;
+				}
+				for (let objId2 of eve["ocel:omap"]) {
+					if (objId < objId2) {
+						if (!([objId, objId2] in relations)) {
+							relations[[objId, objId2]] = 0;
+							newRelationsOccured += 1;
+						}
+					}
+				}
+			}
+			if (isFirstLifecycle > 0 || isLastLifecycle > 0 || newRelationsOccured > 0) {
+				essEvents[evId] = {"isFirstLifecycle": isFirstLifecycle, "isLastLifecycle": isLastLifecycle, "newRelationsOccured": newRelationsOccured};
+			}
+		}
+		return essEvents;
 	}
 }
 
@@ -20321,5 +20461,329 @@ catch (err) {
 	//console.log(err);
 }
 
+
+
+class OcelGeneralFiltering {
+	static filterRelatedEvents(ocel, relObjs) {
+		let filteredOcel = {};
+		filteredOcel["ocel:global-event"] = ocel["ocel:global-event"];
+		filteredOcel["ocel:global-object"] = ocel["ocel:global-object"];
+		filteredOcel["ocel:global-log"] = {};
+		filteredOcel["ocel:global-log"]["ocel:attribute-names"] = ocel["ocel:global-log"]["ocel:attribute-names"];
+		filteredOcel["ocel:global-log"]["ocel:object-types"] = ocel["ocel:global-log"]["ocel:object-types"];
+		filteredOcel["ocel:objects"] = {};
+		filteredOcel["ocel:events"] = {};
+		for (let eveId in ocel["ocel:events"]) {
+			let eve = ocel["ocel:events"][eveId];
+			let inte = [];
+			for (let objId of eve["ocel:omap"]) {
+				if (relObjs.includes(objId)) {
+					inte.push(objId);
+				}
+			}
+			if (inte.length > 0) {
+				for (let objId of eve["ocel:omap"]) {
+					if (!(objId in filteredOcel["ocel:objects"])) {
+						filteredOcel["ocel:objects"][objId] = ocel["ocel:objects"][objId];
+					}
+				}
+				filteredOcel["ocel:events"][eveId] = eve;
+			}
+		}
+		return filteredOcel;
+	}
+	
+	static filterNonRelatedEvents(ocel, positive, negative) {
+		let filteredOcel = {};
+		filteredOcel["ocel:global-event"] = ocel["ocel:global-event"];
+		filteredOcel["ocel:global-object"] = ocel["ocel:global-object"];
+		filteredOcel["ocel:global-log"] = {};
+		filteredOcel["ocel:global-log"]["ocel:attribute-names"] = ocel["ocel:global-log"]["ocel:attribute-names"];
+		filteredOcel["ocel:global-log"]["ocel:object-types"] = ocel["ocel:global-log"]["ocel:object-types"];
+		filteredOcel["ocel:objects"] = {};
+		filteredOcel["ocel:events"] = {};
+		for (let eveId in ocel["ocel:events"]) {
+			let eve = ocel["ocel:events"][eveId];
+			let inte = [];
+			let inte2 = [];
+			for (let objId of eve["ocel:omap"]) {
+				if (positive.includes(objId)) {
+					inte.push(objId);
+				}
+				if (negative.includes(objId)) {
+					inte2.push(objId);
+				}
+			}
+			if (inte.length > 0 && inte2.length == 0) {
+				for (let objId of eve["ocel:omap"]) {
+					if (!(objId in filteredOcel["ocel:objects"])) {
+						filteredOcel["ocel:objects"][objId] = ocel["ocel:objects"][objId];
+					}
+				}
+				filteredOcel["ocel:events"][eveId] = eve;
+			}
+		}
+		return filteredOcel;
+	}
+	
+	static filterObjectTypes(ocel, objTypes) {
+		let filteredOcel = {};
+		filteredOcel["ocel:global-event"] = ocel["ocel:global-event"];
+		filteredOcel["ocel:global-object"] = ocel["ocel:global-object"];
+		filteredOcel["ocel:global-log"] = {};
+		filteredOcel["ocel:global-log"]["ocel:attribute-names"] = ocel["ocel:global-log"]["ocel:attribute-names"];
+		filteredOcel["ocel:global-log"]["ocel:object-types"] = objTypes;
+		filteredOcel["ocel:objects"] = {};
+		for (let objId in ocel["ocel:objects"]) {
+			let obj = ocel["ocel:objects"][objId];
+			if (objTypes.includes(obj["ocel:type"])) {
+				filteredOcel["ocel:objects"][objId] = obj;
+			}
+		}
+		filteredOcel["ocel:events"] = {};
+		for (let eveId in ocel["ocel:events"]) {
+			let eve = ocel["ocel:events"][eveId];
+			let relObj = [];
+			for (let objId of eve["ocel:omap"]) {
+				if (objId in filteredOcel["ocel:objects"]) {
+					relObj.push(objId);
+				}
+			}
+			if (relObj.length > 0) {
+				let newEve = {};
+				newEve["ocel:activity"] = eve["ocel:activity"];
+				newEve["ocel:timestamp"] = eve["ocel:timestamp"];
+				newEve["ocel:vmap"] = eve["ocel:vmap"];
+				newEve["ocel:omap"] = relObj;
+				filteredOcel["ocel:events"][eveId] = newEve;
+			}
+		}
+		return filteredOcel;
+	}
+	
+	static filterOtRateUniqueActivities(ocel, minRate) {
+		let lif = {};
+		let lifUnq = {};
+		let objects = ocel["ocel:objects"];
+		for (let objId in objects) {
+			lif[objId] = [];
+			lifUnq[objId] = {}
+		}
+		let events = ocel["ocel:events"];
+		for (let evId in events) {
+			let eve = events[evId];
+			for (let objId of eve["ocel:omap"]) {
+				lif[objId].push(eve["ocel:activity"]);
+				lifUnq[objId][eve["ocel:activity"]] = 0;
+			}
+		}
+		let objOt = {};
+		let objectTypes = {};
+		for (let objId in objects) {
+			let obj = objects[objId];
+			objOt[objId] = obj["ocel:type"];
+			objectTypes[obj["ocel:type"]] = 0;
+		}
+		objectTypes = Object.keys(objectTypes);
+		let otEvents = {};
+		let otUnqAct = {}
+		for (let objId in lif) {
+			let ot = objOt[objId];
+			if (!(ot in otEvents)) {
+				otEvents[ot] = 0;
+				otUnqAct[ot] = 0;
+			}
+			otEvents[ot] += lif[objId].length;
+			otUnqAct[ot] += Object.keys(lifUnq[objId]).length;
+		}
+		let includedTypes = [];
+		for (let ot of objectTypes) {
+			let rate = otUnqAct[ot] / otEvents[ot];
+			if (rate > minRate) {
+				includedTypes.push(ot);
+			}
+		}
+		return OcelGeneralFiltering.filterObjectTypes(ocel, includedTypes);
+	}
+	
+	static filterOtMinNumRelatedEvents(ocel, minCount) {
+		let relEveOt = GeneralOcelStatistics.eventsRelatedPerObjectTypeCount(ocel);
+		let retTypes = [];
+		for (let ot in relEveOt) {
+			if (relEveOt[ot] >= minCount) {
+				retTypes.push(ot);
+			}
+		}
+		return OcelGeneralFiltering.filterObjectTypes(ocel, retTypes);
+	}
+	
+	static filterOtMinNumRelatedObjects(ocel, minCount) {
+		let relObjOt = GeneralOcelStatistics.objectsPerTypeCount(ocel);
+		let retTypes = [];
+		for (let ot in relObjOt) {
+			if (relObjOt[ot] >= minCount) {
+				retTypes.push(ot);
+			}
+		}
+		return OcelGeneralFiltering.filterObjectTypes(ocel, retTypes);
+	}
+	
+	static filterMinOccActivities(ocel, minCount) {
+		let evPerActCount = GeneralOcelStatistics.eventsPerActivityCount(ocel);
+		let keepActivities = [];
+		for (let act in evPerActCount) {
+			if (evPerActCount[act] >= minCount) {
+				keepActivities.push(act);
+			}
+		}
+		let filteredOcel = {};
+		filteredOcel["ocel:global-event"] = ocel["ocel:global-event"];
+		filteredOcel["ocel:global-object"] = ocel["ocel:global-object"];
+		filteredOcel["ocel:global-log"] = {};
+		filteredOcel["ocel:global-log"]["ocel:attribute-names"] = ocel["ocel:global-log"]["ocel:attribute-names"];
+		filteredOcel["ocel:global-log"]["ocel:object-types"] = ocel["ocel:global-log"]["ocel:object-types"];
+		filteredOcel["ocel:objects"] = {};
+		filteredOcel["ocel:events"] = {};
+				
+		for (let evId in ocel["ocel:events"]) {
+			let eve = ocel["ocel:events"][evId];
+			if (keepActivities.includes(eve["ocel:activity"])) {
+				filteredOcel["ocel:events"][evId] = eve;
+				for (let objId of eve["ocel:omap"]) {
+					filteredOcel["ocel:objects"][objId] = ocel["ocel:objects"][objId];
+				}
+			}
+		}
+		
+		return filteredOcel;
+	}
+	
+	static filterEssentialEvents(ocel) {
+		let essentialEvents = GeneralOcelStatistics.getEssentialEventsWithCategorization(ocel);
+		let filteredOcel = {};
+		filteredOcel["ocel:global-event"] = ocel["ocel:global-event"];
+		filteredOcel["ocel:global-object"] = ocel["ocel:global-object"];
+		filteredOcel["ocel:global-log"] = {};
+		filteredOcel["ocel:global-log"]["ocel:attribute-names"] = ocel["ocel:global-log"]["ocel:attribute-names"];
+		filteredOcel["ocel:global-log"]["ocel:object-types"] = ocel["ocel:global-log"]["ocel:object-types"];
+		filteredOcel["ocel:objects"] = {};
+		filteredOcel["ocel:events"] = {};
+		
+		for (let evId in ocel["ocel:events"]) {
+			if (evId in essentialEvents) {
+				let eve = ocel["ocel:events"][evId];
+				filteredOcel["ocel:events"][evId] = eve;
+				for (let objId of eve["ocel:omap"]) {
+					filteredOcel["ocel:objects"][objId] = ocel["ocel:objects"][objId];
+				}
+			}
+		}
+		
+		return filteredOcel;
+	}
+	
+	static filterEssentialEventsOrMinActCount(ocel, minCount) {
+		let essentialEvents = GeneralOcelStatistics.getEssentialEventsWithCategorization(ocel);
+		let evPerActCount = GeneralOcelStatistics.eventsPerActivityCount(ocel);
+		let keepActivities = [];
+		for (let act in evPerActCount) {
+			if (evPerActCount[act] >= minCount) {
+				keepActivities.push(act);
+			}
+		}
+		let filteredOcel = {};
+		filteredOcel["ocel:global-event"] = ocel["ocel:global-event"];
+		filteredOcel["ocel:global-object"] = ocel["ocel:global-object"];
+		filteredOcel["ocel:global-log"] = {};
+		filteredOcel["ocel:global-log"]["ocel:attribute-names"] = ocel["ocel:global-log"]["ocel:attribute-names"];
+		filteredOcel["ocel:global-log"]["ocel:object-types"] = ocel["ocel:global-log"]["ocel:object-types"];
+		filteredOcel["ocel:objects"] = {};
+		filteredOcel["ocel:events"] = {};
+		
+		for (let evId in ocel["ocel:events"]) {
+			let eve = ocel["ocel:events"][evId];
+			if (keepActivities.includes(eve["ocel:activity"]) || evId in essentialEvents) {
+				filteredOcel["ocel:events"][evId] = eve;
+				for (let objId of eve["ocel:omap"]) {
+					filteredOcel["ocel:objects"][objId] = ocel["ocel:objects"][objId];
+				}
+			}
+		}
+		
+		return filteredOcel;
+	}
+	
+	static filterConnComp(ocel, connComp, selectedConnCompIdx) {
+		let cc = connComp[selectedConnCompIdx];
+		
+		let filteredOcel = {};
+		filteredOcel["ocel:global-event"] = ocel["ocel:global-event"];
+		filteredOcel["ocel:global-object"] = ocel["ocel:global-object"];
+		filteredOcel["ocel:global-log"] = {};
+		filteredOcel["ocel:global-log"]["ocel:attribute-names"] = ocel["ocel:global-log"]["ocel:attribute-names"];
+		filteredOcel["ocel:global-log"]["ocel:object-types"] = ocel["ocel:global-log"]["ocel:object-types"];
+		filteredOcel["ocel:objects"] = {};
+		filteredOcel["ocel:events"] = {};
+		
+		for (let evId in ocel["ocel:events"]) {
+			if (cc.includes(evId)) {
+				let eve = ocel["ocel:events"][evId];
+				filteredOcel["ocel:events"][evId] = eve;
+				for (let objId of eve["ocel:omap"]) {
+					filteredOcel["ocel:objects"][objId] = ocel["ocel:objects"][objId];
+				}
+			}
+		}
+		
+		return filteredOcel;
+	}
+	
+	static sampleEventLog(ocel, connComp) {
+		let keys = Object.keys(connComp);
+		let selectedKey = keys[ keys.length * Math.random() << 0];
+		return OcelGeneralFiltering.filterConnComp(ocel, connComp, selectedKey);
+	}
+	
+	static projectOnArrayObjects(ocel, robi) {
+		let filteredOcel = {};
+		filteredOcel["ocel:global-event"] = ocel["ocel:global-event"];
+		filteredOcel["ocel:global-object"] = ocel["ocel:global-object"];
+		filteredOcel["ocel:global-log"] = {};
+		filteredOcel["ocel:global-log"]["ocel:attribute-names"] = ocel["ocel:global-log"]["ocel:attribute-names"];
+		filteredOcel["ocel:global-log"]["ocel:object-types"] = ocel["ocel:global-log"]["ocel:object-types"];
+		filteredOcel["ocel:objects"] = {};
+		filteredOcel["ocel:events"] = {};
+		
+		for (let evId in ocel["ocel:events"]) {
+			let eve = ocel["ocel:events"][evId];
+			let roFound = false;
+			for (let objId of eve["ocel:omap"]) {
+				if (robi.includes(objId)) {
+					roFound = true;
+				}
+			}
+			if (roFound) {
+				filteredOcel["ocel:events"][evId] = {"ocel:activity": eve["ocel:activity"], "ocel:timestamp": eve["ocel:timestamp"], "ocel:vmap": eve["ocel:vmap"], "ocel:omap": []};
+				for (let objId of eve["ocel:omap"]) {
+					if (robi.includes(objId)) {
+						filteredOcel["ocel:events"][evId]["ocel:omap"].push(objId);
+						filteredOcel["ocel:objects"][objId] = ocel["ocel:objects"][objId];
+					}
+				}
+			}
+		}
+		
+		return filteredOcel;
+	}
+}
+
+try {
+	require('../../../pm4js.js');
+	module.exports = {OcelGeneralFiltering: OcelGeneralFiltering};
+	global.OcelGeneralFiltering = OcelGeneralFiltering;
+}
+catch (err) {
+	// not in Node
+}
 
 
