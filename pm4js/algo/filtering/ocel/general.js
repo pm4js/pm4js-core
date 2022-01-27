@@ -278,6 +278,38 @@ class OcelGeneralFiltering {
 		let selectedKey = keys[ keys.length * Math.random() << 0];
 		return OcelGeneralFiltering.filterConnComp(ocel, connComp, selectedKey);
 	}
+	
+	static projectOnArrayObjects(ocel, robi) {
+		let filteredOcel = {};
+		filteredOcel["ocel:global-event"] = ocel["ocel:global-event"];
+		filteredOcel["ocel:global-object"] = ocel["ocel:global-object"];
+		filteredOcel["ocel:global-log"] = {};
+		filteredOcel["ocel:global-log"]["ocel:attribute-names"] = ocel["ocel:global-log"]["ocel:attribute-names"];
+		filteredOcel["ocel:global-log"]["ocel:object-types"] = ocel["ocel:global-log"]["ocel:object-types"];
+		filteredOcel["ocel:objects"] = {};
+		filteredOcel["ocel:events"] = {};
+		
+		for (let evId in ocel["ocel:events"]) {
+			let eve = ocel["ocel:events"][evId];
+			let roFound = false;
+			for (let objId of eve["ocel:omap"]) {
+				if (robi.includes(objId)) {
+					roFound = true;
+				}
+			}
+			if (roFound) {
+				filteredOcel["ocel:events"][evId] = {"ocel:activity": eve["ocel:activity"], "ocel:timestamp": eve["ocel:timestamp"], "ocel:vmap": eve["ocel:vmap"], "ocel:omap": []};
+				for (let objId of eve["ocel:omap"]) {
+					if (robi.includes(objId)) {
+						filteredOcel["ocel:events"][evId]["ocel:omap"].push(objId);
+						filteredOcel["ocel:objects"][objId] = ocel["ocel:objects"][objId];
+					}
+				}
+			}
+		}
+		
+		return filteredOcel;
+	}
 }
 
 try {
