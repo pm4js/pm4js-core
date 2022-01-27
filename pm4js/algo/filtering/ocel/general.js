@@ -1,5 +1,5 @@
 class OcelGeneralFiltering {
-	static filterRelatedEvents(ocel, relObj) {
+	static filterRelatedEvents(ocel, relObjs) {
 		let filteredOcel = {};
 		filteredOcel["ocel:global-event"] = ocel["ocel:global-event"];
 		filteredOcel["ocel:global-object"] = ocel["ocel:global-object"];
@@ -28,7 +28,7 @@ class OcelGeneralFiltering {
 		return filteredOcel;
 	}
 	
-	static filterNonRelatedEvents(ocel, relObj) {
+	static filterNonRelatedEvents(ocel, positive, negative) {
 		let filteredOcel = {};
 		filteredOcel["ocel:global-event"] = ocel["ocel:global-event"];
 		filteredOcel["ocel:global-object"] = ocel["ocel:global-object"];
