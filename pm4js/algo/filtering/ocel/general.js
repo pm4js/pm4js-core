@@ -140,6 +140,29 @@ class OcelGeneralFiltering {
 		}
 		return OcelGeneralFiltering.filterObjectTypes(ocel, includedTypes);
 	}
+	
+	static filterOtMinNumRelatedEvents(ocel, minCount) {
+		let relEveOt = GeneralOcelStatistics.eventsRelatedPerObjectTypeCount(ocel);
+		let retTypes = [];
+		for (let ot in relEveOt) {
+			if (relEveOt[ot] >= minCount) {
+				retTypes.push(ot);
+			}
+		}
+		return OcelGeneralFiltering.filterObjectTypes(ocel, retTypes);
+	}
+	
+	static filterOtMinNumRelatedObjects(ocel, minCount) {
+		let relObjOt = GeneralOcelStatistics.objectsPerTypeCount(ocel);
+		console.log(relObjOt);
+		let retTypes = [];
+		for (let ot in relObjOt) {
+			if (relObjOt[ot] >= minCount) {
+				retTypes.push(ot);
+			}
+		}
+		return OcelGeneralFiltering.filterObjectTypes(ocel, retTypes);
+	}
 }
 
 try {
