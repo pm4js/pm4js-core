@@ -193,8 +193,8 @@ class LogGeneralFiltering {
 			}
 			let idx = activities.lastIndexOf(activity);
 			if (idx > -1) {
-				if (!(strict)) {
-					idx--;
+				if (strict) {
+					idx++;
 				}
 				let filteredTrace = new Trace();
 				let i = idx;
