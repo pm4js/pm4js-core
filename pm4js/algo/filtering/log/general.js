@@ -207,6 +207,44 @@ class LogGeneralFiltering {
 		}
 		return filteredLog;
 	}
+	
+	static filterFullTextEvents(log, attribute, searchString) {
+		let filteredLog = new EventLog();
+		for (let trace of log.traces) {
+			let filteredTrace = new Trace();
+			for (let eve of trace.events) {
+				if (attribute in eve.attributes) {
+					let value = eve.attributes[attribute].value;
+					if (value.indexOf(searchString) > -1) {
+						filteredTrace.events.push(eve);
+					}
+				}
+			}
+			if (filteredTrace.events.length > 0) {
+				filteredLog.traces.push(filteredTrace);
+			}
+		}
+		return filteredLog;
+	}
+	
+	static filterFullTextCases(log, attribute, searchString) {
+		let filteredLog = new EventLog();
+		for (let trace of log.traces) {
+			let toInclude = false;
+			for (let eve of trace.events) {
+				if (attribute in eve.attributes) {
+					let value = eve.attributes[attribute].value;
+					if (value.indexOf(searchString) > -1) {
+						toInclude = true;
+					}
+				}
+			}
+			if (toInclude) {
+				filteredLog.traces.push(trace);
+			}
+		}
+		return filteredLog;
+	}
 }
 
 try {
