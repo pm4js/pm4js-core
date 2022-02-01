@@ -155,6 +155,58 @@ class LogGeneralFiltering {
 		}
 		return filteredLog;
 	}
+	
+	static filterPrefixes(log, activity, strict=true, activityKey="concept:name") {
+		let filteredLog = new EventLog();
+		for (let trace of log.traces) {
+			let activities = [];
+			for (let eve of trace.events) {
+				if (activityKey in eve.attributes) {
+					activities.push(eve.attributes[activityKey].value);
+				}
+			}
+			let idx = activities.indexOf(activity);
+			if (idx > -1) {
+				if (strict) {
+					idx--;
+				}
+				let filteredTrace = new Trace();
+				let i = 0;
+				while (i <= idx) {
+					filteredTrace.events.push(trace.events[i]);
+					i++;
+				}
+				filteredLog.traces.push(filteredTrace);
+			}
+		}
+		return filteredLog;
+	}
+	
+	static filterSuffixes(log, activity, strict=true, activityKey="concept:name") {
+		let filteredLog = new EventLog();
+		for (let trace of log.traces) {
+			let activities = [];
+			for (let eve of trace.events) {
+				if (activityKey in eve.attributes) {
+					activities.push(eve.attributes[activityKey].value);
+				}
+			}
+			let idx = activities.lastIndexOf(activity);
+			if (idx > -1) {
+				if (!(strict)) {
+					idx--;
+				}
+				let filteredTrace = new Trace();
+				let i = idx;
+				while (i < trace.events.length) {
+					filteredTrace.events.push(trace.events[i]);
+					i++;
+				}
+				filteredLog.traces.push(filteredTrace);
+			}
+		}
+		return filteredLog;
+	}
 }
 
 try {
