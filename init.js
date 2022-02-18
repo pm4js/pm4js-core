@@ -93,3 +93,4 @@ require('./pm4js/utils/ml/dt_utils.js');
 require('./pm4js/objects/bpmn/layouting/dagre.js');
 require('./pm4js/utils/generic/stats-utils.js');
 require('./pm4js/algo/filtering/ocel/general.js');
+require('./pm4js/utils/ml/rules.js');
