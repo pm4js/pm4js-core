@@ -61,7 +61,7 @@ class Pm4JS {
 	}
 }
 
-Pm4JS.VERSION = "0.0.25";
+Pm4JS.VERSION = "0.0.26";
 Pm4JS.registrationEnabled = false;
 Pm4JS.objects = [];
 Pm4JS.algorithms = [];
@@ -9696,6 +9696,96 @@ class LogGeneralFiltering {
 					}
 				}
 				i++;
+			}
+		}
+		return filteredLog;
+	}
+	
+	static filterPrefixes(log, activity, strict=true, activityKey="concept:name") {
+		let filteredLog = new EventLog();
+		for (let trace of log.traces) {
+			let activities = [];
+			for (let eve of trace.events) {
+				if (activityKey in eve.attributes) {
+					activities.push(eve.attributes[activityKey].value);
+				}
+			}
+			let idx = activities.indexOf(activity);
+			if (idx > -1) {
+				if (strict) {
+					idx--;
+				}
+				let filteredTrace = new Trace();
+				let i = 0;
+				while (i <= idx) {
+					filteredTrace.events.push(trace.events[i]);
+					i++;
+				}
+				filteredLog.traces.push(filteredTrace);
+			}
+		}
+		return filteredLog;
+	}
+	
+	static filterSuffixes(log, activity, strict=true, activityKey="concept:name") {
+		let filteredLog = new EventLog();
+		for (let trace of log.traces) {
+			let activities = [];
+			for (let eve of trace.events) {
+				if (activityKey in eve.attributes) {
+					activities.push(eve.attributes[activityKey].value);
+				}
+			}
+			let idx = activities.lastIndexOf(activity);
+			if (idx > -1) {
+				if (strict) {
+					idx++;
+				}
+				let filteredTrace = new Trace();
+				let i = idx;
+				while (i < trace.events.length) {
+					filteredTrace.events.push(trace.events[i]);
+					i++;
+				}
+				filteredLog.traces.push(filteredTrace);
+			}
+		}
+		return filteredLog;
+	}
+	
+	static filterFullTextEvents(log, attribute, searchString) {
+		let filteredLog = new EventLog();
+		for (let trace of log.traces) {
+			let filteredTrace = new Trace();
+			for (let eve of trace.events) {
+				if (attribute in eve.attributes) {
+					let value = eve.attributes[attribute].value;
+					if (value.indexOf(searchString) > -1) {
+						filteredTrace.events.push(eve);
+					}
+				}
+			}
+			if (filteredTrace.events.length > 0) {
+				filteredLog.traces.push(filteredTrace);
+			}
+		}
+		return filteredLog;
+	}
+	
+	static filterFullTextCases(log, attribute, searchString) {
+		let filteredLog = new EventLog();
+		for (let trace of log.traces) {
+			let toInclude = false;
+			for (let eve of trace.events) {
+				if (attribute in eve.attributes) {
+					let value = eve.attributes[attribute].value;
+					if (value.indexOf(searchString) > -1) {
+						toInclude = true;
+					}
+				}
+			}
+			if (toInclude) {
+				filteredLog.traces.push(trace);
 			}
 		}
 		return filteredLog;
@@ -20682,6 +20772,30 @@ class OcelGeneralFiltering {
 		return filteredOcel;
 	}
 	
+	static filterNonEssentialEvents(ocel) {
+		let essentialEvents = GeneralOcelStatistics.getEssentialEventsWithCategorization(ocel);
+		let filteredOcel = {};
+		filteredOcel["ocel:global-event"] = ocel["ocel:global-event"];
+		filteredOcel["ocel:global-object"] = ocel["ocel:global-object"];
+		filteredOcel["ocel:global-log"] = {};
+		filteredOcel["ocel:global-log"]["ocel:attribute-names"] = ocel["ocel:global-log"]["ocel:attribute-names"];
+		filteredOcel["ocel:global-log"]["ocel:object-types"] = ocel["ocel:global-log"]["ocel:object-types"];
+		filteredOcel["ocel:objects"] = {};
+		filteredOcel["ocel:events"] = {};
+		
+		for (let evId in ocel["ocel:events"]) {
+			if (!(evId in essentialEvents)) {
+				let eve = ocel["ocel:events"][evId];
+				filteredOcel["ocel:events"][evId] = eve;
+				for (let objId of eve["ocel:omap"]) {
+					filteredOcel["ocel:objects"][objId] = ocel["ocel:objects"][objId];
+				}
+			}
+		}
+		
+		return filteredOcel;
+	}
+	
 	static filterEssentialEventsOrMinActCount(ocel, minCount) {
 		let essentialEvents = GeneralOcelStatistics.getEssentialEventsWithCategorization(ocel);
 		let evPerActCount = GeneralOcelStatistics.eventsPerActivityCount(ocel);
@@ -20775,6 +20889,196 @@ class OcelGeneralFiltering {
 		
 		return filteredOcel;
 	}
+	
+	static filterActivityOtAssociation(ocel, actOtAssociation) {
+		let filteredOcel = {};
+		filteredOcel["ocel:global-event"] = ocel["ocel:global-event"];
+		filteredOcel["ocel:global-object"] = ocel["ocel:global-object"];
+		filteredOcel["ocel:global-log"] = {};
+		filteredOcel["ocel:global-log"]["ocel:attribute-names"] = ocel["ocel:global-log"]["ocel:attribute-names"];
+		filteredOcel["ocel:global-log"]["ocel:object-types"] = ocel["ocel:global-log"]["ocel:object-types"];
+		filteredOcel["ocel:objects"] = {};
+		filteredOcel["ocel:events"] = {};
+		let objOt = {};
+		let objectTypes = {};
+		for (let objId in ocel["ocel:objects"]) {
+			let obj = ocel["ocel:objects"][objId];
+			objOt[objId] = obj["ocel:type"];
+			objectTypes[obj["ocel:type"]] = 0;
+		}
+		objectTypes = Object.keys(objectTypes);
+		for (let evId in ocel["ocel:events"]) {
+			let eve = ocel["ocel:events"][evId];
+			let newEve = {};
+			let act = eve["ocel:activity"]
+			newEve["ocel:activity"] = act;
+			newEve["ocel:timestamp"] = eve["ocel:timestamp"];
+			newEve["ocel:vmap"] = eve["ocel:vmap"];
+			newEve["ocel:omap"] = [];
+			for (let objId of eve["ocel:omap"]) {
+				let ot = objOt[objId];
+				if (act in actOtAssociation && actOtAssociation[act].includes(ot)) {
+					let obj = ocel["ocel:objects"][objId];
+					filteredOcel["ocel:objects"][objId] = obj;
+					newEve["ocel:omap"].push(objId);
+				}
+			}
+			
+			if (newEve["ocel:omap"].length > 0) {
+				filteredOcel["ocel:events"][evId] = newEve;
+			}
+		}
+		return filteredOcel;
+	}
+	
+	static eventBasedRandomSampling(ocel, p=0.5) {
+		let filteredOcel = {};
+		filteredOcel["ocel:global-event"] = ocel["ocel:global-event"];
+		filteredOcel["ocel:global-object"] = ocel["ocel:global-object"];
+		filteredOcel["ocel:global-log"] = {};
+		filteredOcel["ocel:global-log"]["ocel:attribute-names"] = ocel["ocel:global-log"]["ocel:attribute-names"];
+		filteredOcel["ocel:global-log"]["ocel:object-types"] = ocel["ocel:global-log"]["ocel:object-types"];
+		filteredOcel["ocel:objects"] = {};
+		filteredOcel["ocel:events"] = {};
+		
+		for (let evId in ocel["ocel:events"]) {
+			let eve = ocel["ocel:events"][evId];
+			let r = Math.random();
+			if (r <= p) {
+				filteredOcel["ocel:events"][evId] = eve;
+				for (let objId of eve["ocel:omap"]) {
+					filteredOcel["ocel:objects"][objId] = ocel["ocel:objects"][objId];
+				}
+			}
+		}
+		
+		return filteredOcel;
+	}
+	
+	static objectBasedRandomSampling(ocel, p=0.5) {
+		let filteredOcel = {};
+		filteredOcel["ocel:global-event"] = ocel["ocel:global-event"];
+		filteredOcel["ocel:global-object"] = ocel["ocel:global-object"];
+		filteredOcel["ocel:global-log"] = {};
+		filteredOcel["ocel:global-log"]["ocel:attribute-names"] = ocel["ocel:global-log"]["ocel:attribute-names"];
+		filteredOcel["ocel:global-log"]["ocel:object-types"] = ocel["ocel:global-log"]["ocel:object-types"];
+		filteredOcel["ocel:objects"] = {};
+		filteredOcel["ocel:events"] = {};
+		
+		for (let objId in ocel["ocel:objects"]) {
+			let r = Math.random();
+			if (r <= p) {
+				filteredOcel["ocel:objects"][objId] = ocel["ocel:objects"][objId];
+			}
+		}
+		
+		for (let evId in ocel["ocel:events"]) {
+			let eve = ocel["ocel:events"][evId];
+			let newEve = {};
+			let act = eve["ocel:activity"]
+			newEve["ocel:activity"] = act;
+			newEve["ocel:timestamp"] = eve["ocel:timestamp"];
+			newEve["ocel:vmap"] = eve["ocel:vmap"];
+			newEve["ocel:omap"] = [];
+			for (let objId of eve["ocel:omap"]) {
+				if (objId in filteredOcel["ocel:objects"]) {
+					newEve["ocel:omap"].push(objId);
+				}
+			}
+			if (newEve["ocel:omap"].length > 0) {
+				filteredOcel["ocel:events"][evId] = newEve;
+			}
+		}
+		
+		return filteredOcel;
+	}
+	
+	static objectTypeBasedRandomSampling(ocel, p=0.5) {
+		let filteredOcel = {};
+		filteredOcel["ocel:global-event"] = ocel["ocel:global-event"];
+		filteredOcel["ocel:global-object"] = ocel["ocel:global-object"];
+		filteredOcel["ocel:global-log"] = {};
+		filteredOcel["ocel:global-log"]["ocel:attribute-names"] = ocel["ocel:global-log"]["ocel:attribute-names"];
+		filteredOcel["ocel:objects"] = {};
+		filteredOcel["ocel:events"] = {};
+		
+		let objOt = {};
+		let objectTypes = {};
+		for (let objId in ocel["ocel:objects"]) {
+			let obj = ocel["ocel:objects"][objId];
+			objOt[objId] = obj["ocel:type"];
+			objectTypes[obj["ocel:type"]] = 0;
+		}
+		objectTypes = Object.keys(objectTypes);
+		
+		let filteredObjectTypes = [];
+		
+		for (let ot of objectTypes) {
+			let r = Math.random();
+			if (r <= p) {
+				filteredObjectTypes.push(ot);
+			}
+		}
+		
+		filteredOcel["ocel:global-log"]["ocel:object-types"] = filteredObjectTypes;
+		
+		for (let objId in ocel["ocel:objects"]) {
+			let ot = objOt[objId];
+			if (filteredObjectTypes.includes(ot)) {
+				filteredOcel["ocel:objects"][objId] = ocel["ocel:objects"][objId];
+			}
+		}
+		
+		for (let evId in ocel["ocel:events"]) {
+			let eve = ocel["ocel:events"][evId];
+			let newEve = {};
+			let act = eve["ocel:activity"]
+			newEve["ocel:activity"] = act;
+			newEve["ocel:timestamp"] = eve["ocel:timestamp"];
+			newEve["ocel:vmap"] = eve["ocel:vmap"];
+			newEve["ocel:omap"] = [];
+			for (let objId of eve["ocel:omap"]) {
+				if (objId in filteredOcel["ocel:objects"]) {
+					newEve["ocel:omap"].push(objId);
+				}
+			}
+			if (newEve["ocel:omap"].length > 0) {
+				filteredOcel["ocel:events"][evId] = newEve;
+			}
+		}
+		
+		return filteredOcel;
+	}
+	
+	static automaticFilterActivityOtAssociation(ocel) {
+		let essentialOcel = OcelGeneralFiltering.filterEssentialEvents(ocel);
+		let nonEssentialOcel = OcelGeneralFiltering.filterNonEssentialEvents(ocel);
+		let actOtMap = {};
+		let otActEssOcel = GeneralOcelStatistics.objectsPerTypePerActivity(essentialOcel);
+		let otActNonEssOcel = GeneralOcelStatistics.objectsPerTypePerActivity(nonEssentialOcel);
+		for (let act in otActEssOcel) {
+			for (let ot in otActEssOcel[act]) {
+				if (!(act in actOtMap)) {
+					actOtMap[act] = [];
+				}
+				actOtMap[act].push(ot);
+			}
+		}
+		for (let act in otActNonEssOcel) {
+			for (let ot in otActNonEssOcel[act]) {
+				if (otActNonEssOcel[act][ot] <= 1) {
+					// it does not cause convergence problems
+					if (!(act in actOtMap)) {
+						actOtMap[act] = [];
+					}
+					if (!(ot in actOtMap[act])) {
+						actOtMap[act].push(ot);
+					}
+				}
+			}
+		}
+		return OcelGeneralFiltering.filterActivityOtAssociation(ocel, actOtMap);
+	}
 }
 
 try {
@@ -20784,6 +21088,103 @@ try {
 }
 catch (err) {
 	// not in Node
+}
+
+
+class MlRules {
+	static dataRandomClassification(data) {
+		let classification = [];
+		let i = 0;
+		while (i < data.length) {
+			let r = Math.random();
+			if (r <= 0.5) {
+				classification.push(1);
+			}
+			else {
+				classification.push(-1);
+			}
+			i++;
+		}
+		return classification;
+	}
+	
+	static extractRangePerFeature(data, j, classification) {
+		let minRange = 9999999;
+		let maxRange = -9999999;
+		let i = 0;
+		while (i < data.length) {
+			if (classification[i] == 1) {
+				minRange = Math.min(minRange, data[i][j]);
+				maxRange = Math.max(maxRange, data[i][j]);
+			}
+			i++;
+		}
+		return [minRange, maxRange];
+	}
+
+	static ruleDiscovery(data, featureNames, classification) {
+		let ret = {};
+		let j = 0;
+		while (j < featureNames.length) {
+			let ranges = MlRules.extractRangePerFeature(data, j, classification);
+			ret[featureNames[j]] = ranges;
+			j++;
+		}
+		return ret;
+	}
+
+	static ruleClassificationScore(rules, data, features, classification) {
+		let ret = {};
+		let j = 0;
+		while (j < features.length) {
+			let feature = features[j];
+			let ranges = rules[feature];
+			let i = 0;
+			let devCount = 0;
+			let devDetectedCount = 0;
+			while (i < data.length) {
+				if (classification[i] == -1) {
+					devCount++;
+					if (data[i][j] < ranges[0] || data[i][j] > ranges[1]) {
+						devDetectedCount++;
+					}
+				}
+				i++;
+			}
+			ret[feature] = 0;
+			if (devCount > 0) {
+				ret[feature] = devDetectedCount / devCount;
+			}
+			j++;
+		}
+		return ret;
+	}
+
+	static getClassificationFromRule(rules, data, features, feature) {
+		let ret = [];
+		let j = features.indexOf(feature);
+		let ranges = rules[feature];
+		let i = 0;
+		while (i < data.length) {
+			if (data[i][j] < ranges[0] || data[i][j] > ranges[1]) {
+				ret.push(-1);
+			}
+			else {
+				ret.push(1);
+			}
+			i++;
+		}
+		return ret;
+	}
+}
+
+try {
+	require('../../pm4js.js');
+	module.exports = {MlRules: MlRules};
+	global.MlRules = MlRules;
+}
+catch (err) {
+	// not in node
 }
 
 
