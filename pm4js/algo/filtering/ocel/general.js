@@ -413,6 +413,63 @@ class OcelGeneralFiltering {
 		
 		return filteredOcel;
 	}
+	
+	static objectTypeBasedRandomSampling(ocel, p=0.5) {
+		let filteredOcel = {};
+		filteredOcel["ocel:global-event"] = ocel["ocel:global-event"];
+		filteredOcel["ocel:global-object"] = ocel["ocel:global-object"];
+		filteredOcel["ocel:global-log"] = {};
+		filteredOcel["ocel:global-log"]["ocel:attribute-names"] = ocel["ocel:global-log"]["ocel:attribute-names"];
+		filteredOcel["ocel:objects"] = {};
+		filteredOcel["ocel:events"] = {};
+		
+		let objOt = {};
+		let objectTypes = {};
+		for (let objId in ocel["ocel:objects"]) {
+			let obj = ocel["ocel:objects"][objId];
+			objOt[objId] = obj["ocel:type"];
+			objectTypes[obj["ocel:type"]] = 0;
+		}
+		objectTypes = Object.keys(objectTypes);
+		
+		let filteredObjectTypes = [];
+		
+		for (let ot of objectTypes) {
+			let r = Math.random();
+			if (r <= p) {
+				filteredObjectTypes.push(ot);
+			}
+		}
+		
+		filteredOcel["ocel:global-log"]["ocel:object-types"] = filteredObjectTypes;
+		
+		for (let objId in ocel["ocel:objects"]) {
+			let ot = objOt[objId];
+			if (filteredObjectTypes.includes(ot)) {
+				filteredOcel["ocel:objects"][objId] = ocel["ocel:objects"][objId];
+			}
+		}
+		
+		for (let evId in ocel["ocel:events"]) {
+			let eve = ocel["ocel:events"][evId];
+			let newEve = {};
+			let act = eve["ocel:activity"]
+			newEve["ocel:activity"] = act;
+			newEve["ocel:timestamp"] = eve["ocel:timestamp"];
+			newEve["ocel:vmap"] = eve["ocel:vmap"];
+			newEve["ocel:omap"] = [];
+			for (let objId of eve["ocel:omap"]) {
+				if (objId in filteredOcel["ocel:objects"]) {
+					newEve["ocel:omap"].push(objId);
+				}
+			}
+			if (newEve["ocel:omap"].length > 0) {
+				filteredOcel["ocel:events"][evId] = newEve;
+			}
+		}
+		
+		return filteredOcel;
+	}
 }
 
 try {
