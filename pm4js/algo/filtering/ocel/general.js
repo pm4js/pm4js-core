@@ -310,6 +310,47 @@ class OcelGeneralFiltering {
 		
 		return filteredOcel;
 	}
+	
+	static filterActivityOtAssociation(ocel, actOtAssociation) {
+		let filteredOcel = {};
+		filteredOcel["ocel:global-event"] = ocel["ocel:global-event"];
+		filteredOcel["ocel:global-object"] = ocel["ocel:global-object"];
+		filteredOcel["ocel:global-log"] = {};
+		filteredOcel["ocel:global-log"]["ocel:attribute-names"] = ocel["ocel:global-log"]["ocel:attribute-names"];
+		filteredOcel["ocel:global-log"]["ocel:object-types"] = ocel["ocel:global-log"]["ocel:object-types"];
+		filteredOcel["ocel:objects"] = {};
+		filteredOcel["ocel:events"] = {};
+		let objOt = {};
+		let objectTypes = {};
+		for (let objId in ocel["ocel:objects"]) {
+			let obj = ocel["ocel:objects"][objId];
+			objOt[objId] = obj["ocel:type"];
+			objectTypes[obj["ocel:type"]] = 0;
+		}
+		objectTypes = Object.keys(objectTypes);
+		for (let evId in ocel["ocel:events"]) {
+			let eve = ocel["ocel:events"][evId];
+			let newEve = {};
+			let act = eve["ocel:activity"]
+			newEve["ocel:activity"] = act;
+			newEve["ocel:timestamp"] = eve["ocel:timestamp"];
+			newEve["ocel:vmap"] = eve["ocel:vmap"];
+			newEve["ocel:omap"] = [];
+			for (let objId of eve["ocel:omap"]) {
+				let ot = objOt[objId];
+				if (act in actOtAssociation && actOtAssociation[act].includes(ot)) {
+					let obj = ocel["ocel:objects"][objId];
+					filteredOcel["ocel:objects"][objId] = obj;
+					newEve["ocel:omap"].push(objId);
+				}
+			}
+			
+			if (newEve["ocel:omap"].length > 0) {
+				filteredOcel["ocel:events"][evId] = newEve;
+			}
+		}
+		return filteredOcel;
+	}
 }
 
 try {
