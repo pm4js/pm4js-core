@@ -51,7 +51,7 @@ class XmlOcelExporter {
 			xmlEvent.appendChild(eveActivity);
 			let eveTimestamp = document.createElement("date");
 			eveTimestamp.setAttribute("key", "timestamp");
-			eveTimestamp.setAttribute("value", eve["ocel:timestamp"]);
+			eveTimestamp.setAttribute("value", eve["ocel:timestamp"].toISOString());
 			xmlEvent.appendChild(eveTimestamp);
 			let xmlOmap = document.createElement("list");
 			xmlOmap.setAttribute("key", "omap");
