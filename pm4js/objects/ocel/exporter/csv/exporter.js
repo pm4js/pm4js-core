@@ -3,7 +3,9 @@ class CsvOcelExporter {
 		let rows = [];
 		let header = ["ocel:eid", "ocel:activity", "ocel:timestamp"];
 		for (let objType of ocel["ocel:global-log"]["ocel:object-types"]) {
-			header.push(objType);
+			let objType1 = objType.split("ocel:type:");
+			objType1 = objType1[objType1.length - 1]
+			header.push("ocel:type:"+objType1);
 		}
 		for (let attName of ocel["ocel:global-log"]["ocel:attribute-names"]) {
 			header.push(attName);

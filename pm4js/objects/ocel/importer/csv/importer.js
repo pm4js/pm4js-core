@@ -53,7 +53,10 @@ class CsvOcelImporter {
 							}
 						}
 						else {
-							objArr = objArr0.split(sep);
+							objArr = objArr0.split(",");
+							if (objArr.length == 1 && objArr[0].length == 0) {
+								objArr = [];
+							}
 						}
 						for (let objId of objArr) {
 							eve["ocel:omap"].push(objId);
