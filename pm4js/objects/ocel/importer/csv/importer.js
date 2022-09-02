@@ -3,7 +3,7 @@ class CsvOcelImporter {
 		if (separators == null) {
 			separators = ["\"", "'"];
 		}
-		let arr = CsvImporter.parseCSV(txt);
+		let arr = CsvImporter.parseCSV(txt, sep=sep, quotechar=quotechar);
 		let ocel = {};
 		ocel["ocel:events"] = {};
 		ocel["ocel:objects"] = {};
