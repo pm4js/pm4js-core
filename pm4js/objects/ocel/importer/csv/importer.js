@@ -1,5 +1,5 @@
 class CsvOcelImporter {
-	static apply(txt, activityColumn, timestampColumn, objectTypes, attNames, evIdColumn=null, separators=null, sep=CsvImporter.DEFAULT_SEPARATOR, quotechar=CsvImporter.DEFAULT_QUOTECHAR) {
+	static apply(txt, activityColumn, timestampColumn, objectTypes, attNames, evIdColumn=null, separators=null, sep=CsvOcelImporter.DEFAULT_SEPARATOR, quotechar=CsvOcelImporter.DEFAULT_QUOTECHAR) {
 		if (separators == null) {
 			separators = ["\"", "'"];
 		}
@@ -29,35 +29,37 @@ class CsvOcelImporter {
 					eve["ocel:timestamp"] = arr[i][j];
 				}
 				else if (objectTypes.includes(arr[0][j])) {
-					let objArr0 = arr[i][j].substring(1, arr[i][j].length-1);
-					let objArr = null;
-					if (separators.length > 0) {
-						objArr = [];
-						let z = 0;
-						let reading = false;
-						let currRead = null;
-						while (z < objArr0.length) {
-							if (separators.includes(objArr0[z])) {
-								if (reading) {
-									objArr.push(currRead);
+					if (arr[i][j].length >= 2) {
+						let objArr0 = arr[i][j].substring(1, arr[i][j].length-1);
+						let objArr = null;
+						if (separators.length > 0) {
+							objArr = [];
+							let z = 0;
+							let reading = false;
+							let currRead = null;
+							while (z < objArr0.length) {
+								if (separators.includes(objArr0[z])) {
+									if (reading) {
+										objArr.push(currRead);
+									}
+									reading = !reading;
+									currRead = null;
+									currRead = "";
 								}
-								reading = !reading;
-								currRead = null;
-								currRead = "";
+								else if (reading) {
+									currRead += objArr0[z];
+								}
+								z++;
 							}
-							else if (reading) {
-								currRead += objArr0[z];
-							}
-							z++;
 						}
-					}
-					else {
-						objArr = objArr0.split(sep);
-					}
-					for (let objId of objArr) {
-						eve["ocel:omap"].push(objId);
-						if (!(objId in ocel["ocel:objects"])) {
-							ocel["ocel:objects"][objId] = {"ocel:type": arr[0][j], "ocel:ovmap": {}};
+						else {
+							objArr = objArr0.split(sep);
+						}
+						for (let objId of objArr) {
+							eve["ocel:omap"].push(objId);
+							if (!(objId in ocel["ocel:objects"])) {
+								ocel["ocel:objects"][objId] = {"ocel:type": arr[0][j], "ocel:ovmap": {}};
+							}
 						}
 					}
 				}
