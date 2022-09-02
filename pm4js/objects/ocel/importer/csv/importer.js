@@ -26,7 +26,7 @@ class CsvOcelImporter {
 					eve["ocel:activity"] = arr[i][j];
 				}
 				else if (arr[0][j] == timestampColumn) {
-					eve["ocel:timestamp"] = arr[i][j];
+					eve["ocel:timestamp"] = new Date(arr[i][j]);
 				}
 				else if (objectTypes.includes(arr[0][j])) {
 					if (arr[i][j].length >= 2) {

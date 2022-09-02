@@ -21216,7 +21216,7 @@ class CsvOcelImporter {
 					eve["ocel:activity"] = arr[i][j];
 				}
 				else if (arr[0][j] == timestampColumn) {
-					eve["ocel:timestamp"] = arr[i][j];
+					eve["ocel:timestamp"] = new Date(arr[i][j]);
 				}
 				else if (objectTypes.includes(arr[0][j])) {
 					if (arr[i][j].length >= 2) {
@@ -21301,7 +21301,7 @@ class CsvOcelExporter {
 			let row = [];
 			row.push(evId);
 			row.push(eve["ocel:activity"]);
-			row.push(eve["ocel:timestamp"]);
+			row.push(eve["ocel:timestamp"].toISOString());
 			let omap = eve["ocel:omap"];
 			let typeOmap = {};
 			for (let objType of ocel["ocel:global-log"]["ocel:object-types"]) {
@@ -21320,8 +21320,8 @@ class CsvOcelExporter {
 				}
 			}
 			for (let attName of ocel["ocel:global-log"]["ocel:attribute-names"]) {
-				if (attName in eve) {
-					row.push(eve[attName]);
+				if (attName in eve["ocel:vmap"]) {
+					row.push(eve["ocel:vmap"][attName]);
 				}
 				else {
 					row.push(" ");
