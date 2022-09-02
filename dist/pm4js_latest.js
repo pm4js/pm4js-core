@@ -61,7 +61,7 @@ class Pm4JS {
 	}
 }
 
-Pm4JS.VERSION = "0.0.27";
+Pm4JS.VERSION = "0.0.28";
 Pm4JS.registrationEnabled = false;
 Pm4JS.objects = [];
 Pm4JS.algorithms = [];
@@ -21186,5 +21186,166 @@ try {
 catch (err) {
 	// not in node
 }
+
+
+class CsvOcelImporter {
+	static apply(txt, activityColumn, timestampColumn, objectTypes, attNames, evIdColumn=null, separators=null, sep=CsvOcelImporter.DEFAULT_SEPARATOR, quotechar=CsvOcelImporter.DEFAULT_QUOTECHAR) {
+		if (separators == null) {
+			separators = ["\"", "'"];
+		}
+		let arr = CsvImporter.parseCSV(txt, sep=sep, quotechar=quotechar);
+		let ocel = {};
+		ocel["ocel:events"] = {};
+		ocel["ocel:objects"] = {};
+		ocel["ocel:global-event"] = {"ocel:activity": "__INVALID__"};
+		ocel["ocel:global-object"] = {"ocel:activity": "__INVALID__"};
+		ocel["ocel:global-log"] = {"ocel:version": "1.0", "ocel:ordering": "timestamp", "ocel:attribute-names": attNames, "ocel:object-types": objectTypes};
+		let i = 1;
+		while (i < arr.length) {
+			let eve = {"ocel:omap": [], "ocel:vmap": {}}
+			let evId = null;
+			if (evIdColumn == null) {
+				evId = ""+i;
+			}
+			let j = 0;
+			while (j < arr[0].length) {
+				if (arr[0][j] == evIdColumn) {
+					evId = arr[i][j];
+				}
+				if (arr[0][j] == activityColumn) {
+					eve["ocel:activity"] = arr[i][j];
+				}
+				else if (arr[0][j] == timestampColumn) {
+					eve["ocel:timestamp"] = arr[i][j];
+				}
+				else if (objectTypes.includes(arr[0][j])) {
+					if (arr[i][j].length >= 2) {
+						let objArr0 = arr[i][j].substring(1, arr[i][j].length-1);
+						let objArr = null;
+						if (separators.length > 0) {
+							objArr = [];
+							let z = 0;
+							let reading = false;
+							let currRead = null;
+							while (z < objArr0.length) {
+								if (separators.includes(objArr0[z])) {
+									if (reading) {
+										objArr.push(currRead);
+									}
+									reading = !reading;
+									currRead = null;
+									currRead = "";
+								}
+								else if (reading) {
+									currRead += objArr0[z];
+								}
+								z++;
+							}
+						}
+						else {
+							objArr = objArr0.split(",");
+							if (objArr.length == 1 && objArr[0].length == 0) {
+								objArr = [];
+							}
+						}
+						for (let objId of objArr) {
+							eve["ocel:omap"].push(objId);
+							if (!(objId in ocel["ocel:objects"])) {
+								ocel["ocel:objects"][objId] = {"ocel:type": arr[0][j], "ocel:ovmap": {}};
+							}
+						}
+					}
+				}
+				else if (attNames.includes(arr[0][j])) {
+					eve["ocel:vmap"][arr[0][j]] = arr[i][j];
+				}
+				j++;
+			}
+			ocel["ocel:events"][evId] = eve;
+			i++;
+		}
+		return ocel;
+	}
+}
+
+
+CsvOcelImporter.DEFAULT_SEPARATOR = ',';
+CsvOcelImporter.DEFAULT_QUOTECHAR = '"';
+
+try {
+	require('../../../../pm4js.js');
+	module.exports = {CsvOcelImporter: CsvOcelImporter};
+	global.CsvOcelImporter = CsvOcelImporter;
+}
+catch (err) {
+	// not in node
+	//console.log(err);
+}
+
+
+class CsvOcelExporter {
+	static apply(ocel, sep=CsvOcelExporter.DEFAULT_SEPARATOR, quotechar=CsvOcelExporter.DEFAULT_QUOTECHAR, newline=CsvOcelExporter.DEFAULT_NEWLINE) {
+		let rows = [];
+		let header = ["ocel:eid", "ocel:activity", "ocel:timestamp"];
+		for (let objType of ocel["ocel:global-log"]["ocel:object-types"]) {
+			let objType1 = objType.split("ocel:type:");
+			objType1 = objType1[objType1.length - 1]
+			header.push("ocel:type:"+objType1);
+		}
+		for (let attName of ocel["ocel:global-log"]["ocel:attribute-names"]) {
+			header.push(attName);
+		}
+		rows.push(header.join(sep));
+		for (let evId in ocel["ocel:events"]) {
+			let eve = ocel["ocel:events"][evId];
+			let row = [];
+			row.push(evId);
+			row.push(eve["ocel:activity"]);
+			row.push(eve["ocel:timestamp"]);
+			let omap = eve["ocel:omap"];
+			let typeOmap = {};
+			for (let objType of ocel["ocel:global-log"]["ocel:object-types"]) {
+				typeOmap[objType] = [];
+			}
+			for (let obj of omap) {
+				let objType = ocel["ocel:objects"][obj]["ocel:type"];
+				typeOmap[objType].push(obj);
+			}
+			for (let objType of ocel["ocel:global-log"]["ocel:object-types"]) {
+				if (typeOmap[objType].length > 0) {
+					row.push(quotechar+"['"+typeOmap[objType].join("','")+"']"+quotechar);
+				}
+				else {
+					row.push(" ");
+				}
+			}
+			for (let attName of ocel["ocel:global-log"]["ocel:attribute-names"]) {
+				if (attName in eve) {
+					row.push(eve[attName]);
+				}
+				else {
+					row.push(" ");
+				}
+			}
+			rows.push(row.join(sep));
+		}
+		return rows.join(newline);
+	}
+}
+
+CsvOcelExporter.DEFAULT_SEPARATOR = ',';
+CsvOcelExporter.DEFAULT_QUOTECHAR = '"';
+CsvOcelExporter.DEFAULT_NEWLINE = '\n';
+
+try {
+	require('../../../../pm4js.js');
+	module.exports = {CsvOcelExporter: CsvOcelExporter};
+	global.CsvOcelExporter = CsvOcelExporter;
+}
+catch (err) {
+	// not in node
+	//console.log(err);
+}
+
 
 
