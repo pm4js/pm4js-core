@@ -97,43 +97,18 @@ class Pm4JS {
 		Pm4JS.runningAlgorithmsObservers.push(observer);
 	}
 	
-	static synchronousCallMethod(staticMethod, args) {
+	static asynchronousCallMethod(staticMethod, args) {
 		let thisUuid = Pm4JS.startAlgorithm({"staticMethod": staticMethod, "args": args});
-		Pm4JS.latestIssuedUuid = thisUuid;
-		let argStri = "";
-		let i = 0;
-		while (i < args.length) {
-			if (i > 0) {
-				argStri += ",";
+		let promise = new Promise((succFunction, errFunction) => {
+			try {
+				let ret = staticMethod(...args);
+				succFunction(ret);
 			}
-			argStri += "x["+i+"]";
-			i++;
-		}
-		let body = 'let [x]= args; return '+staticMethod+'('+argStri+')';
-		let myFunc = new Function("...args", body);
-		let ret = myFunc(args);
-		Pm4JS.stopAlgorithm(thisUuid, {});
-		return ret;
-	}
-	
-	static asynchronousCallMethod(staticMethod, args, succFunction, errFunction) {
-		let thisUuid = Pm4JS.startAlgorithm({"staticMethod": staticMethod, "args": args});
-		Pm4JS.latestIssuedUuid = thisUuid;
-		let argStri = "";
-		args.push(thisUuid);
-		args.push(succFunction);
-		args.push(errFunction);
-		let i = 0;
-		while (i < args.length - 3) {
-			if (i > 0) {
-				argStri += ",";
+			catch (err) {
+				errFunction(err);
 			}
-			argStri += "x["+i+"]";
-			i++;
-		}
-		let body = 'let [x]= args; try { let ret = '+staticMethod+'('+argStri+'); let func = x[(x.length - 2)]; if (func != null) { Pm4JS.stopAlgorithm(x[(x.length - 3)], {}); func(ret); } } catch (err) { let func = x[(x.length - 1)]; if (func != null) { func(err) } }';
-		let myFunc = new Function("...args", body);
-		myFunc(args);
+		});
+		return promise;
 	}
 }
 
