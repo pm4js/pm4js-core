@@ -98,6 +98,8 @@ class Pm4JS {
 	}
 	
 	static synchronousCallMethod(staticMethod, args) {
+		let thisUuid = Pm4JS.startAlgorithm({"staticMethod": staticMethod, "args": args});
+		Pm4JS.latestIssuedUuid = thisUuid;
 		let argStri = "";
 		let i = 0;
 		while (i < args.length) {
@@ -109,22 +111,27 @@ class Pm4JS {
 		}
 		let body = 'let [x]= args; return '+staticMethod+'('+argStri+')';
 		let myFunc = new Function("...args", body);
-		return myFunc(args);
+		let ret = myFunc(args);
+		Pm4JS.stopAlgorithm(thisUuid, {});
+		return ret;
 	}
 	
 	static asynchronousCallMethod(staticMethod, args, succFunction, errFunction) {
+		let thisUuid = Pm4JS.startAlgorithm({"staticMethod": staticMethod, "args": args});
+		Pm4JS.latestIssuedUuid = thisUuid;
 		let argStri = "";
+		args.push(thisUuid);
 		args.push(succFunction);
 		args.push(errFunction);
 		let i = 0;
-		while (i < args.length - 2) {
+		while (i < args.length - 3) {
 			if (i > 0) {
 				argStri += ",";
 			}
 			argStri += "x["+i+"]";
 			i++;
 		}
-		let body = 'let [x]= args; try { let ret = '+staticMethod+'('+argStri+'); let func = x[(x.length - 2)]; if (func != null) { func(ret); } } catch (err) { let func = x[(x.length - 1)]; if (func != null) { func(err) } }';
+		let body = 'let [x]= args; try { let ret = '+staticMethod+'('+argStri+'); let func = x[(x.length - 2)]; if (func != null) { Pm4JS.stopAlgorithm(x[(x.length - 3)], {}); func(ret); } } catch (err) { let func = x[(x.length - 1)]; if (func != null) { func(err) } }';
 		let myFunc = new Function("...args", body);
 		myFunc(args);
 	}
@@ -133,17 +140,14 @@ class Pm4JS {
 class Pm4JSObserverExample {
 	algorithmStarted(uuid, details) {
 		console.log("algorithm started! " + uuid);
-		console.log(details);
 	}
 	
 	algorithmStatusUpdated(uuid, oldDetails, details) {
 		console.log("algorithm status updated! " + uuid);
-		console.log(details);
 	}
 	
 	algorithmStopped(uuid, details) {
 		console.log("algorithm stopped! " + uuid);
-		console.log(details);
 	}
 }
 
@@ -157,6 +161,7 @@ Pm4JS.visualizers = [];
 Pm4JS.objectsCallbacks = [];
 Pm4JS.runningAlgorithms = {};
 Pm4JS.runningAlgorithmsObservers = [];
+Pm4JS.latestIssuedUuid = "";
 
 try {
 	module.exports = {Pm4JS: Pm4JS, Pm4JSObserverExample: Pm4JSObserverExample};
