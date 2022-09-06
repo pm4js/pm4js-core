@@ -1,6 +1,6 @@
 {
   "name": "pm4js",
-  "version": "0.0.28",
+  "version": "0.0.29",
   "description": "Process Mining for Javascript",
   "main": "init.js",
   "directories": {
