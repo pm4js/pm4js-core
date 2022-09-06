@@ -96,20 +96,6 @@ class Pm4JS {
 	static registerObserver(observer) {
 		Pm4JS.runningAlgorithmsObservers.push(observer);
 	}
-	
-	static asynchronousCallMethod(staticMethod, args) {
-		let thisUuid = Pm4JS.startAlgorithm({"staticMethod": staticMethod, "args": args});
-		let promise = new Promise((succFunction, errFunction) => {
-			try {
-				let ret = staticMethod(...args);
-				succFunction(ret);
-			}
-			catch (err) {
-				errFunction(err);
-			}
-		});
-		return promise;
-	}
 }
 
 class Pm4JSObserverExample {
