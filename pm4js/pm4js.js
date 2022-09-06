@@ -90,10 +90,43 @@ class Pm4JS {
 			obs.algorithmStopped(uuid, details);
 		}
 		delete Pm4JS.runningAlgorithms[uuid];
+		return uuid;
 	}
 	
 	static registerObserver(observer) {
 		Pm4JS.runningAlgorithmsObservers.push(observer);
+	}
+	
+	static synchronousCallMethod(staticMethod, args) {
+		let argStri = "";
+		let i = 0;
+		while (i < args.length) {
+			if (i > 0) {
+				argStri += ",";
+			}
+			argStri += "x["+i+"]";
+			i++;
+		}
+		let body = 'let [x]= args; return '+staticMethod+'('+argStri+')';
+		let myFunc = new Function("...args", body);
+		return myFunc(args);
+	}
+	
+	static asynchronousCallMethod(staticMethod, args, succFunction, errFunction) {
+		let argStri = "";
+		args.push(succFunction);
+		args.push(errFunction);
+		let i = 0;
+		while (i < args.length - 2) {
+			if (i > 0) {
+				argStri += ",";
+			}
+			argStri += "x["+i+"]";
+			i++;
+		}
+		let body = 'let [x]= args; try { let ret = '+staticMethod+'('+argStri+'); let func = x[(x.length - 2)]; if (func != null) { func(ret); } } catch (err) { let func = x[(x.length - 1)]; if (func != null) { func(err) } }';
+		let myFunc = new Function("...args", body);
+		myFunc(args);
 	}
 }
 
