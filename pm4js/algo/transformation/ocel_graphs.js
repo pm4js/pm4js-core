@@ -200,7 +200,7 @@ class OcelGraphs {
 						while (i < lif2.length) {
 							let currTime = lif2[i]["ocel:timestamp"].getTime()/1000.0;
 							if (currTime > lifse[0] && currTime < lifse[1]) {
-								if (lif.includes(lif2[i])) {
+								if (!(lif.includes(lif2[i]))) {
 									isOk = false;
 									break;
 								}
@@ -219,6 +219,8 @@ class OcelGraphs {
 		}
 		return interrupts;
 	}
+	
+	
 	
 	static graphFindParents(ocel) {
 		let objInteractionGraph = OcelGraphs.objectInteractionGraph(ocel);
