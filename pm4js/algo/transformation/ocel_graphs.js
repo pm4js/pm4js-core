@@ -173,6 +173,109 @@ class OcelGraphs {
 		return OcelGraphs.transformArrayToDictArray(Object.keys(ret));
 	}
 	
+	static graphFindInterrupts(ocel) {
+		let objInteractionGraph = OcelGraphs.objectInteractionGraph(ocel);
+		let objects = ocel["ocel:objects"];
+		let objTypes = {};
+		for (let objId in objects) {
+			let objType = objects[objId]["ocel:type"];
+			objTypes[objId] = objType;
+		}
+		let lifecycleObj = OcelObjectFeatures.getObjectsLifecycle(ocel);
+		let lifecycleStartEnd = {};
+		for (let objId in lifecycleObj) {
+			lifecycleStartEnd[objId] = [lifecycleObj[objId][0]["ocel:timestamp"].getTime()/1000.0, lifecycleObj[objId][lifecycleObj[objId].length-1]["ocel:timestamp"].getTime()/1000.0];
+		}
+		let interrupts = {};
+		for (let objId in objInteractionGraph) {
+			let lifse = lifecycleStartEnd[objId];
+			for (let objId2 of objInteractionGraph[objId]) {
+				if (objTypes[objId2] != objTypes[objId]) {
+					let lifse2 = lifecycleStartEnd[objId2];
+					if (lifse[0] > lifse2[0] && lifse[1] < lifse2[1]) {
+						let lif = lifecycleObj[objId];
+						let lif2 = lifecycleObj[objId2];
+						let isOk = true;
+						let i = 0;
+						while (i < lif2.length) {
+							let currTime = lif2[i]["ocel:timestamp"].getTime()/1000.0;
+							if (currTime > lifse[0] && currTime < lifse[1]) {
+								if (lif.includes(lif2[i])) {
+									isOk = false;
+									break;
+								}
+							}
+							i++;
+						}
+						if (isOk) {
+							if (!(objId in interrupts)) {
+								interrupts[objId] = [];
+							}
+							interrupts[objId].push(objId2);
+						}
+					}
+				}
+			}
+		}
+		return interrupts;
+	}
+	
+	static graphFindParents(ocel) {
+		let objInteractionGraph = OcelGraphs.objectInteractionGraph(ocel);
+		let objects = ocel["ocel:objects"];
+		let objTypes = {};
+		for (let objId in objects) {
+			let objType = objects[objId]["ocel:type"];
+			objTypes[objId] = objType;
+		}
+		let lifecycleObj = OcelObjectFeatures.getObjectsLifecycle(ocel);
+		let lifecycleStartEnd = {};
+		for (let objId in lifecycleObj) {
+			lifecycleStartEnd[objId] = [lifecycleObj[objId][0]["ocel:timestamp"].getTime()/1000.0, lifecycleObj[objId][lifecycleObj[objId].length-1]["ocel:timestamp"].getTime()/1000.0];
+		}
+		let interactionDivided = {};
+		for (let objId in objInteractionGraph) {
+			interactionDivided[objId] = {};
+			for (let objId2 of objInteractionGraph[objId]) {
+				let objType = objTypes[objId2];
+				if (!(objType in interactionDivided[objId])) {
+					interactionDivided[objId][objType] = [];
+				}
+				interactionDivided[objId][objType].push(objId2);
+			}
+		}
+		let parents = {};
+		for (let objId in interactionDivided) {
+			let currType = objTypes[objId];
+			for (let objType in interactionDivided[objId]) {
+				if (objType != currType) {
+					if (interactionDivided[objId][objType].length == 1) {
+						let objId2 = interactionDivided[objId][objType][0];
+						let lif = lifecycleStartEnd[objId];
+						let lif2 = lifecycleStartEnd[objId2];
+						if (lif[0] >= lif2[0] && lif[1] <= lif2[1]) {
+							parents[objId] = objId2;
+						}
+					}
+				}
+			}
+		}
+		return parents;
+	}
+	
+	static graphFindChildren(ocel) {
+		let parents = OcelGraphs.graphFindParents(ocel);
+		let children = {};
+		for (let child in parents) {
+			let par = parents[child];
+			if (!(par in children)) {
+				children[par] = [];
+			}
+			children[par].push(child);
+		}
+		return children;
+	}
+	
 	static transformArrayToDictArray(arr) {
 		let dl = {};
 		let i = 0;
