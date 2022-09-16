@@ -220,6 +220,67 @@ class OcelGraphs {
 		return interrupts;
 	}
 	
+	static graphFindLocks(ocel) {
+		let objInteractionGraph = OcelGraphs.objectInteractionGraph(ocel);
+		let objects = ocel["ocel:objects"];
+		let objTypes = {};
+		for (let objId in objects) {
+			let objType = objects[objId]["ocel:type"];
+			objTypes[objId] = objType;
+		}
+		let lifecycleObj = OcelObjectFeatures.getObjectsLifecycle(ocel);
+		let lifecycleStartEnd = {};
+		for (let objId in lifecycleObj) {
+			lifecycleStartEnd[objId] = [lifecycleObj[objId][0]["ocel:timestamp"].getTime()/1000.0, lifecycleObj[objId][lifecycleObj[objId].length-1]["ocel:timestamp"].getTime()/1000.0];
+		}
+		let interactionDivided = {};
+		for (let objId in objInteractionGraph) {
+			interactionDivided[objId] = {};
+			for (let objId2 of objInteractionGraph[objId]) {
+				let objType = objTypes[objId2];
+				if (!(objType in interactionDivided[objId])) {
+					interactionDivided[objId][objType] = [];
+				}
+				interactionDivided[objId][objType].push(objId2);
+			}
+		}
+		let locks = {};
+		for (let objId in interactionDivided) {
+			let lifse = lifecycleStartEnd[objId];
+			let currObjType = objTypes[objId];
+			for (let objType in interactionDivided[objId]) {
+				if (objType != currObjType) {
+					if (interactionDivided[objId][objType].length == 1) {
+						let objId2 = interactionDivided[objId][objType][0];
+						let otherInteractions = interactionDivided[objId2][currObjType];
+						let otherInteractionsLifStartEnd = [];
+						for (let objId3 of otherInteractions) {
+							if (objId3 != objId) {
+								otherInteractionsLifStartEnd.push(lifecycleStartEnd[objId3]);
+							}
+						}
+						let isOk = true;
+						let i = 0;
+						while (i < otherInteractionsLifStartEnd.length) {
+							let lifse2 = otherInteractionsLifStartEnd[i];
+							if (!(lifse2[i][1] < lifse[i][0] || lifse2[i][0] > lifse[i][1])) {
+								isOk = false;
+								break;
+							}
+							i++;
+						}
+						if (isOk) {
+							if (!(objId in locks)) {
+								locks[objId] = [];
+							}
+							locks[objId].push(objId2);
+						}
+					}
+				}
+			}
+		}
+		return locks;
+	}
 	
 	
 	static graphFindParents(ocel) {
