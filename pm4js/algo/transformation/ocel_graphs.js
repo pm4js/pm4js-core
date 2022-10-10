@@ -273,6 +273,9 @@ class OcelGraphs {
 								}
 							}
 							let isOk = true;
+							if (otherInteractionsLifStartEnd.length == 0) {
+								isOk = false;
+							}
 							let i = 0;
 							while (i < otherInteractionsLifStartEnd.length) {
 								let lifse2 = otherInteractionsLifStartEnd[i];
