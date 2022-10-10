@@ -156,11 +156,13 @@ class OcelGraphs {
 		for (let evId of evIds) {
 			let eve = events[evId];
 			for (let objId of eve["ocel:omap"]) {
-				if (objId in lastEventLifecycle && lastEventLifecycle[objId] == evId) {
-					for (let objId2 of eve["ocel:omap"]) {
-						if (objId != objId2) {
-							if (!(objId2 in seenObjects)) {
-								ret[[objId, objId2]] = 0;
+				if (objId in seenObjects) {
+					if (objId in lastEventLifecycle && lastEventLifecycle[objId] == evId) {
+						for (let objId2 of eve["ocel:omap"]) {
+							if (objId != objId2) {
+								if (!(objId2 in seenObjects)) {
+									ret[[objId, objId2]] = 0;
+								}
 							}
 						}
 					}
