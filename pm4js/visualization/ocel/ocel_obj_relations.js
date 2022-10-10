@@ -10,15 +10,32 @@ class OcelObjRelationsVisualizer {
 		let uuid = PetriNetVanillaVisualizer.uuidv4();
 		return "n"+uuid.replace(/-/g, "");
 	}
+
+	static stringToColour(str) {
+	  var hash = 0;
+	  for (var i = 0; i < str.length; i++) {
+		hash = str.charCodeAt(i) + ((hash << 5) - hash);
+	  }
+	  var colour = '#';
+	  for (var i = 0; i < 3; i++) {
+		var value = (hash >> (i * 8)) & 0xFF;
+		colour += ('00' + value.toString(16)).substr(-2);
+	  }
+	  return colour;
+	}
 	
-	static apply(objectsArray, objectsInteractionGraph, objectsDescendantsGraph, objectsCobirthGraph, objectsCodeathGraph, objectInheritanceGraph, enableInteractionGraph=true, enableDescendantsGraph=true, enableCobirthGraph=true, enableCodeathGraph=true, enableObjectInheritanceGraph=true) {
+	static apply(ocel, objectsInteractionGraph, objectsDescendantsGraph, objectsCobirthGraph, objectsCodeathGraph, objectInheritanceGraph, enableInteractionGraph=true, enableDescendantsGraph=true, enableCobirthGraph=true, enableCodeathGraph=true, enableObjectInheritanceGraph=true) {
 		let ret = [];
 		let uidMap = {};
 		ret.push("digraph G {");
 		ret.push("rankdir=\"LR\"");
+		let objectsArray = Object.keys(ocel["ocel:objects"]);
 		for (let objId of objectsArray) {
+			let obj = ocel["ocel:objects"][objId];
+			let objType = obj["ocel:type"];
+			let objTypeColor = OcelObjRelationsVisualizer.stringToColour(objType);
 			let objGuid = OcelObjRelationsVisualizer.nodeUuid();
-			ret.push(objGuid+" [label=\""+objId+"\"]");
+			ret.push(objGuid+" [label=\""+objId+"\n"+objType+"\", color=\""+objTypeColor+"\", textcolor=\""+objTypeColor+"\"]");
 			uidMap[objId] = objGuid;
 		}
 		let interactionColor = "white";
