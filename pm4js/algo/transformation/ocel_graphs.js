@@ -186,34 +186,40 @@ class OcelGraphs {
 		let lifecycleObj = OcelObjectFeatures.getObjectsLifecycle(ocel);
 		let lifecycleStartEnd = {};
 		for (let objId in lifecycleObj) {
-			lifecycleStartEnd[objId] = [lifecycleObj[objId][0]["ocel:timestamp"].getTime()/1000.0, lifecycleObj[objId][lifecycleObj[objId].length-1]["ocel:timestamp"].getTime()/1000.0];
+			if (lifecycleObj[objId].length > 0) {
+				lifecycleStartEnd[objId] = [lifecycleObj[objId][0]["ocel:timestamp"].getTime()/1000.0, lifecycleObj[objId][lifecycleObj[objId].length-1]["ocel:timestamp"].getTime()/1000.0];
+			}
 		}
 		let interrupts = {};
 		for (let objId in objInteractionGraph) {
-			let lifse = lifecycleStartEnd[objId];
-			for (let objId2 of objInteractionGraph[objId]) {
-				if (objTypes[objId2] != objTypes[objId]) {
-					let lifse2 = lifecycleStartEnd[objId2];
-					if (lifse[0] > lifse2[0] && lifse[1] < lifse2[1]) {
-						let lif = lifecycleObj[objId];
-						let lif2 = lifecycleObj[objId2];
-						let isOk = true;
-						let i = 0;
-						while (i < lif2.length) {
-							let currTime = lif2[i]["ocel:timestamp"].getTime()/1000.0;
-							if (currTime > lifse[0] && currTime < lifse[1]) {
-								if (!(lif.includes(lif2[i]))) {
-									isOk = false;
-									break;
+			if (objId in lifecycleStartEnd) {
+				let lifse = lifecycleStartEnd[objId];
+				for (let objId2 of objInteractionGraph[objId]) {
+					if (objId2 in lifecycleStartEnd) {
+						if (objTypes[objId2] != objTypes[objId]) {
+							let lifse2 = lifecycleStartEnd[objId2];
+							if (lifse[0] > lifse2[0] && lifse[1] < lifse2[1]) {
+								let lif = lifecycleObj[objId];
+								let lif2 = lifecycleObj[objId2];
+								let isOk = true;
+								let i = 0;
+								while (i < lif2.length) {
+									let currTime = lif2[i]["ocel:timestamp"].getTime()/1000.0;
+									if (currTime > lifse[0] && currTime < lifse[1]) {
+										if (!(lif.includes(lif2[i]))) {
+											isOk = false;
+											break;
+										}
+									}
+									i++;
+								}
+								if (isOk) {
+									if (!(objId in interrupts)) {
+										interrupts[objId] = [];
+									}
+									interrupts[objId].push(objId2);
 								}
 							}
-							i++;
-						}
-						if (isOk) {
-							if (!(objId in interrupts)) {
-								interrupts[objId] = [];
-							}
-							interrupts[objId].push(objId2);
 						}
 					}
 				}
@@ -233,7 +239,9 @@ class OcelGraphs {
 		let lifecycleObj = OcelObjectFeatures.getObjectsLifecycle(ocel);
 		let lifecycleStartEnd = {};
 		for (let objId in lifecycleObj) {
-			lifecycleStartEnd[objId] = [lifecycleObj[objId][0]["ocel:timestamp"].getTime()/1000.0, lifecycleObj[objId][lifecycleObj[objId].length-1]["ocel:timestamp"].getTime()/1000.0];
+			if (lifecycleObj[objId].length > 0) {
+				lifecycleStartEnd[objId] = [lifecycleObj[objId][0]["ocel:timestamp"].getTime()/1000.0, lifecycleObj[objId][lifecycleObj[objId].length-1]["ocel:timestamp"].getTime()/1000.0];
+			}
 		}
 		let interactionDivided = {};
 		for (let objId in objInteractionGraph) {
@@ -248,34 +256,38 @@ class OcelGraphs {
 		}
 		let locks = {};
 		for (let objId in interactionDivided) {
-			let lifse = lifecycleStartEnd[objId];
-			let currObjType = objTypes[objId];
-			for (let objType in interactionDivided[objId]) {
-				if (objType != currObjType) {
-					if (interactionDivided[objId][objType].length == 1) {
-						let objId2 = interactionDivided[objId][objType][0];
-						let otherInteractions = interactionDivided[objId2][currObjType];
-						let otherInteractionsLifStartEnd = [];
-						for (let objId3 of otherInteractions) {
-							if (objId3 != objId) {
-								otherInteractionsLifStartEnd.push(lifecycleStartEnd[objId3]);
+			if (objId in lifecycleStartEnd) {
+				let lifse = lifecycleStartEnd[objId];
+				let currObjType = objTypes[objId];
+				for (let objType in interactionDivided[objId]) {
+					if (objType != currObjType) {
+						if (interactionDivided[objId][objType].length == 1) {
+							let objId2 = interactionDivided[objId][objType][0];
+							let otherInteractions = interactionDivided[objId2][currObjType];
+							let otherInteractionsLifStartEnd = [];
+							for (let objId3 of otherInteractions) {
+								if (objId3 != objId) {
+									if (objId3 in lifecycleStartEnd) {
+										otherInteractionsLifStartEnd.push(lifecycleStartEnd[objId3]);
+									}
+								}
 							}
-						}
-						let isOk = true;
-						let i = 0;
-						while (i < otherInteractionsLifStartEnd.length) {
-							let lifse2 = otherInteractionsLifStartEnd[i];
-							if (!(lifse2[i][1] < lifse[i][0] || lifse2[i][0] > lifse[i][1])) {
-								isOk = false;
-								break;
+							let isOk = true;
+							let i = 0;
+							while (i < otherInteractionsLifStartEnd.length) {
+								let lifse2 = otherInteractionsLifStartEnd[i];
+								if (!(lifse2[i][1] < lifse[i][0] || lifse2[i][0] > lifse[i][1])) {
+									isOk = false;
+									break;
+								}
+								i++;
 							}
-							i++;
-						}
-						if (isOk) {
-							if (!(objId in locks)) {
-								locks[objId] = [];
+							if (isOk) {
+								if (!(objId in locks)) {
+									locks[objId] = [];
+								}
+								locks[objId].push(objId2);
 							}
-							locks[objId].push(objId2);
 						}
 					}
 				}
@@ -296,7 +308,9 @@ class OcelGraphs {
 		let lifecycleObj = OcelObjectFeatures.getObjectsLifecycle(ocel);
 		let lifecycleStartEnd = {};
 		for (let objId in lifecycleObj) {
-			lifecycleStartEnd[objId] = [lifecycleObj[objId][0]["ocel:timestamp"].getTime()/1000.0, lifecycleObj[objId][lifecycleObj[objId].length-1]["ocel:timestamp"].getTime()/1000.0];
+			if (lifecycleObj[objId].length > 0) {
+				lifecycleStartEnd[objId] = [lifecycleObj[objId][0]["ocel:timestamp"].getTime()/1000.0, lifecycleObj[objId][lifecycleObj[objId].length-1]["ocel:timestamp"].getTime()/1000.0];
+			}
 		}
 		let interactionDivided = {};
 		for (let objId in objInteractionGraph) {
@@ -316,10 +330,12 @@ class OcelGraphs {
 				if (objType != currType) {
 					if (interactionDivided[objId][objType].length == 1) {
 						let objId2 = interactionDivided[objId][objType][0];
-						let lif = lifecycleStartEnd[objId];
-						let lif2 = lifecycleStartEnd[objId2];
-						if (lif[0] >= lif2[0] && lif[1] <= lif2[1]) {
-							parents[objId] = objId2;
+						if (objId in lifecycleStartEnd && objId2 in lifecycleStartEnd) {
+							let lif = lifecycleStartEnd[objId];
+							let lif2 = lifecycleStartEnd[objId2];
+							if (lif[0] >= lif2[0] && lif[1] <= lif2[1]) {
+								parents[objId] = objId2;
+							}
 						}
 					}
 				}
