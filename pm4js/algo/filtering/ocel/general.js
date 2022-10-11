@@ -585,7 +585,7 @@ class OcelGeneralFiltering {
 			}
 			let isOk = false;
 			for (let o2 of expGraph[o]) {
-				if (objTypesDct[o] == ot2) {
+				if (objTypesDct[o2] == ot2) {
 					isOk = true;
 					break;
 				}
@@ -594,15 +594,29 @@ class OcelGeneralFiltering {
 				delete expGraph[o];
 			}
 		}
-		let allObjects = {};
+		let allowedObjects1 = Object.keys(expGraph);
+		let allowedObjects2 = {};
 		for (let o in expGraph) {
-			allObjects[o] = 0;
-			for (let o2 of expGraph[o]) {
-				allObjects[o2] = 0;
+			if (objTypesDct[o] == ot1) {
+				allowedObjects2[o] = 0;
+				for (let o2 of expGraph[o]) {
+					allowedObjects2[o2] = 0;
+				}
 			}
 		}
-		console.log(allObjects);
-		return OcelGeneralFiltering.filterObjects(ocel, allObjects);
+		let allowedObjects = {};
+		for (let objId in objTypesDct) {
+			if (objTypesDct[objId] == ot2 || objTypesDct[objId] == ot1) {
+				allowedObjects[objId] = 0;
+			}
+		}
+		for (let obj of allowedObjects1) {
+			if (obj in allowedObjects2) {
+				allowedObjects[obj] = 0;
+			}
+		}
+		console.log(allowedObjects);
+		return OcelGeneralFiltering.filterObjects(ocel, allowedObjects);
 	}
 }
 
