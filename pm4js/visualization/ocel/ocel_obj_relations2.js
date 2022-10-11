@@ -66,7 +66,7 @@ class OcelObjRelations2Visualizer {
 				for (let obj2 of objectsInteractionGraph[obj1]) {
 					if (obj1 < obj2) {
 						let objuid2 = uidMap[obj2];
-						ret.push(objuid1 + " -> "+objuid2+" [label=\"Interacts\", dir=none, color="+interactionColor+", fontcolor="+interactionColor+"]");
+						ret.push(objuid1 + " -> "+objuid2+" [label=\"Relates\", dir=none, color="+interactionColor+", fontcolor="+interactionColor+"]");
 					}
 				}
 			}
@@ -77,7 +77,7 @@ class OcelObjRelations2Visualizer {
 				let objuid1 = uidMap[obj1];
 				for (let obj2 of objectsDescendantsGraph[obj1]) {
 					let objuid2 = uidMap[obj2];
-					ret.push(objuid2+" -> "+objuid1+" [label=\"Descends\", color="+descendantsColor+", fontcolor="+descendantsColor+"]");
+					ret.push(objuid2+" -> "+objuid1+" [label=\"Replaces\", color="+descendantsColor+", fontcolor="+descendantsColor+"]");
 				}
 			}
 		}
