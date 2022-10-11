@@ -244,6 +244,22 @@ class OcelObjectFeatures {
 		return lif;
 	}
 	
+	static getObjectsLifecycleId(ocel) {
+		let lif = {};
+		let objects = ocel["ocel:objects"];
+		for (let objId in objects) {
+			lif[objId] = [];
+		}
+		let events = ocel["ocel:events"];
+		for (let evId in events) {
+			let eve = events[evId];
+			for (let objId of eve["ocel:omap"]) {
+				lif[objId].push(evId);
+			}
+		}
+		return lif;
+	}
+	
 	static encodeLifecycleActivities(ocel) {
 		let events = ocel["ocel:events"];
 		let objects = ocel["ocel:objects"];
