@@ -24,7 +24,7 @@ class OcelObjRelations2Visualizer {
 	  return colour;
 	}
 	
-	static apply(ocel, objectsInteractionGraph, objectsDescendantsGraph, objectsParents, objectsLocks, objectsInterrupts, enableInteraction=true, enableDescendants=true, enableParents=true, enableLocks=true, enableInterrupts=true) {
+	static apply(ocel, objectsDescendantsGraph, objectInheritanceGraph, objectsParents, objectsLocks, objectsInterrupts, enableDescendants=true, enableInheritance=true, enableParents=true, enableLocks=true, enableInterrupts=true) {
 		let ret = [];
 		let uidMap = {};
 		ret.push("digraph G {");
@@ -38,17 +38,17 @@ class OcelObjRelations2Visualizer {
 			ret.push(objGuid+" [label=\""+objId+"\n"+objType+"\", color=\""+objTypeColor+"\", textcolor=\""+objTypeColor+"\"]");
 			uidMap[objId] = objGuid;
 		}
-		let interactionColor = "white";
 		let descendantsColor = "white";
+		let inheritanceColor = "white";
 		let parentsColor = "white";
 		let locksColor = "white";
 		let interruptsColor = "white";
 		
-		if (enableInteraction) {
-			interactionColor = "black";
-		}
 		if (enableDescendants) {
 			descendantsColor = "gray";
+		}
+		if (enableInheritance) {
+			inheritanceColor = "blue";
 		}
 		if (enableParents) {
 			parentsColor = "lightblue";
@@ -60,24 +60,22 @@ class OcelObjRelations2Visualizer {
 			interruptsColor = "brown";
 		}
 		
-		if (objectsInteractionGraph != null) {
-			for (let obj1 in objectsInteractionGraph) {
-				let objuid1 = uidMap[obj1];
-				for (let obj2 of objectsInteractionGraph[obj1]) {
-					if (obj1 < obj2) {
-						let objuid2 = uidMap[obj2];
-						ret.push(objuid1 + " -> "+objuid2+" [label=\"Relates\", dir=none, color="+interactionColor+", fontcolor="+interactionColor+"]");
-					}
-				}
-			}
-		}
-		
 		if (objectsDescendantsGraph != null) {
 			for (let obj1 in objectsDescendantsGraph) {
 				let objuid1 = uidMap[obj1];
 				for (let obj2 of objectsDescendantsGraph[obj1]) {
 					let objuid2 = uidMap[obj2];
-					ret.push(objuid2+" -> "+objuid1+" [label=\"Replaces\", color="+descendantsColor+", fontcolor="+descendantsColor+"]");
+					ret.push(objuid2+" -> "+objuid1+" [label=\"RELATES\", color="+descendantsColor+", fontcolor="+descendantsColor+"]");
+				}
+			}
+		}
+		
+		if (objectInheritanceGraph != null) {
+			for (let obj1 in objectInheritanceGraph) {
+				let objuid1 = uidMap[obj1];
+				for (let obj2 of objectInheritanceGraph[obj1]) {
+					let objuid2 = uidMap[obj2];
+					ret.push(objuid2+" -> "+objuid1+" [label=\"REPLACES\", color="+inheritanceColor+", fontcolor="+inheritanceColor+"]");
 				}
 			}
 		}
@@ -87,7 +85,7 @@ class OcelObjRelations2Visualizer {
 				let objuid1 = uidMap[obj1];
 				let obj2 = objectsParents[obj1];
 				let objuid2 = uidMap[obj2];
-				ret.push(objuid2+" -> "+objuid1+" [label=\"IsParent\", color="+parentsColor+", fontcolor="+parentsColor+"]");
+				ret.push(objuid2+" -> "+objuid1+" [label=\"PARENT_OF\", color="+parentsColor+", fontcolor="+parentsColor+"]");
 			}
 		}
 		
@@ -96,7 +94,7 @@ class OcelObjRelations2Visualizer {
 				let objuid1 = uidMap[obj1];
 				for (let obj2 of objectsLocks[obj1]) {
 					let objuid2 = uidMap[obj2];
-					ret.push(objuid1+" -> "+objuid2+" [label=\"Locks\", color="+locksColor+", fontcolor="+locksColor+"]");
+					ret.push(objuid1+" -> "+objuid2+" [label=\"LOCKS\", color="+locksColor+", fontcolor="+locksColor+"]");
 				}
 			}
 		}
@@ -106,7 +104,7 @@ class OcelObjRelations2Visualizer {
 				let objuid1 = uidMap[obj1];
 				for (let obj2 of objectsInterrupts[obj1]) {
 					let objuid2 = uidMap[obj2];
-					ret.push(objuid1+" -> "+objuid2+" [label=\"Interrupts\", color="+interruptsColor+", fontcolor="+interruptsColor+"]");
+					ret.push(objuid1+" -> "+objuid2+" [label=\"INTERRUPTS\", color="+interruptsColor+", fontcolor="+interruptsColor+"]");
 				}
 			}
 		}
