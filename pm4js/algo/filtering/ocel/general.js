@@ -671,7 +671,13 @@ class OcelGeneralFiltering {
 			}
 			
 			for (let o of eve["ocel:omap"]) {
-				if (Object.keys(objectsMapChildren[o]).length == 0 && objectsMapParents[o] != o) {
+				if (startEveObj[o] == evId || endEveObj[o] == evId) {
+					newEve["ocel:omap"].push(o);
+				}
+				else if (objectsMapParents[o] == o && Object.keys(objectsMapChildren[o]).length == 0) {
+					newEve["ocel:omap"].push(o);
+				}
+				else if (Object.keys(objectsMapChildren[o]).length == 0 && objectsMapParents[o] != o) {
 					let pare = objectsMapParents[o];
 					let inte = {};
 					for (let o2 of eve["ocel:omap"]) {
@@ -693,12 +699,6 @@ class OcelGeneralFiltering {
 					if (Object.keys(inte).length == Object.keys(objectsMapChildren[o]).length) {
 						newEve["ocel:omap"].push(o);
 					}
-				}
-				else if (startEveObj[o] == evId || endEveObj[o] == evId) {
-					newEve["ocel:omap"].push(o);
-				}
-				else if (objectsMapParents[o] == o && Object.keys(objectsMapChildren[o]).length == 0) {
-					newEve["ocel:omap"].push(o);
 				}
 			}
 
