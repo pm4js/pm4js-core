@@ -571,6 +571,12 @@ class OcelGeneralFiltering {
 			if (!(child in objectsDescendantsGraph[pare])) {
 				objectsDescendantsGraph[pare].push(child);
 			}
+			if (!(child in objectsDescendantsGraph)) {
+				objectsDescendantsGraph[child] = [];
+			}
+			if (!(pare in objectsDescendantsGraph[child])) {
+				objectsDescendantsGraph[child].push(pare);
+			}
 		}
 		let objTypesDct = {};
 		for (let objId in ocel["ocel:objects"]) {
