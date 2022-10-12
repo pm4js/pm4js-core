@@ -112,7 +112,7 @@ class Pm4JSObserverExample {
 	}
 }
 
-Pm4JS.VERSION = "0.0.30";
+Pm4JS.VERSION = "0.0.31";
 Pm4JS.registrationEnabled = false;
 Pm4JS.objects = [];
 Pm4JS.algorithms = [];
@@ -21384,6 +21384,12 @@ class OcelGeneralFiltering {
 			if (!(child in objectsDescendantsGraph[pare])) {
 				objectsDescendantsGraph[pare].push(child);
 			}
+			if (!(child in objectsDescendantsGraph)) {
+				objectsDescendantsGraph[child] = [];
+			}
+			if (!(pare in objectsDescendantsGraph[child])) {
+				objectsDescendantsGraph[child].push(pare);
+			}
 		}
 		let objTypesDct = {};
 		for (let objId in ocel["ocel:objects"]) {
@@ -21484,7 +21490,13 @@ class OcelGeneralFiltering {
 			}
 			
 			for (let o of eve["ocel:omap"]) {
-				if (Object.keys(objectsMapChildren[o]).length == 0 && objectsMapParents[o] != o) {
+				if (startEveObj[o] == evId || endEveObj[o] == evId) {
+					newEve["ocel:omap"].push(o);
+				}
+				else if (objectsMapParents[o] == o && Object.keys(objectsMapChildren[o]).length == 0) {
+					newEve["ocel:omap"].push(o);
+				}
+				else if (Object.keys(objectsMapChildren[o]).length == 0 && objectsMapParents[o] != o) {
 					let pare = objectsMapParents[o];
 					let inte = {};
 					for (let o2 of eve["ocel:omap"]) {
@@ -21506,12 +21518,6 @@ class OcelGeneralFiltering {
 					if (Object.keys(inte).length == Object.keys(objectsMapChildren[o]).length) {
 						newEve["ocel:omap"].push(o);
 					}
-				}
-				else if (startEveObj[o] == evId || endEveObj[o] == evId) {
-					newEve["ocel:omap"].push(o);
-				}
-				else if (objectsMapParents[o] == o && Object.keys(objectsMapChildren[o]).length == 0) {
-					newEve["ocel:omap"].push(o);
 				}
 			}
 
