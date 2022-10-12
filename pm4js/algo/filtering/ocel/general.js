@@ -644,6 +644,16 @@ class OcelGeneralFiltering {
 		filteredOcel["ocel:global-log"]["ocel:object-types"] = ocel["ocel:global-log"]["ocel:object-types"];
 		filteredOcel["ocel:objects"] = ocel["ocel:objects"];
 		filteredOcel["ocel:events"] = {};
+		
+		let extendedChildrenMap = {};
+		for (let o in ocel["ocel:objects"]) {
+			extendedChildrenMap[o] = {};
+		}
+		for (let o in parentsGraph) {
+			extendedChildrenMap[parentsGraph[o]][o] = 0;
+		}
+		console.log(extendedChildrenMap);
+		
 		for (let evId in ocel["ocel:events"]) {
 			let eve = ocel["ocel:events"][evId];
 			let newEve = {};
@@ -691,7 +701,8 @@ class OcelGeneralFiltering {
 							inte[o2] = 0;
 						}
 					}
-					if (Object.keys(inte).length < Object.keys(objectsMapChildren[pare]).length) {
+					//if (Object.keys(inte).length < Object.keys(objectsMapChildren[pare]).length) {
+					if (Object.keys(inte).length < Object.keys(extendedChildrenMap[pare]).length) {
 						newEve["ocel:omap"].push(o);
 					}
 				}
@@ -702,7 +713,8 @@ class OcelGeneralFiltering {
 							inte[o2] = 0;
 						}
 					}
-					if (Object.keys(inte).length == Object.keys(objectsMapChildren[o]).length) {
+					//if (Object.keys(inte).length == Object.keys(objectsMapChildren[o]).length) {
+					if (Object.keys(inte).length == Object.keys(extendedChildrenMap[o]).length) {
 						newEve["ocel:omap"].push(o);
 					}
 				}
