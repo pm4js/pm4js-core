@@ -112,7 +112,7 @@ class Pm4JSObserverExample {
 	}
 }
 
-Pm4JS.VERSION = "0.0.31";
+Pm4JS.VERSION = "0.0.32";
 Pm4JS.registrationEnabled = false;
 Pm4JS.objects = [];
 Pm4JS.algorithms = [];
@@ -17092,6 +17092,45 @@ catch (err) {
 }
 
 
+class OcelParentChildrenAttribute {
+	static apply(ocel, childOt, parentOt) {
+		let objTypes = {};
+		for (let objId in ocel["ocel:objects"]) {
+			let obj = ocel["ocel:objects"][objId];
+			objTypes[objId] = obj["ocel:type"];
+		}
+		let parents = {};
+		for (let evId in ocel["ocel:events"]) {
+			let eve = ocel["ocel:events"][evId];
+			for (let objId of eve["ocel:omap"]) {
+				if (objTypes[objId] == childOt) {
+					for (let objId2 of eve["ocel:omap"]) {
+						if (objTypes[objId2] == parentOt) {
+							parents[objId] = objId2;
+						}
+					}
+				}
+			}
+		}
+		
+		for (let childId in parents) {
+			ocel["ocel:objects"][childId]["ocel:ovmap"][parentOt+"ID"] = parents[childId];
+		}
+		return ocel;
+	}
+}
+
+try {
+	require('../../../pm4js.js');
+	module.exports = {OcelParentChildrenAttribute: OcelParentChildrenAttribute};
+	global.OcelParentChildrenAttribute = OcelParentChildrenAttribute;
+}
+catch (err) {
+	// not in node
+	//console.log(err);
+}
+
+
 class CelonisMapper {
 	constructor(baseUrl, apiKey) {
 		this.baseUrl = baseUrl;
@@ -21457,6 +21496,16 @@ class OcelGeneralFiltering {
 		filteredOcel["ocel:global-log"]["ocel:object-types"] = ocel["ocel:global-log"]["ocel:object-types"];
 		filteredOcel["ocel:objects"] = ocel["ocel:objects"];
 		filteredOcel["ocel:events"] = {};
+		
+		let extendedChildrenMap = {};
+		for (let o in ocel["ocel:objects"]) {
+			extendedChildrenMap[o] = {};
+		}
+		for (let o in parentsGraph) {
+			extendedChildrenMap[parentsGraph[o]][o] = 0;
+		}
+		console.log(extendedChildrenMap);
+		
 		for (let evId in ocel["ocel:events"]) {
 			let eve = ocel["ocel:events"][evId];
 			let newEve = {};
@@ -21504,7 +21553,8 @@ class OcelGeneralFiltering {
 							inte[o2] = 0;
 						}
 					}
-					if (Object.keys(inte).length < Object.keys(objectsMapChildren[pare]).length) {
+					//if (Object.keys(inte).length < Object.keys(objectsMapChildren[pare]).length) {
+					if (Object.keys(inte).length < Object.keys(extendedChildrenMap[pare]).length) {
 						newEve["ocel:omap"].push(o);
 					}
 				}
@@ -21515,7 +21565,8 @@ class OcelGeneralFiltering {
 							inte[o2] = 0;
 						}
 					}
-					if (Object.keys(inte).length == Object.keys(objectsMapChildren[o]).length) {
+					//if (Object.keys(inte).length == Object.keys(objectsMapChildren[o]).length) {
+					if (Object.keys(inte).length == Object.keys(extendedChildrenMap[o]).length) {
 						newEve["ocel:omap"].push(o);
 					}
 				}
