@@ -76,6 +76,12 @@ class InductiveMiner {
 			return detectedCut;
 		}
 		if (!(removeNoise)) {
+			if (threshold > 0) {
+				let detectedCut = InductiveMiner.inductiveMiner(log, treeParent, activityKey, true, threshold, freqDfg, skippable);
+				if (detectedCut != null) {
+					return detectedCut;
+				}
+			}
 			let detectedFallthrough = null;
 			if (log != null) {
 				detectedFallthrough = InductiveMiner.detectFallthroughs(log, freqDfg, treeParent, activityKey, threshold);
@@ -86,9 +92,6 @@ class InductiveMiner {
 			if (detectedFallthrough != null) {
 				return detectedFallthrough;
 			}
-		}
-		if (!(removeNoise) && threshold > 0) {
-			return InductiveMiner.inductiveMiner(log, treeParent, activityKey, true, threshold, freqDfg, skippable);
 		}
 		return InductiveMiner.mineFlower(freqDfg, treeParent);
 	}
