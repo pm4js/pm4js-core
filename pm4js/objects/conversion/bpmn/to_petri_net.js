@@ -59,6 +59,8 @@ class BpmnToPetriNetConverter {
 		
 		let nodesEntering = {};
 		let nodesExiting = {};
+		let transMap = {};
+		
 		for (let nodeId in bpmnGraph.nodes) {
 			let node = bpmnGraph.nodes[nodeId];
 			let entryPlace = petriNet.addPlace("ent_"+nodeId);
@@ -68,6 +70,7 @@ class BpmnToPetriNetConverter {
 				label = node.name;
 			}
 			let transition = petriNet.addTransition(nodeId, label);
+			transMap[nodeId] = [transition];
 			petriNet.addArcFromTo(entryPlace, transition);
 			petriNet.addArcFromTo(transition, exitingPlace);
 			if (node.type.endsWith("parallelGateway") || node.type.endsWith("inclusiveGateway")) {
@@ -76,6 +79,7 @@ class BpmnToPetriNetConverter {
 				if (sourceCount[node] > 1) {
 					exitingObject = petriNet.addTransition(BpmnToPetriNetConverter.nodeUuid(), null);
 					petriNet.addArcFromTo(exitingPlace, exitingObject);
+					transMap[nodeId].push(exitingObject);
 				}
 				else {
 					exitingObject = exitingPlace;
@@ -84,6 +88,7 @@ class BpmnToPetriNetConverter {
 				if (targetCount[node] > 1) {
 					enteringObject = petriNet.addTransition(BpmnToPetriNetConverter.nodeUuid(), null);
 					petriNet.addArcFromTo(enteringObject, entryPlace);
+					transMap[nodeId].push(enteringObject);
 				}
 				else {
 					enteringObject = entryPlace;
@@ -100,11 +105,13 @@ class BpmnToPetriNetConverter {
 				let startTransition = petriNet.addTransition(BpmnToPetriNetConverter.nodeUuid(), null);
 				petriNet.addArcFromTo(sourcePlace, startTransition);
 				petriNet.addArcFromTo(startTransition, entryPlace);
+				transMap[nodeId].push(startTransition);
 			}
 			else if (node.type.toLowerCase().endsWith("endevent")) {
 				let endTransition = petriNet.addTransition(BpmnToPetriNetConverter.nodeUuid(), null);
 				petriNet.addArcFromTo(exitingPlace, endTransition);
 				petriNet.addArcFromTo(endTransition, sinkPlace);
+				transMap[nodeId].push(endTransition);
 			}
 		}
 		
@@ -115,11 +122,13 @@ class BpmnToPetriNetConverter {
 			if (sourceObject.constructor.name == "PetriNetPlace") {
 				let inv1 = petriNet.addTransition(BpmnToPetriNetConverter.nodeUuid(), null);
 				petriNet.addArcFromTo(sourceObject, inv1);
+				transMap[flow.source].push(inv1);
 				sourceObject = inv1;
 			}
 			if (targetObject.constructor.name == "PetriNetPlace") {
 				let inv2 = petriNet.addTransition(BpmnToPetriNetConverter.nodeUuid(), null);
 				petriNet.addArcFromTo(inv2, targetObject);
+				transMap[flow.target].push(inv2);
 				targetObject = inv2;
 			}
 			petriNet.addArcFromTo(sourceObject, flowPlace[flow]);
@@ -137,7 +146,7 @@ class BpmnToPetriNetConverter {
 		Pm4JS.registerObject(acceptingPetriNet, "Accepting Petri Net (converted from BPMN)");
 
 		if (returnFlowPlace) {
-			return [acceptingPetriNet, flowPlace];
+			return [acceptingPetriNet, flowPlace, transMap];
 		}
 		
 		return acceptingPetriNet;

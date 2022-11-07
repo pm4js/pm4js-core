@@ -57,7 +57,7 @@ class TokenBasedReplayResult {
 				let trans = res["visitedTransitions"][i];
 				let transTime = res["visitedTransitionsTimes"][i];
 				let markTime = res["visitedMarkingsTimes"][i];
-				this.transExecutionPerformance[trans].push((transTime - markTime));
+				this.transExecutionPerformance[trans].push(Math.abs(transTime - markTime));
 				i = i + 1;
 			}
 			for (let p in this.acceptingPetriNet.net.places) {
