@@ -11,7 +11,7 @@ class BpmnToPetriNetConverter {
 		return "id"+uuid.replace(/-/g, "");
 	}
 		
-	static apply(bpmnGraph) {
+	static apply(bpmnGraph, reduce=true, returnFlowPlace=false) {
 		let petriNet = new PetriNet("converted from BPMN");
 		let im = new Marking(petriNet);
 		let fm = new Marking(petriNet);
@@ -129,10 +129,17 @@ class BpmnToPetriNetConverter {
 		// TODO: extra management of inclusiveGateways
 		
 		let acceptingPetriNet = new AcceptingPetriNet(petriNet, im, fm);
-		PetriNetReduction.apply(acceptingPetriNet, false);
+		
+		if (reduce) {
+			PetriNetReduction.apply(acceptingPetriNet, false);
+		}
 		
 		Pm4JS.registerObject(acceptingPetriNet, "Accepting Petri Net (converted from BPMN)");
 
+		if (returnFlowPlace) {
+			return [acceptingPetriNet, flowPlace];
+		}
+		
 		return acceptingPetriNet;
 	}
 }
