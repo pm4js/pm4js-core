@@ -11,7 +11,31 @@ class InductiveMiner {
 		return InductiveMiner.apply(null, null, threshold, frequencyDfg, removeNoise);
 	}
 	
-	static apply(eventLog, activityKey="concept:name", threshold=0.0, freqDfg=null, removeNoise=false) {
+	static apply(eventLog, activityKey="concept:name", threshold=0.0, freqDfg=null, removeNoise=false, variantsFiltering=false) {
+		if (variantsFiltering) {
+			if (threshold > 0.0) {
+				let variants = GeneralLogStatistics.getVariants(eventLog);
+				let variants2 = [];
+				let totalCount = 0;
+				for (let k in variants) {
+					let v = variants[k];
+					variants2.push([k, v]);
+					totalCount += 1;
+				}
+				variants2.sort((a, b) => b[1] - a[1]);
+				let includedVariants = [];
+				let i = 0;
+				let partialSum = 0;
+				while (i < variants2.length) {
+					if (partialSum <= totalCount * (1 - threshold)) {
+						includedVariants.push(variants2[i][0]);
+					}
+					partialSum += variants2[i][1];
+					i++;
+				}
+				eventLog = LogGeneralFiltering.filterVariants(eventLog, includedVariants);
+			}
+		}
 		let tree = InductiveMiner.inductiveMiner(eventLog, null, activityKey, removeNoise, threshold, freqDfg);
 		if (eventLog == null) {
 			Pm4JS.registerObject(tree, "Process Tree (Inductive Miner DFG)");
