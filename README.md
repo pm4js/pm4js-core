@@ -11,6 +11,7 @@ Include the script **dist/pm4js_latest.js** in your web page to use the function
 Install pm4js by doing **npm install -g pm4js**. Then, PM4Js can be used in Node by doing:
 **require('pm4js')**.
 
+
 #### Node (local installation)
 Clone the Git project, and install the required packages by doing **npm install**. Then, PM4Js can be used in Node by doing:
 **require('./init.js')**.
