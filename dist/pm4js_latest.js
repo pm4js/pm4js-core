@@ -112,7 +112,7 @@ class Pm4JSObserverExample {
 	}
 }
 
-Pm4JS.VERSION = "0.0.34";
+Pm4JS.VERSION = "0.0.35";
 Pm4JS.registrationEnabled = false;
 Pm4JS.objects = [];
 Pm4JS.algorithms = [];
@@ -11138,7 +11138,31 @@ class InductiveMiner {
 		return InductiveMiner.apply(null, null, threshold, frequencyDfg, removeNoise);
 	}
 	
-	static apply(eventLog, activityKey="concept:name", threshold=0.0, freqDfg=null, removeNoise=false) {
+	static apply(eventLog, activityKey="concept:name", threshold=0.0, freqDfg=null, removeNoise=false, variantsFiltering=false) {
+		if (variantsFiltering) {
+			if (threshold > 0.0) {
+				let variants = GeneralLogStatistics.getVariants(eventLog);
+				let variants2 = [];
+				let totalCount = 0;
+				for (let k in variants) {
+					let v = variants[k];
+					variants2.push([k, v]);
+					totalCount += 1;
+				}
+				variants2.sort((a, b) => b[1] - a[1]);
+				let includedVariants = [];
+				let i = 0;
+				let partialSum = 0;
+				while (i < variants2.length) {
+					if (partialSum <= totalCount * (1 - threshold)) {
+						includedVariants.push(variants2[i][0]);
+					}
+					partialSum += variants2[i][1];
+					i++;
+				}
+				eventLog = LogGeneralFiltering.filterVariants(eventLog, includedVariants);
+			}
+		}
 		let tree = InductiveMiner.inductiveMiner(eventLog, null, activityKey, removeNoise, threshold, freqDfg);
 		if (eventLog == null) {
 			Pm4JS.registerObject(tree, "Process Tree (Inductive Miner DFG)");
@@ -16559,6 +16583,107 @@ catch (err) {
 Pm4JS.registerAlgorithm("PerformanceDfgSimulation", "apply", ["PerformanceDfg"], "EventLog", "Perform Playout on a Performance DFG (performance simulation)", "Alessandro Berti");
 
 
+class Ocel20FormatFixer {
+	static apply(ocel) {
+		if (!("ocel:objectChanges" in ocel)) {
+			ocel["ocel:objectChanges"] = [];
+		}
+		for (let evId in ocel["ocel:events"]) {
+			let ev = ocel["ocel:events"][evId];
+			if (!("ocel:typedOmap" in ev)) {
+				let typedOmap = [];
+				for (let objId of ev["ocel:omap"]) {
+					typedOmap.push({"ocel:oid": objId, "ocel:qualifier": "EMPTY"});
+				}
+				ev["ocel:typedOmap"] = typedOmap;
+			}
+		}
+		for (let objId in ocel["ocel:objects"]) {
+			let obj = ocel["ocel:objects"][objId];
+			if (!("ocel:o2o" in obj)) {
+				obj["ocel:o2o"] = [];
+			}
+		}
+		if (!("ocel:objectTypes" in ocel)) {			
+			let objectTypes = {};
+			
+			for (let objId in ocel["ocel:objects"]) {
+				let obj = ocel["ocel:objects"][objId];
+				let type = obj["ocel:type"];
+				
+				if (!(type in objectTypes)) {
+					objectTypes[type] = {};
+				}
+								
+				for (let att in obj["ocel:ovmap"]) {
+					let attValue = obj["ocel:ovmap"][att];
+					let transf = Ocel20FormatFixer.transformAttValue(attValue);
+					objectTypes[type][att] = transf[0];
+				}
+			}
+			
+			ocel["ocel:objectTypes"] = objectTypes;
+		}
+		if (!("ocel:eventTypes" in ocel)) {			
+			let eventTypes = {};
+			
+			for (let evId in ocel["ocel:events"]) {
+				let eve = ocel["ocel:events"][evId];
+				let type = eve["ocel:activity"];
+				
+				if (!(type in eventTypes)) {
+					eventTypes[type] = {};
+				}
+				
+				for (let att in eve["ocel:vmap"]) {
+					let attValue = eve["ocel:vmap"][att];
+					let transf = Ocel20FormatFixer.transformAttValue(attValue);
+					eventTypes[type][att] = transf[0];
+				}
+				
+				
+			}
+			
+			ocel["ocel:eventTypes"] = eventTypes;
+		}
+		return ocel;
+	}
+	
+	static transformAttValue(attValue) {
+		let xmlTag = null;
+		let value = null;
+		if (typeof attValue == "string") {
+			xmlTag = "string";
+			value = attValue;
+		}
+		else if (typeof attValue == "object") {
+			return "date";
+			xmlTag = "date";
+			value = attValue.toISOString();
+		}
+		else if (typeof attValue == "number") {
+			xmlTag = "float";
+			value = ""+attValue;
+		}
+		else {
+			xmlTag = "string";
+			value = attValue;
+		}
+		return [xmlTag, value];
+	}
+}
+
+try {
+	require('../../../pm4js.js');
+	module.exports = {Ocel20FormatFixer: Ocel20FormatFixer};
+	global.Ocel20FormatFixer = Ocel20FormatFixer;
+}
+catch (err) {
+	// not in node
+	//console.log(err);
+}
+
+
 class JsonOcelImporter {
 	static apply(jsonString) {
 		return JsonOcelImporter.importLog(jsonString);
@@ -16746,12 +16871,215 @@ catch (err) {
 }
 
 
+class Xml2OcelImporter {
+	static apply(xmlString) {
+		return Xml2OcelImporter.importLog(xmlString);
+	}
+	
+	static importLog(xmlString) {
+		var parser = new DOMParser();
+		var xmlDoc = parser.parseFromString(xmlString, "text/xml");
+		let xmlLog = xmlDoc.getElementsByTagName("log")[0];
+		let ocel = {};
+		Xml2OcelImporter.parseXmlObj(xmlLog, ocel, ocel);
+		return ocel;
+	}
+
+	static parseXmlObj(xmlObj, target, ocel) {
+		let attributeNames = {};
+		let objectTypes = {};
+		let eventTypes = {};
+		let events = {};
+		let objects = {};
+		let objectChanges = [];
+		for (let childId in xmlObj.childNodes) {
+			let child = xmlObj.childNodes[childId];
+			if (child.tagName == "object-types") {
+				for (let childId2 in child.childNodes) {
+					let child2 = child.childNodes[childId2];
+					if (child2.tagName != null) {
+						objectTypes[child2.getAttribute("name")] = {};
+						for (let childId3 in child2.childNodes) {
+							let child3 = child2.childNodes[childId3];
+							if (child3.tagName != null) {
+								for (let childId4 in child3.childNodes) {
+									let child4 = child3.childNodes[childId4];
+									if (child4.tagName != null) {
+										let attributeName = child4.getAttribute("name");
+										let attributeType = child4.getAttribute("type");
+										objectTypes[child2.getAttribute("name")][attributeName] = attributeType;
+										attributeNames[attributeName] = 0;
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+			else if (child.tagName == "event-types") {
+				for (let childId2 in child.childNodes) {
+					let child2 = child.childNodes[childId2];
+					if (child2.tagName != null) {
+						eventTypes[child2.getAttribute("name")] = {};
+						for (let childId3 in child2.childNodes) {
+							let child3 = child2.childNodes[childId3];
+							if (child3.tagName != null) {
+								for (let childId4 in child3.childNodes) {
+									let child4 = child3.childNodes[childId4];
+									if (child4.tagName != null) {
+										let attributeName = child4.getAttribute("name");
+										let attributeType = child4.getAttribute("type");
+										eventTypes[child2.getAttribute("name")][attributeName] = attributeType;
+										attributeNames[attributeName] = 0;
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+			else if (child.tagName == "events") {
+				for (let childId2 in child.childNodes) {
+					let child2 = child.childNodes[childId2];
+					if (child2.tagName != null) {
+						let eventId = child2.getAttribute("id");
+						let eventType = child2.getAttribute("type");
+						let eventTime = child2.getAttribute("time");
+						let eventsOmap = [];
+						let eventsTypedOmap = [];
+						let eventsVmap = {};
+						for (let childId3 in child2.childNodes) {
+							let child3 = child2.childNodes[childId3];
+							if (child3.tagName == "objects") {
+								for (let childId4 in child3.childNodes) {
+									let child4 = child3.childNodes[childId4];
+									if (child4.tagName != null) {
+										let objectId = child4.getAttribute("object-id");
+										let objectQualifier = child4.getAttribute("qualifier");
+										if (!(eventsOmap.includes(objectId))) {
+											eventsOmap.push(objectId);
+										}
+										eventsTypedOmap.push({"ocel:oid": objectId, "ocel:qualifier": objectQualifier});
+									}
+								}
+							}
+							else if (child3.tagName == "attributes") {
+								for (let childId4 in child3.childNodes) {
+									let child4 = child3.childNodes[childId4];
+									if (child4.tagName != null) {
+										let attributeName = child4.getAttribute("name");										
+										let value = child4.lastChild.nodeValue;
+										
+										let attType = eventTypes[eventType][attributeName];
+										
+										if (attType == "float" || attType == "double") {
+											value = parseFloat(value);
+										}
+										else if (attType == "int") {
+											value = parseInt(value);
+										}
+										else if (attType == "date") {
+											value = new Date(value);
+										}
+										eventsVmap[attributeName] = value;
+									}
+								}
+							}
+						}
+						events[eventId] = {"ocel:activity": eventType, "ocel:timestamp": new Date(eventTime), "ocel:omap": eventsOmap, "ocel:typedOmap": eventsTypedOmap, "ocel:vmap": eventsVmap};
+					}
+				}
+			}
+			else if (child.tagName == "objects") {
+				for (let childId2 in child.childNodes) {
+					let child2 = child.childNodes[childId2];
+					if (child2.tagName != null) {
+						let objectId = child2.getAttribute("id");
+						let objectType = child2.getAttribute("type");
+						let objectO2O = [];
+						let objectOvmap = {};
+						for (let childId3 in child2.childNodes) {
+							let child3 = child2.childNodes[childId3];
+							if (child3.tagName == "objects") {
+								for (let childId4 in child3.childNodes) {
+									let child4 = child3.childNodes[childId4];
+									if (child4.tagName != null) {
+										let targetObjectId = child4.getAttribute("object-id");
+										let qualifier = child4.getAttribute("qualifier");
+										objectO2O.push({"ocel:oid": targetObjectId, "ocel:qualifier": qualifier});
+
+									}
+								}
+							}
+							else if (child3.tagName == "attributes") {
+								for (let childId4 in child3.childNodes) {
+									let child4 = child3.childNodes[childId4];
+									if (child4.tagName != null) {
+										let name = child4.getAttribute("name");
+										let time = child4.getAttribute("time");
+										let value = child4.lastChild.nodeValue;
+										
+										let attType = objectTypes[objectType][name];
+										
+										if (attType == "float" || attType == "double") {
+											value = parseFloat(value);
+										}
+										else if (attType == "int") {
+											value = parseInt(value);
+										}
+										else if (attType == "date") {
+											value = new Date(value);
+										}
+										
+										if (time == "0") {
+											objectOvmap[name] = value;
+										}
+										else {
+											objectChanges.push({"ocel:oid": objectId, "ocel:name": name, "ocel:timestamp": new Date(time), "ocel:value": value});
+										}
+									}
+								}
+							}
+						}
+						objects[objectId] = {"ocel:type": objectType, "ocel:ovmap": objectOvmap, "ocel:o2o": objectO2O};
+					}
+				}
+			}
+		}
+		ocel["ocel:global-event"] = {};
+		ocel["ocel:global-object"] = {};
+		ocel["ocel:global-log"] = {};
+		ocel["ocel:global-log"]["ocel:attribute-names"] = Object.keys(attributeNames);
+		ocel["ocel:global-log"]["ocel:object-types"] = Object.keys(objectTypes);
+		ocel["ocel:global-log"]["ocel:version"] = "1.0";
+		ocel["ocel:global-log"]["ocel:ordering"] = "timestamp";
+		ocel["ocel:events"] = events;
+		ocel["ocel:objects"] = objects;
+		ocel["ocel:objectTypes"] = objectTypes;
+		ocel["ocel:eventTypes"] = eventTypes;
+		ocel["ocel:objectChanges"] = objectChanges;
+	}
+}
+
+try {
+	require('../../../../pm4js.js');
+	module.exports = {Xml2OcelImporter: Xml2OcelImporter};
+	global.Xml2OcelImporter = Xml2OcelImporter;
+	global.DOMParser = require('xmldom').DOMParser;
+}
+catch (err) {
+	// not in node
+	//console.log(err);
+}
+
+
 class JsonOcelExporter {
 	static apply(ocel) {
 		return JsonOcelExporter.exportLog(ocel);
 	}
 	
 	static exportLog(ocel) {
+		ocel = Ocel20FormatFixer.apply(ocel);
 		return JSON.stringify(ocel);
 	}
 }
@@ -16937,6 +17265,174 @@ catch (err) {
 	// not in node
 	//console.log(err);
 }
+
+
+class Xml2OcelExporter {
+	static apply(ocel) {
+		return Xml2OcelExporter.exportLog(ocel);
+	}
+	
+	static exportLog(ocel) {
+		ocel = Ocel20FormatFixer.apply(ocel);
+		let xmlDocument = document.createElement("log");
+		let objectTypes = document.createElement("object-types");
+		let eventTypes = document.createElement("event-types");
+		let events = document.createElement("events");
+		let objects = document.createElement("objects");
+		xmlDocument.appendChild(objectTypes);
+		xmlDocument.appendChild(eventTypes);
+		xmlDocument.appendChild(objects);
+		xmlDocument.appendChild(events);
+		for (let ot in ocel["ocel:objectTypes"]) {
+			let xmlOt = document.createElement("object-type");
+			xmlOt.setAttribute("name", ot);
+			objectTypes.appendChild(xmlOt);
+			let attributes = document.createElement("attributes");
+			xmlOt.appendChild(attributes);
+			for (let att in ocel["ocel:objectTypes"][ot]) {
+				let attribute = document.createElement("attribute");
+				attribute.setAttribute("name", att);
+				attribute.setAttribute("type", ocel["ocel:objectTypes"][ot][att]);
+				attributes.appendChild(attribute);
+			}
+		}
+		for (let et in ocel["ocel:eventTypes"]) {
+			let xmlEt = document.createElement("event-type");
+			xmlEt.setAttribute("name", et);
+			eventTypes.appendChild(xmlEt);
+			let attributes = document.createElement("attributes");
+			xmlEt.appendChild(attributes);
+			for (let att in ocel["ocel:eventTypes"][et]) {
+				let attribute = document.createElement("attribute");
+				attribute.setAttribute("name", att);
+				attribute.setAttribute("type", ocel["ocel:eventTypes"][et][att]);
+				attributes.appendChild(attribute);
+			}
+		}
+		for (let objId in ocel["ocel:objects"]) {
+			let obj = ocel["ocel:objects"][objId];
+			let xmlObj = document.createElement("object");
+			xmlObj.setAttribute("id", objId);
+			xmlObj.setAttribute("type", obj["ocel:type"]);
+			let attributes = document.createElement("attributes");
+			let innerObjects = document.createElement("objects");
+			for (let entry of obj["ocel:o2o"]) {
+				let objId = entry["ocel:oid"];
+				let qualifier = entry["ocel:qualifier"];
+				let xmlObj = document.createElement("object");
+				xmlObj.setAttribute("object-id", objId);
+				xmlObj.setAttribute("qualifier", qualifier);
+				innerObjects.appendChild(xmlObj);
+			}
+			for (let att in obj["ocel:ovmap"]) {
+				let attValue = obj["ocel:ovmap"][att];
+				let attType = ocel["ocel:objectTypes"][obj["ocel:type"]][att];
+				
+				if (attType == "date") {
+					attValue = attValue.toISOString();
+				}
+				else {
+					attValue = ""+attValue;
+				}
+				
+				let xmlAtt = document.createElement("attribute");
+				attributes.appendChild(xmlAtt);
+				xmlAtt.setAttribute("name", att);
+				xmlAtt.setAttribute("time", "0");
+				xmlAtt.innerHTML = attValue;
+			}
+			
+			for (let entry of ocel["ocel:objectChanges"]) {
+				let noid = entry["ocel:oid"];
+				if (objId == noid) {
+					let att = entry["ocel:name"];
+					let attValue = entry["ocel:value"];
+					let attTimestamp = entry["ocel:timestamp"].toISOString();
+					let attType = ocel["ocel:objectTypes"][obj["ocel:type"]][att];
+					
+					if (attType == "date") {
+						attValue = attValue.toISOString();
+					}
+					else {
+						attValue = ""+attValue;
+					}
+										
+					let xmlAtt = document.createElement("attribute");
+					attributes.appendChild(xmlAtt);
+					xmlAtt.setAttribute("name", att);
+					xmlAtt.setAttribute("time", attTimestamp);
+					xmlAtt.innerHTML = attValue;
+				}
+			}
+			xmlObj.appendChild(attributes);
+			xmlObj.appendChild(innerObjects);
+			objects.appendChild(xmlObj);
+		}
+		for (let evId in ocel["ocel:events"]) {
+			let ev = ocel["ocel:events"][evId];
+			let xmlEv = document.createElement("event");
+			xmlEv.setAttribute("id", evId);
+			xmlEv.setAttribute("type", ev["ocel:activity"]);
+			xmlEv.setAttribute("time", ev["ocel:timestamp"].toISOString());
+			let attributes = document.createElement("attributes");
+			let innerObjects = document.createElement("objects");
+			for (let entry of ev["ocel:typedOmap"]) {
+				let objId = entry["ocel:oid"];
+				let qualifier = entry["ocel:qualifier"];
+				let xmlObj = document.createElement("object");
+				xmlObj.setAttribute("object-id", objId);
+				xmlObj.setAttribute("qualifier", qualifier);
+				innerObjects.appendChild(xmlObj);
+			}
+			for (let att in ev["ocel:vmap"]) {
+				let attValue = ev["ocel:vmap"][att];
+				let attType = ocel["ocel:eventTypes"][ev["ocel:activity"]][att];
+
+				if (attType == "date") {
+					attValue = attValue.toISOString();
+				}
+				else {
+					attValue = ""+attValue;
+				}
+				
+				let xmlAtt = document.createElement("attribute");
+				attributes.appendChild(xmlAtt);
+				xmlAtt.setAttribute("name", att);
+				xmlAtt.innerHTML = attValue;
+			}
+			xmlEv.appendChild(attributes);
+			xmlEv.appendChild(innerObjects);
+			events.appendChild(xmlEv);
+		}
+		
+		let serializer = null;
+		try {
+			serializer = new XMLSerializer();
+		}
+		catch (err) {
+			serializer = require('xmlserializer');
+		}
+		const xmlStr = serializer.serializeToString(xmlDocument);
+		return xmlStr;
+	}
+}
+
+try {
+	require('../../../../pm4js.js');
+	module.exports = {Xml2OcelExporter: Xml2OcelExporter};
+	global.Xml2OcelExporter = Xml2OcelExporter;
+	const jsdom = require("jsdom");
+	const { JSDOM } = jsdom;
+	global.dom = new JSDOM('<!doctype html><html><body></body></html>');
+	global.window = dom.window;
+	global.document = dom.window.document;
+	global.navigator = global.window.navigator;
+}
+catch (err) {
+	// not in node
+	//console.log(err);
+}
+
 
 
 class OcelFlattening {
