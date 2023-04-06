@@ -94,9 +94,21 @@ class Xml2OcelImporter {
 								for (let childId4 in child3.childNodes) {
 									let child4 = child3.childNodes[childId4];
 									if (child4.tagName != null) {
-										let attributeName = child4.getAttribute("name");
-										let attributeValue = child4.lastChild.nodeValue;
-										eventsVmap[attributeName] = attributeValue;
+										let attributeName = child4.getAttribute("name");										
+										let value = child4.lastChild.nodeValue;
+										
+										let attType = eventTypes[eventType][attributeName];
+										
+										if (attType == "float" || attType == "double") {
+											value = parseFloat(value);
+										}
+										else if (attType == "int") {
+											value = parseInt(value);
+										}
+										else if (attType == "date") {
+											value = new Date(value);
+										}
+										eventsVmap[attributeName] = value;
 									}
 								}
 							}
@@ -132,7 +144,20 @@ class Xml2OcelImporter {
 									if (child4.tagName != null) {
 										let name = child4.getAttribute("name");
 										let time = child4.getAttribute("time");
-										let value = ""+child4.lastChild.nodeValue;
+										let value = child4.lastChild.nodeValue;
+										
+										let attType = objectTypes[objectType][name];
+										
+										if (attType == "float" || attType == "double") {
+											value = parseFloat(value);
+										}
+										else if (attType == "int") {
+											value = parseInt(value);
+										}
+										else if (attType == "date") {
+											value = new Date(value);
+										}
+										
 										if (time == "0") {
 											objectOvmap[name] = value;
 										}
