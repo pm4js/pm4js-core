@@ -18,6 +18,7 @@ class Xml2OcelImporter {
 		let eventTypes = {};
 		let events = {};
 		let objects = {};
+		let objectChanges = [];
 		for (let childId in xmlObj.childNodes) {
 			let child = xmlObj.childNodes[childId];
 			if (child.tagName == "object-types") {
@@ -130,8 +131,14 @@ class Xml2OcelImporter {
 									let child4 = child3.childNodes[childId4];
 									if (child4.tagName != null) {
 										let name = child4.getAttribute("name");
+										let time = child4.getAttribute("time");
 										let value = ""+child4.lastChild.nodeValue;
-										objectOvmap[name] = value;
+										if (time == "0") {
+											objectOvmap[name] = value;
+										}
+										else {
+											objectChanges.push({"ocel:oid": objectId, "ocel:name": name, "ocel:timestamp": new Date(time), "ocel:value": value});
+										}
 									}
 								}
 							}
@@ -152,6 +159,7 @@ class Xml2OcelImporter {
 		ocel["ocel:objects"] = objects;
 		ocel["ocel:objectTypes"] = objectTypes;
 		ocel["ocel:eventTypes"] = eventTypes;
+		ocel["ocel:objectChanges"] = objectChanges;
 	}
 }
 
