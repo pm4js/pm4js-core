@@ -4,6 +4,7 @@ class Xml2OcelExporter {
 	}
 	
 	static exportLog(ocel) {
+		ocel = Ocel20FormatFixer.apply(ocel);
 		let xmlDocument = document.createElement("log");
 		let objectTypes = document.createElement("object-types");
 		let eventTypes = document.createElement("event-types");

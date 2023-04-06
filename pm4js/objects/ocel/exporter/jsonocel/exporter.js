@@ -4,6 +4,7 @@ class JsonOcelExporter {
 	}
 	
 	static exportLog(ocel) {
+		ocel = Ocel20FormatFixer.apply(ocel);
 		return JSON.stringify(ocel);
 	}
 }
