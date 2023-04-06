@@ -11,8 +11,8 @@ class Xml2OcelExporter {
 		let objects = document.createElement("objects");
 		xmlDocument.appendChild(objectTypes);
 		xmlDocument.appendChild(eventTypes);
-		xmlDocument.appendChild(events);
 		xmlDocument.appendChild(objects);
+		xmlDocument.appendChild(events);
 		for (let ot in ocel["ocel:objectTypes"]) {
 			let xmlOt = document.createElement("object-type");
 			xmlOt.setAttribute("name", ot);
@@ -39,6 +39,65 @@ class Xml2OcelExporter {
 				attributes.appendChild(attribute);
 			}
 		}
+		for (let objId in ocel["ocel:objects"]) {
+			let obj = ocel["ocel:objects"][objId];
+			let xmlObj = document.createElement("object");
+			xmlObj.setAttribute("id", objId);
+			xmlObj.setAttribute("type", obj["ocel:type"]);
+			let attributes = document.createElement("attributes");
+			let innerObjects = document.createElement("objects");
+			for (let entry of obj["ocel:o2o"]) {
+				let objId = entry["ocel:oid"];
+				let qualifier = entry["ocel:qualifier"];
+				let xmlObj = document.createElement("object");
+				xmlObj.setAttribute("object-id", objId);
+				xmlObj.setAttribute("qualifier", qualifier);
+				innerObjects.appendChild(xmlObj);
+			}
+			for (let att in obj["ocel:ovmap"]) {
+				let attValue = obj["ocel:ovmap"][att];
+				let attType = ocel["ocel:objectTypes"][obj["ocel:type"]][att];
+				
+				if (attType == "date") {
+					attValue = attValue.toISOString();
+				}
+				else {
+					attValue = ""+attValue;
+				}
+				
+				let xmlAtt = document.createElement("attribute");
+				attributes.appendChild(xmlAtt);
+				xmlAtt.setAttribute("name", att);
+				xmlAtt.setAttribute("time", "0");
+				xmlAtt.innerHTML = attValue;
+			}
+			
+			for (let entry of ocel["ocel:objectChanges"]) {
+				let noid = entry["ocel:oid"];
+				if (objId == noid) {
+					let att = entry["ocel:name"];
+					let attValue = entry["ocel:value"];
+					let attTimestamp = entry["ocel:timestamp"].toISOString();
+					let attType = ocel["ocel:objectTypes"][obj["ocel:type"]][att];
+					
+					if (attType == "date") {
+						attValue = attValue.toISOString();
+					}
+					else {
+						attValue = ""+attValue;
+					}
+										
+					let xmlAtt = document.createElement("attribute");
+					attributes.appendChild(xmlAtt);
+					xmlAtt.setAttribute("name", att);
+					xmlAtt.setAttribute("time", attTimestamp);
+					xmlAtt.innerHTML = attValue;
+				}
+			}
+			xmlObj.appendChild(attributes);
+			xmlObj.appendChild(innerObjects);
+			objects.appendChild(xmlObj);
+		}
 		for (let evId in ocel["ocel:events"]) {
 			let ev = ocel["ocel:events"][evId];
 			let xmlEv = document.createElement("event");
@@ -58,7 +117,7 @@ class Xml2OcelExporter {
 			for (let att in ev["ocel:vmap"]) {
 				let attValue = ev["ocel:vmap"][att];
 				let attType = ocel["ocel:eventTypes"][ev["ocel:activity"]][att];
-				
+
 				if (attType == "date") {
 					attValue = attValue.toISOString();
 				}
@@ -74,25 +133,6 @@ class Xml2OcelExporter {
 			xmlEv.appendChild(attributes);
 			xmlEv.appendChild(innerObjects);
 			events.appendChild(xmlEv);
-		}
-		for (let objId in ocel["ocel:objects"]) {
-			let obj = ocel["ocel:objects"][objId];
-			let xmlObj = document.createElement("object");
-			xmlObj.setAttribute("id", objId);
-			xmlObj.setAttribute("type", obj["ocel:type"]);
-			let attributes = document.createElement("attributes");
-			let innerObjects = document.createElement("objects");
-			for (let entry of obj["ocel:o2o"]) {
-				let objId = entry["ocel:oid"];
-				let qualifier = entry["ocel:qualifier"];
-				let xmlObj = document.createElement("object");
-				xmlObj.setAttribute("object-id", objId);
-				xmlObj.setAttribute("qualifier", qualifier);
-				innerObjects.appendChild(xmlObj);
-			}
-			xmlObj.appendChild(attributes);
-			xmlObj.appendChild(innerObjects);
-			objects.appendChild(xmlObj);
 		}
 		
 		let serializer = null;
