@@ -101,9 +101,73 @@ class SqliteOcel2Importer {
 		let eventObject1 = {};
 		let objectObject1 = {};
 		
+		let columns = eventObject0[0].columns;
+		let idIdx = columns.indexOf("ocel_event_id");
 		
+		for (let el of eventObject0[0].values) {
+			let sourceId = el[idIdx];
+			let dictio = {};
+			let idx = 0;
+			for (let col of columns) {
+				dictio[col] = el[idx];
+				idx++;
+			}
+			if (!(sourceId in eventObject1)) {
+				eventObject1[sourceId] = [];
+			}
+			eventObject1[sourceId].push(dictio);
+		}
 		
+		columns = objectObject0[0].columns;
+		idIdx = columns.indexOf("ocel_source_id");
 		
+		for (let el of objectObject0[0].values) {
+			let sourceId = el[idIdx];
+			let dictio = {};
+			let idx = 0;
+			for (let col of columns) {
+				dictio[col] = el[idx];
+				idx++;
+			}
+			if (!(sourceId in objectObject1)) {
+				objectObject1[sourceId] = [];
+			}
+			objectObject1[sourceId].push(dictio);
+		}
+		
+		columns = events0[0].columns;
+		idIdx = columns.indexOf("ocel_id");
+		
+		for (let el of events0[0].values) {
+			let eveId = el[idIdx]
+			let corr = eventsMap1[eveId];
+			let relobjs = eventObject1[eveId];
+			
+			let dictio = {};
+			dictio["ocel:activity"] = el[columns.indexOf("ocel_type")];
+			dictio["ocel:timestamp"] = new Date(corr["ocel_time"]);
+			let vmap = {};
+			let typedOmap = [];
+			let omap = [];
+						
+			for (let relobj of relobjs) {
+				let objId = relobj["ocel_object_id"];
+				let thisDct = {"ocel:oid": objId, "ocel:qualifier": relobj["ocel_qualifier"]};
+				typedOmap.push(thisDct);
+				if (!(omap.includes(objId))) {
+					omap.push(objId);
+				}
+			}
+			
+			dictio["ocel:vmap"] = vmap;
+			dictio["ocel:typedOmap"] = typedOmap;
+			dictio["ocel:omap"] = omap;
+			
+			events[eveId] = dictio;
+		}
+		
+		console.log(events);
+				
 		let ocel = {};
 		ocel["ocel:global-event"] = {};
 		ocel["ocel:global-object"] = {};
