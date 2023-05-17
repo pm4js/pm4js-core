@@ -55,17 +55,48 @@ class SqliteOcel2Exporter {
 		for (let evId in ocel["ocel:events"]) {
 			let ev = ocel["ocel:events"][evId];
 			db.run("INSERT INTO event VALUES ('"+evId+"', '"+ev["ocel:activity"]+"')");
-			for (let relobj in ev["ocel:typedOmap"]) {
+			for (let relobj of ev["ocel:typedOmap"]) {
 				db.run("INSERT INTO event_object VALUES ('"+evId+"', '"+relobj["ocel:oid"]+"', '"+relobj["ocel:qualifier"]+"')");
 			}
+			let thisTypeMap = eventMapTypeList[ev["ocel:activity"]];
+			let thisTypeCorr = eventMapType[ev["ocel:activity"]];
+			let columns = ["ocel_id", "ocel_time"];
+			let values = [evId, ev["ocel:timestamp"].toISOString()];
+			
+			for (let attr of thisTypeMap) {
+				if (attr in ev["ocel:vmap"]) {
+					columns.push(attr);
+					values.push(ev["ocel:vmap"][attr]);
+				}
+				
+			}
+			
+			let stru = "INSERT INTO event_"+thisTypeCorr+" ("+columns.join(", ")+") VALUES ('"+values.join("', '")+"')";
+
+			db.run(stru);
 		}
 		
 		for (let objId in ocel["ocel:objects"]) {
 			let obj = ocel["ocel:objects"][objId];
 			db.run("INSERT INTO object VALUES ('"+objId+"', '"+obj["ocel:type"]+"')");
-			for (let relobj in obj["ocel:o2o"]) {
+			for (let relobj of obj["ocel:o2o"]) {
 				db.run("INSERT INTO object_object VALUES ('"+objId+"', '"+relobj["ocel:oid"]+"', '"+relobj["ocel:qualifier"]+"')");
 			}
+			let thisTypeMap = objectMapTypeList[obj["ocel:type"]];
+			let thisTypeCorr = objectMapType[obj["ocel:type"]];
+			let columns = ["ocel_id", "ocel_time"];
+			let values = [objId, "1970-01-01T01:00:00"];
+			
+			for (let attr of thisTypeMap) {
+				if (attr in obj["ocel:ovmap"]) {
+					columns.push(attr);
+					values.push(obj["ocel:ovmap"][attr]);
+				}
+			}
+			
+			let stru = "INSERT INTO object_"+thisTypeCorr+" ("+columns.join(", ")+") VALUES ('"+values.join("', '")+"')";
+			
+			db.run(stru);
 		}
 		
 
