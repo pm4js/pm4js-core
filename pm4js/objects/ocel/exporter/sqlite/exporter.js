@@ -95,8 +95,22 @@ class SqliteOcel2Exporter {
 			}
 			
 			let stru = "INSERT INTO object_"+thisTypeCorr+" ("+columns.join(", ")+") VALUES ('"+values.join("', '")+"')";
-			
 			db.run(stru);
+		}
+		
+		for (let obj2 of ocel["ocel:objectChanges"]) {
+			let objId = obj2["ocel:oid"];
+			let obj = ocel["ocel:objects"][objId];
+			if (obj != null) {
+				let thisTypeCorr = objectMapType[obj["ocel:type"]];
+				
+				let columns = ["ocel_id", "ocel_time", "ocel_changed_field", obj2["ocel:name"]];
+				let values = [obj2["ocel:oid"], obj2["ocel:timestamp"].toISOString(), obj2["ocel:name"], obj2["ocel:value"]];
+				
+				let stru = "INSERT INTO object_"+thisTypeCorr+" ("+columns.join(", ")+") VALUES ('"+values.join("', '")+"')";
+				
+				db.run(stru);
+			}
 		}
 		
 
