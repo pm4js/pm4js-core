@@ -158,7 +158,7 @@ class Xml2OcelImporter {
 											value = new Date(value);
 										}
 										
-										if (time == "0") {
+										if (time == "0" || time == "1970-01-01T00:00:00") {
 											objectOvmap[name] = value;
 										}
 										else {

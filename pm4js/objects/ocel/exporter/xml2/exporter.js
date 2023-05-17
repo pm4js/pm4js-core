@@ -69,7 +69,7 @@ class Xml2OcelExporter {
 				let xmlAtt = document.createElement("attribute");
 				attributes.appendChild(xmlAtt);
 				xmlAtt.setAttribute("name", att);
-				xmlAtt.setAttribute("time", "0");
+				xmlAtt.setAttribute("time", "1970-01-01T00:00:00");
 				xmlAtt.innerHTML = attValue;
 			}
 			
