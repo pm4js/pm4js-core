@@ -69,6 +69,7 @@ require('./pm4js/objects/ocel/util/ocel20_fixer.js');
 require('./pm4js/objects/ocel/importer/jsonocel/importer.js');
 require('./pm4js/objects/ocel/importer/xmlocel/importer.js');
 require('./pm4js/objects/ocel/importer/xml2/importer.js');
+require('./pm4js/objects/ocel/importer/sqlite/importer.js');
 require('./pm4js/objects/ocel/exporter/jsonocel/exporter.js');
 require('./pm4js/objects/ocel/exporter/xmlocel/exporter.js');
 require('./pm4js/objects/ocel/exporter/xml2/exporter.js');
