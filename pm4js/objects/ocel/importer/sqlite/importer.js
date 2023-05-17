@@ -270,7 +270,6 @@ try {
 	require('../../../../pm4js.js');
 	module.exports = {SqliteOcel2Importer: SqliteOcel2Importer};
 	global.SqliteOcel2Importer = SqliteOcel2Importer;
-	global.DOMParser = require('xmldom').DOMParser;
 }
 catch (err) {
 	// not in node

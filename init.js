@@ -73,6 +73,7 @@ require('./pm4js/objects/ocel/importer/sqlite/importer.js');
 require('./pm4js/objects/ocel/exporter/jsonocel/exporter.js');
 require('./pm4js/objects/ocel/exporter/xmlocel/exporter.js');
 require('./pm4js/objects/ocel/exporter/xml2/exporter.js');
+require('./pm4js/objects/ocel/exporter/sqlite/exporter.js');
 require('./pm4js/objects/ocel/util/flattening.js');
 require('./pm4js/objects/ocel/util/to_celonis.js');
 require('./pm4js/objects/ocel/util/parent_children.js');
