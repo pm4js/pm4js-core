@@ -9,7 +9,8 @@
   "dependencies": {
     "retus": "^1.1.2",
     "xmldom": "^0.6.0",
-    "xmlserializer": "^0.6.1"
+    "xmlserializer": "^0.6.1",
+	"sql.js": "^1.8.0"
   },
   "devDependencies": {
     "jest": "^27.1.1"
