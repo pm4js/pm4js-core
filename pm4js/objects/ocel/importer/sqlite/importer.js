@@ -3,6 +3,22 @@ class SqliteOcel2Importer {
 		return SqliteOcel2Importer.importLog(content);
 	}
 	
+	static inferType(stru) {
+		try {
+			Double.parseDouble(stru);
+			return "float";
+		}
+		catch (err) {
+			let thisDate = Date.parse(stru);
+			
+			if (isNaN(thisDate) || (""+thisDate).startsWith("-")) {
+				return "string";
+			}
+			
+			return "date";
+		}
+	}
+	
 	static importLog(content) {
 		let db = new SQL.Database(content);
 		let events0 = db.exec("SELECT * FROM event");
@@ -48,24 +64,26 @@ class SqliteOcel2Importer {
 			let res = db.exec("SELECT * FROM event_"+typeMap);
 			let columns = res[0].columns;
 			let idIdx = columns.indexOf("ocel_id");
-				
-			for (let col of columns) {
-				if (!(col.startsWith("ocel_"))) {
-					attributeNames[col] = 0;
-					if (!(col in eventTypes[evType])) {
-						eventTypes[evType][col] = "string";
-					}
-				}
-			}
 
+			let dictio = {};
 			for (let el of res[0].values) {
-				let dictio = {};
+				dictio = null;
+				dictio = {};
 				let idx = 0;
 				for (let col of columns) {
 					dictio[col] = el[idx];
 					idx++;
 				}
 				eventsMap1[el[idIdx]] = dictio;
+			}
+			
+			for (let col of columns) {
+				if (!(col.startsWith("ocel_"))) {
+					attributeNames[col] = 0;
+					if (!(col in eventTypes[evType])) {
+						eventTypes[evType][col] = SqliteOcel2Importer.inferType(dictio[col]);
+					}
+				}
 			}
 		}
 
@@ -78,17 +96,11 @@ class SqliteOcel2Importer {
 			let columns = res[0].columns;
 			let idIdx = columns.indexOf("ocel_id");
 
-			for (let col of columns) {
-				if (!(col.startsWith("ocel_"))) {
-					attributeNames[col] = 0;
-					if (!(col in objectTypes[objType])) {
-						objectTypes[objType][col] = "string";
-					}
-				}
-			}
-
+			let dictio = {};
 			for (let el of res[0].values) {
-				let dictio = {};
+				dictio = null;
+				dictio = {};
+				
 				let idx = 0;
 				for (let col of columns) {
 					dictio[col] = el[idx];
@@ -100,6 +112,15 @@ class SqliteOcel2Importer {
 					objectsMap1[thisId] = [];
 				}
 				objectsMap1[thisId].push(dictio);
+			}
+			
+			for (let col of columns) {
+				if (!(col.startsWith("ocel_"))) {
+					attributeNames[col] = 0;
+					if (!(col in objectTypes[objType])) {
+						objectTypes[objType][col] = SqliteOcel2Importer.inferType(dictio[col]);
+					}
+				}
 			}
 		}
 		
