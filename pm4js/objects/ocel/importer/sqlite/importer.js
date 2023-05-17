@@ -37,11 +37,11 @@ class SqliteOcel2Importer {
 		let objects = {};
 		let eventTypes = {};
 		let objectTypes = {};
-		let objectChanges = {};
+		let objectChanges = [];
 		let attributeNames = {};
 
 		for (let evType in eventMapType1) {
-			eventTypes[evType] = [];
+			eventTypes[evType] = {};
 			
 			let typeMap = eventMapType1[evType];
 
@@ -52,8 +52,8 @@ class SqliteOcel2Importer {
 			for (let col of columns) {
 				if (!(col.startsWith("ocel_"))) {
 					attributeNames[col] = 0;
-					if (!(eventTypes[evType].includes(col))) {
-						eventTypes[evType].push(col);
+					if (!(col in eventTypes[evType])) {
+						eventTypes[evType][col] = "string";
 					}
 				}
 			}
@@ -70,7 +70,7 @@ class SqliteOcel2Importer {
 		}
 
 		for (let objType in objectMapType1) {
-			objectTypes[objType] = [];
+			objectTypes[objType] = {};
 			
 			let typeMap = objectMapType1[objType];
 
@@ -81,8 +81,8 @@ class SqliteOcel2Importer {
 			for (let col of columns) {
 				if (!(col.startsWith("ocel_"))) {
 					attributeNames[col] = 0;
-					if (!(objectTypes[objType].includes(col))) {
-						objectTypes[objType].push(col);
+					if (!(col in objectTypes[objType])) {
+						objectTypes[objType][col] = "string";
 					}
 				}
 			}
@@ -94,7 +94,12 @@ class SqliteOcel2Importer {
 					dictio[col] = el[idx];
 					idx++;
 				}
-				objectsMap1[el[idIdx]] = dictio;
+				let thisId = el[idIdx];
+				
+				if (!(thisId in objectsMap1)) {
+					objectsMap1[thisId] = [];
+				}
+				objectsMap1[thisId].push(dictio);
 			}
 		}
 		
@@ -139,7 +144,7 @@ class SqliteOcel2Importer {
 		idIdx = columns.indexOf("ocel_id");
 		
 		for (let el of events0[0].values) {
-			let eveId = el[idIdx]
+			let eveId = el[idIdx];
 			let corr = eventsMap1[eveId];
 			let relobjs = eventObject1[eveId];
 			
@@ -150,12 +155,20 @@ class SqliteOcel2Importer {
 			let typedOmap = [];
 			let omap = [];
 						
-			for (let relobj of relobjs) {
-				let objId = relobj["ocel_object_id"];
-				let thisDct = {"ocel:oid": objId, "ocel:qualifier": relobj["ocel_qualifier"]};
-				typedOmap.push(thisDct);
-				if (!(omap.includes(objId))) {
-					omap.push(objId);
+			if (relobjs != null) {
+				for (let relobj of relobjs) {
+					let objId = relobj["ocel_object_id"];
+					let thisDct = {"ocel:oid": objId, "ocel:qualifier": relobj["ocel_qualifier"]};
+					typedOmap.push(thisDct);
+					if (!(omap.includes(objId))) {
+						omap.push(objId);
+					}
+				}
+			}
+			
+			for (let attr in corr) {
+				if (!(attr.startsWith("ocel_"))) {
+					vmap[attr] = corr[attr];
 				}
 			}
 			
@@ -166,8 +179,54 @@ class SqliteOcel2Importer {
 			events[eveId] = dictio;
 		}
 		
-		console.log(events);
-				
+		columns = objects0[0].columns;
+		idIdx = columns.indexOf("ocel_id");
+		
+		for (let el of objects0[0].values) {
+			let objId = el[idIdx];
+			let corrs = objectsMap1[objId];
+			let relobjs = objectObject1[objId];
+			
+			let dictio = {};
+			dictio["ocel:type"] = el[columns.indexOf("ocel_type")];
+			
+			let ovmap = {};
+			let o2o = [];
+			
+			if (relobjs != null) {
+				for (let relobj of relobjs) {
+					let targetObjId = relobj["ocel_target_id"];
+					let thisDct = {"ocel:oid": targetObjId, "ocel:qualifier": relobj["ocel_qualifier"]};
+					o2o.push(thisDct);
+				}
+			}
+			
+			if (corrs != null) {
+				for (let corr of corrs) {
+					let time = corr["ocel_time"];
+					if (time == "1970-01-01 00:00:00" || time == "1970-01-01 01:00:00") {
+						for (let attr in corr) {
+							if (!(attr.startsWith("ocel_"))) {
+								ovmap[attr] = corr[attr];
+							}
+						}
+					}
+					else {
+						for (let attr in corr) {
+							if (!(attr.startsWith("ocel_"))) {
+								objectChanges.push({"ocel:oid": objId, "ocel:name": attr, "ocel:timestamp": new Date(time), "ocel:value": corr[attr]});
+							}
+						}
+					}
+
+				}
+			}
+			
+			dictio["ocel:o2o"] = o2o;
+			dictio["ocel:ovmap"] = ovmap;
+			objects[objId] = dictio;
+		}
+		
 		let ocel = {};
 		ocel["ocel:global-event"] = {};
 		ocel["ocel:global-object"] = {};
@@ -181,7 +240,7 @@ class SqliteOcel2Importer {
 		ocel["ocel:objectTypes"] = objectTypes;
 		ocel["ocel:eventTypes"] = eventTypes;
 		ocel["ocel:objectChanges"] = objectChanges;
-		
+				
 		return ocel;
 	}
 }
