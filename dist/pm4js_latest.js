@@ -112,7 +112,7 @@ class Pm4JSObserverExample {
 	}
 }
 
-Pm4JS.VERSION = "0.0.35";
+Pm4JS.VERSION = "0.0.36";
 Pm4JS.registrationEnabled = false;
 Pm4JS.objects = [];
 Pm4JS.algorithms = [];
@@ -17031,7 +17031,7 @@ class Xml2OcelImporter {
 											value = new Date(value);
 										}
 										
-										if (time == "0") {
+										if (time == "0" || time == "1970-01-01T00:00:00") {
 											objectOvmap[name] = value;
 										}
 										else {
@@ -17066,6 +17066,285 @@ try {
 	module.exports = {Xml2OcelImporter: Xml2OcelImporter};
 	global.Xml2OcelImporter = Xml2OcelImporter;
 	global.DOMParser = require('xmldom').DOMParser;
+}
+catch (err) {
+	// not in node
+	//console.log(err);
+}
+
+
+class SqliteOcel2Importer {
+	static apply(content) {
+		return SqliteOcel2Importer.importLog(content);
+	}
+	
+	static inferType(stru) {
+		try {
+			Double.parseDouble(stru);
+			return "float";
+		}
+		catch (err) {
+			let thisDate = Date.parse(stru);
+			
+			if (isNaN(thisDate) || (""+thisDate).startsWith("-")) {
+				return "string";
+			}
+			
+			return "date";
+		}
+	}
+	
+	static importLog(content) {
+		let db = new SQL.Database(content);
+		let events0 = db.exec("SELECT * FROM event");
+		let objects0 = db.exec("SELECT * FROM object");
+		let eventObject0 = db.exec("SELECT * FROM event_object");
+		let objectObject0 = db.exec("SELECT * FROM object_object");
+		let eventMapType0 = db.exec("SELECT * FROM event_map_type");
+		let objectMapType0 = db.exec("SELECT * FROM object_map_type");
+
+		let eventMapType1 = {};
+		let objectMapType1 = {};
+
+		let typeColumn = eventMapType0[0].columns.indexOf("ocel_type");
+		let typeMapColumn = eventMapType0[0].columns.indexOf("ocel_type_map");
+
+		for (let el of eventMapType0[0].values) {
+			eventMapType1[el[typeColumn]] = el[typeMapColumn];
+		}
+
+		typeColumn = eventMapType0[0].columns.indexOf("ocel_type");
+		typeMapColumn = eventMapType0[0].columns.indexOf("ocel_type_map");
+
+		for (let el of objectMapType0[0].values) {
+			objectMapType1[el[typeColumn]] = el[typeMapColumn];
+		}
+
+		let eventsMap1 = {};
+		let objectsMap1 = {};
+
+
+		let events = {};
+		let objects = {};
+		let eventTypes = {};
+		let objectTypes = {};
+		let objectChanges = [];
+		let attributeNames = {};
+
+		for (let evType in eventMapType1) {
+			eventTypes[evType] = {};
+			
+			let typeMap = eventMapType1[evType];
+
+			let res = db.exec("SELECT * FROM event_"+typeMap);
+			let columns = res[0].columns;
+			let idIdx = columns.indexOf("ocel_id");
+
+			let dictio = {};
+			for (let el of res[0].values) {
+				dictio = null;
+				dictio = {};
+				let idx = 0;
+				for (let col of columns) {
+					dictio[col] = el[idx];
+					idx++;
+				}
+				eventsMap1[el[idIdx]] = dictio;
+			}
+			
+			for (let col of columns) {
+				if (!(col.startsWith("ocel_"))) {
+					attributeNames[col] = 0;
+					if (!(col in eventTypes[evType])) {
+						eventTypes[evType][col] = SqliteOcel2Importer.inferType(dictio[col]);
+					}
+				}
+			}
+		}
+
+		for (let objType in objectMapType1) {
+			objectTypes[objType] = {};
+			
+			let typeMap = objectMapType1[objType];
+
+			let res = db.exec("SELECT * FROM object_"+typeMap);
+			let columns = res[0].columns;
+			let idIdx = columns.indexOf("ocel_id");
+
+			let dictio = {};
+			for (let el of res[0].values) {
+				dictio = null;
+				dictio = {};
+				
+				let idx = 0;
+				for (let col of columns) {
+					dictio[col] = el[idx];
+					idx++;
+				}
+				let thisId = el[idIdx];
+				
+				if (!(thisId in objectsMap1)) {
+					objectsMap1[thisId] = [];
+				}
+				objectsMap1[thisId].push(dictio);
+			}
+			
+			for (let col of columns) {
+				if (!(col.startsWith("ocel_"))) {
+					attributeNames[col] = 0;
+					if (!(col in objectTypes[objType])) {
+						objectTypes[objType][col] = SqliteOcel2Importer.inferType(dictio[col]);
+					}
+				}
+			}
+		}
+		
+		let eventObject1 = {};
+		let objectObject1 = {};
+		
+		let columns = eventObject0[0].columns;
+		let idIdx = columns.indexOf("ocel_event_id");
+		
+		for (let el of eventObject0[0].values) {
+			let sourceId = el[idIdx];
+			let dictio = {};
+			let idx = 0;
+			for (let col of columns) {
+				dictio[col] = el[idx];
+				idx++;
+			}
+			if (!(sourceId in eventObject1)) {
+				eventObject1[sourceId] = [];
+			}
+			eventObject1[sourceId].push(dictio);
+		}
+		
+		columns = objectObject0[0].columns;
+		idIdx = columns.indexOf("ocel_source_id");
+		
+		for (let el of objectObject0[0].values) {
+			let sourceId = el[idIdx];
+			let dictio = {};
+			let idx = 0;
+			for (let col of columns) {
+				dictio[col] = el[idx];
+				idx++;
+			}
+			if (!(sourceId in objectObject1)) {
+				objectObject1[sourceId] = [];
+			}
+			objectObject1[sourceId].push(dictio);
+		}
+		
+		columns = events0[0].columns;
+		idIdx = columns.indexOf("ocel_id");
+		
+		for (let el of events0[0].values) {
+			let eveId = el[idIdx];
+			let corr = eventsMap1[eveId];
+			let relobjs = eventObject1[eveId];
+			
+			let dictio = {};
+			dictio["ocel:activity"] = el[columns.indexOf("ocel_type")];
+			dictio["ocel:timestamp"] = new Date(corr["ocel_time"]);
+			let vmap = {};
+			let typedOmap = [];
+			let omap = [];
+						
+			if (relobjs != null) {
+				for (let relobj of relobjs) {
+					let objId = relobj["ocel_object_id"];
+					let thisDct = {"ocel:oid": objId, "ocel:qualifier": relobj["ocel_qualifier"]};
+					typedOmap.push(thisDct);
+					if (!(omap.includes(objId))) {
+						omap.push(objId);
+					}
+				}
+			}
+			
+			for (let attr in corr) {
+				if (!(attr.startsWith("ocel_"))) {
+					vmap[attr] = corr[attr];
+				}
+			}
+			
+			dictio["ocel:vmap"] = vmap;
+			dictio["ocel:typedOmap"] = typedOmap;
+			dictio["ocel:omap"] = omap;
+			
+			events[eveId] = dictio;
+		}
+		
+		columns = objects0[0].columns;
+		idIdx = columns.indexOf("ocel_id");
+		
+		for (let el of objects0[0].values) {
+			let objId = el[idIdx];
+			let corrs = objectsMap1[objId];
+			let relobjs = objectObject1[objId];
+			
+			let dictio = {};
+			dictio["ocel:type"] = el[columns.indexOf("ocel_type")];
+			
+			let ovmap = {};
+			let o2o = [];
+			
+			if (relobjs != null) {
+				for (let relobj of relobjs) {
+					let targetObjId = relobj["ocel_target_id"];
+					let thisDct = {"ocel:oid": targetObjId, "ocel:qualifier": relobj["ocel_qualifier"]};
+					o2o.push(thisDct);
+				}
+			}
+			
+			if (corrs != null) {
+				for (let corr of corrs) {
+					let time = corr["ocel_time"];
+					if (time == "1970-01-01 00:00:00" || time == "1970-01-01 01:00:00") {
+						for (let attr in corr) {
+							if (!(attr.startsWith("ocel_"))) {
+								ovmap[attr] = corr[attr];
+							}
+						}
+					}
+					else {
+						for (let attr in corr) {
+							if (!(attr.startsWith("ocel_"))) {
+								objectChanges.push({"ocel:oid": objId, "ocel:name": attr, "ocel:timestamp": new Date(time), "ocel:value": corr[attr]});
+							}
+						}
+					}
+
+				}
+			}
+			
+			dictio["ocel:o2o"] = o2o;
+			dictio["ocel:ovmap"] = ovmap;
+			objects[objId] = dictio;
+		}
+		
+		let ocel = {};
+		ocel["ocel:global-event"] = {};
+		ocel["ocel:global-object"] = {};
+		ocel["ocel:global-log"] = {};
+		ocel["ocel:global-log"]["ocel:attribute-names"] = Object.keys(attributeNames);
+		ocel["ocel:global-log"]["ocel:object-types"] = Object.keys(objectTypes);
+		ocel["ocel:global-log"]["ocel:version"] = "1.0";
+		ocel["ocel:global-log"]["ocel:ordering"] = "timestamp";
+		ocel["ocel:events"] = events;
+		ocel["ocel:objects"] = objects;
+		ocel["ocel:objectTypes"] = objectTypes;
+		ocel["ocel:eventTypes"] = eventTypes;
+		ocel["ocel:objectChanges"] = objectChanges;
+				
+		return ocel;
+	}
+}
+
+try {
+	require('../../../../pm4js.js');
+	module.exports = {SqliteOcel2Importer: SqliteOcel2Importer};
+	global.SqliteOcel2Importer = SqliteOcel2Importer;
 }
 catch (err) {
 	// not in node
@@ -17338,7 +17617,7 @@ class Xml2OcelExporter {
 				let xmlAtt = document.createElement("attribute");
 				attributes.appendChild(xmlAtt);
 				xmlAtt.setAttribute("name", att);
-				xmlAtt.setAttribute("time", "0");
+				xmlAtt.setAttribute("time", "1970-01-01T00:00:00");
 				xmlAtt.innerHTML = attValue;
 			}
 			
@@ -17433,6 +17712,138 @@ catch (err) {
 	//console.log(err);
 }
 
+
+
+class SqliteOcel2Exporter {
+	static apply(ocel) {
+		return SqliteOcel2Exporter.exportLog(ocel);
+	}
+	
+	static exportLog(ocel) {
+		ocel = Ocel20FormatFixer.apply(ocel);
+		let db = new SQL.Database();
+		
+		db.run("CREATE TABLE event_object (ocel_event_id, ocel_object_id, ocel_qualifier)");
+		db.run("CREATE TABLE object_object (ocel_source_id, ocel_target_id, ocel_qualifier)");
+		db.run("CREATE TABLE event_map_type (ocel_type, ocel_type_map)");
+		db.run("CREATE TABLE object_map_type (ocel_type, ocel_type_map)");
+		db.run("CREATE TABLE event (ocel_id, ocel_type)");
+		db.run("CREATE TABLE object (ocel_id, ocel_type)");
+		
+		let eventMapType = {};
+		let objectMapType = {};
+		
+		for (let evType in ocel["ocel:eventTypes"]) {
+			eventMapType[evType] = evType.replaceAll(/[^0-9a-z]/gi, '');
+		}
+		
+		for (let objType in ocel["ocel:objectTypes"]) {
+			objectMapType[objType] = objType.replaceAll(/[^0-9a-z]/gi, '');
+		}
+		
+		let eventMapTypeList = {};
+		let objectMapTypeList = {};
+		
+		for (let evType in eventMapType) {
+			let evTypeAttrs = Object.keys(ocel["ocel:eventTypes"][evType]);
+			eventMapTypeList[evType] = evTypeAttrs;
+			let stru = "CREATE TABLE event_"+eventMapType[evType]+" (ocel_id, ocel_time";
+			for (let attr of evTypeAttrs) {
+				stru += ", "+attr;
+			}
+			stru += ")";
+			db.run(stru);
+			db.run("INSERT INTO event_map_type VALUES ('"+evType+"', '"+eventMapType[evType]+"')");
+		}
+		
+		for (let objType in objectMapType) {
+			let objTypeAttrs = Object.keys(ocel["ocel:objectTypes"][objType]);
+			objectMapTypeList[objType] = objTypeAttrs;
+			let stru = "CREATE TABLE object_"+objectMapType[objType]+" (ocel_id, ocel_time, ocel_changed_field";
+			for (let attr of objTypeAttrs) {
+				stru += ", "+attr;
+			}
+			stru += ")";
+			db.run(stru);
+			db.run("INSERT INTO object_map_type VALUES ('"+objType+"', '"+objectMapType[objType]+"')");
+		}
+		
+		for (let evId in ocel["ocel:events"]) {
+			let ev = ocel["ocel:events"][evId];
+			db.run("INSERT INTO event VALUES ('"+evId+"', '"+ev["ocel:activity"]+"')");
+			for (let relobj of ev["ocel:typedOmap"]) {
+				db.run("INSERT INTO event_object VALUES ('"+evId+"', '"+relobj["ocel:oid"]+"', '"+relobj["ocel:qualifier"]+"')");
+			}
+			let thisTypeMap = eventMapTypeList[ev["ocel:activity"]];
+			let thisTypeCorr = eventMapType[ev["ocel:activity"]];
+			let columns = ["ocel_id", "ocel_time"];
+			let values = [evId, ev["ocel:timestamp"].toISOString()];
+			
+			for (let attr of thisTypeMap) {
+				if (attr in ev["ocel:vmap"]) {
+					columns.push(attr);
+					values.push(ev["ocel:vmap"][attr]);
+				}
+				
+			}
+			
+			let stru = "INSERT INTO event_"+thisTypeCorr+" ("+columns.join(", ")+") VALUES ('"+values.join("', '")+"')";
+
+			db.run(stru);
+		}
+		
+		for (let objId in ocel["ocel:objects"]) {
+			let obj = ocel["ocel:objects"][objId];
+			db.run("INSERT INTO object VALUES ('"+objId+"', '"+obj["ocel:type"]+"')");
+			for (let relobj of obj["ocel:o2o"]) {
+				db.run("INSERT INTO object_object VALUES ('"+objId+"', '"+relobj["ocel:oid"]+"', '"+relobj["ocel:qualifier"]+"')");
+			}
+			let thisTypeMap = objectMapTypeList[obj["ocel:type"]];
+			let thisTypeCorr = objectMapType[obj["ocel:type"]];
+			let columns = ["ocel_id", "ocel_time"];
+			let values = [objId, "1970-01-01T01:00:00"];
+			
+			for (let attr of thisTypeMap) {
+				if (attr in obj["ocel:ovmap"]) {
+					columns.push(attr);
+					values.push(obj["ocel:ovmap"][attr]);
+				}
+			}
+			
+			let stru = "INSERT INTO object_"+thisTypeCorr+" ("+columns.join(", ")+") VALUES ('"+values.join("', '")+"')";
+			db.run(stru);
+		}
+		
+		for (let obj2 of ocel["ocel:objectChanges"]) {
+			let objId = obj2["ocel:oid"];
+			let obj = ocel["ocel:objects"][objId];
+			if (obj != null) {
+				let thisTypeCorr = objectMapType[obj["ocel:type"]];
+				
+				let columns = ["ocel_id", "ocel_time", "ocel_changed_field", obj2["ocel:name"]];
+				let values = [obj2["ocel:oid"], obj2["ocel:timestamp"].toISOString(), obj2["ocel:name"], obj2["ocel:value"]];
+				
+				let stru = "INSERT INTO object_"+thisTypeCorr+" ("+columns.join(", ")+") VALUES ('"+values.join("', '")+"')";
+				
+				db.run(stru);
+			}
+		}
+		
+
+		let binaryArray = db.export();
+		return binaryArray;
+	}
+}
+
+try {
+	require('../../../../pm4js.js');
+	module.exports = {SqliteOcel2Exporter: SqliteOcel2Exporter};
+	global.SqliteOcel2Exporter = SqliteOcel2Exporter;
+}
+catch (err) {
+	// not in node
+	//console.log(err);
+}
 
 
 class OcelFlattening {
