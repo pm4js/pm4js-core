@@ -37,6 +37,7 @@ class SqliteOcel2Exporter {
 			}
 			stru += ")";
 			db.run(stru);
+			db.run("INSERT INTO event_map_type VALUES ('"+evType+"', '"+eventMapType[evType]+"')");
 		}
 		
 		for (let objType in objectMapType) {
@@ -48,7 +49,25 @@ class SqliteOcel2Exporter {
 			}
 			stru += ")";
 			db.run(stru);
+			db.run("INSERT INTO object_map_type VALUES ('"+objType+"', '"+objectMapType[objType]+"')");
 		}
+		
+		for (let evId in ocel["ocel:events"]) {
+			let ev = ocel["ocel:events"][evId];
+			db.run("INSERT INTO event VALUES ('"+evId+"', '"+ev["ocel:activity"]+"')");
+			for (let relobj in ev["ocel:typedOmap"]) {
+				db.run("INSERT INTO event_object VALUES ('"+evId+"', '"+relobj["ocel:oid"]+"', '"+relobj["ocel:qualifier"]+"')");
+			}
+		}
+		
+		for (let objId in ocel["ocel:objects"]) {
+			let obj = ocel["ocel:objects"][objId];
+			db.run("INSERT INTO object VALUES ('"+objId+"', '"+obj["ocel:type"]+"')");
+			for (let relobj in obj["ocel:o2o"]) {
+				db.run("INSERT INTO object_object VALUES ('"+objId+"', '"+relobj["ocel:oid"]+"', '"+relobj["ocel:qualifier"]+"')");
+			}
+		}
+		
 
 		let binaryArray = db.export();
 		return binaryArray;
