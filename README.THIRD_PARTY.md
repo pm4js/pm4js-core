@@ -12,7 +12,7 @@ Common dependencies (Javascript library and Node package)
 | [intervaltree.js](pm4js/utils/generic/intervaltree.js) | https://github.com/pineapplemachine/interval-tree-type-js | [ZLIB/LIBPNG](https://opensource.org/licenses/Zlib) | 1.0.1 |
 | [numeric.js](pm4js/utils/generic/numeric.js) | https://github.com/sloisel/numeric | [MIT](https://opensource.org/licenses/MIT) | 1.2.6 |
 
-Other dependencies of the Node package:
+Other dependencies of the Node package: 
 
 | Name | URL | License | Version |
 | --------------------------- | ------------------------------------------------------------ | --------------------------- | ------------------- |
