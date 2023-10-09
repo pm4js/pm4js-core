@@ -67,6 +67,7 @@ require('./pm4js/utils/random_variables/fitter.js');
 require('./pm4js/algo/simulation/playout/dfg/performance.js');
 require('./pm4js/objects/ocel/util/ocel20_fixer.js');
 require('./pm4js/objects/ocel/importer/jsonocel/importer.js');
+require('./pm4js/objects/ocel/importer/json2/importer.js');
 require('./pm4js/objects/ocel/importer/xmlocel/importer.js');
 require('./pm4js/objects/ocel/importer/xml2/importer.js');
 require('./pm4js/objects/ocel/importer/sqlite/importer.js');
