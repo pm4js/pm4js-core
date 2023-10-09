@@ -88,12 +88,16 @@ class JsonOcel2Exporter {
 		}
 		
 		for (let change of ocel["ocel:objectChanges"]) {
-			let oid = change["ocel:oid"];
-			let obj = jsonObj["objects"][objIdx[oid]];
-			
-			obj["attributes"].push({"name": change["ocel:name"], "time": change["ocel:timestamp"], "value": change["ocel:value"]});
-			
-			jsonObj["objects"][objIdx[oid]] = obj;
+			try {
+				let oid = change["ocel:oid"];
+				let obj = jsonObj["objects"][objIdx[oid]];
+				
+				obj["attributes"].push({"name": change["ocel:name"], "time": change["ocel:timestamp"], "value": change["ocel:value"]});
+				
+				jsonObj["objects"][objIdx[oid]] = obj;
+			}
+			catch (err) {
+			}
 		}
 		
 		return JSON.stringify(jsonObj);

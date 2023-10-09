@@ -17066,23 +17066,27 @@ class Xml2OcelImporter {
 							}
 							else if (child3.tagName == "attributes") {
 								for (let childId4 in child3.childNodes) {
-									let child4 = child3.childNodes[childId4];
-									if (child4.tagName != null) {
-										let attributeName = child4.getAttribute("name");										
-										let value = child4.lastChild.nodeValue;
-										
-										let attType = eventTypes[eventType][attributeName];
-										
-										if (attType == "float" || attType == "double") {
-											value = parseFloat(value);
+									try {
+										let child4 = child3.childNodes[childId4];
+										if (child4.tagName != null) {
+											let attributeName = child4.getAttribute("name");										
+											let value = child4.lastChild.nodeValue;
+											
+											let attType = eventTypes[eventType][attributeName];
+											
+											if (attType == "float" || attType == "double") {
+												value = parseFloat(value);
+											}
+											else if (attType == "int") {
+												value = parseInt(value);
+											}
+											else if (attType == "date") {
+												value = new Date(value);
+											}
+											eventsVmap[attributeName] = value;
 										}
-										else if (attType == "int") {
-											value = parseInt(value);
-										}
-										else if (attType == "date") {
-											value = new Date(value);
-										}
-										eventsVmap[attributeName] = value;
+									}
+									catch (err) {
 									}
 								}
 							}
@@ -17114,30 +17118,34 @@ class Xml2OcelImporter {
 							}
 							else if (child3.tagName == "attributes") {
 								for (let childId4 in child3.childNodes) {
-									let child4 = child3.childNodes[childId4];
-									if (child4.tagName != null) {
-										let name = child4.getAttribute("name");
-										let time = child4.getAttribute("time");
-										let value = child4.lastChild.nodeValue;
-										
-										let attType = objectTypes[objectType][name];
-										
-										if (attType == "float" || attType == "double") {
-											value = parseFloat(value);
+									try {
+										let child4 = child3.childNodes[childId4];
+										if (child4.tagName != null) {
+											let name = child4.getAttribute("name");
+											let time = child4.getAttribute("time");
+											let value = child4.lastChild.nodeValue;
+											
+											let attType = objectTypes[objectType][name];
+											
+											if (attType == "float" || attType == "double") {
+												value = parseFloat(value);
+											}
+											else if (attType == "int") {
+												value = parseInt(value);
+											}
+											else if (attType == "date") {
+												value = new Date(value);
+											}
+											
+											if (time == "0" || time.startsWith("1970-01-01T00:00:00")) {
+												objectOvmap[name] = value;
+											}
+											else {
+												objectChanges.push({"ocel:oid": objectId, "ocel:name": name, "ocel:timestamp": new Date(time), "ocel:value": value});
+											}
 										}
-										else if (attType == "int") {
-											value = parseInt(value);
-										}
-										else if (attType == "date") {
-											value = new Date(value);
-										}
-										
-										if (time == "0" || time.startsWith("1970-01-01T00:00:00")) {
-											objectOvmap[name] = value;
-										}
-										else {
-											objectChanges.push({"ocel:oid": objectId, "ocel:name": name, "ocel:timestamp": new Date(time), "ocel:value": value});
-										}
+									}
+									catch (err) {
 									}
 								}
 							}
@@ -17566,12 +17574,16 @@ class JsonOcel2Exporter {
 		}
 		
 		for (let change of ocel["ocel:objectChanges"]) {
-			let oid = change["ocel:oid"];
-			let obj = jsonObj["objects"][objIdx[oid]];
-			
-			obj["attributes"].push({"name": change["ocel:name"], "time": change["ocel:timestamp"], "value": change["ocel:value"]});
-			
-			jsonObj["objects"][objIdx[oid]] = obj;
+			try {
+				let oid = change["ocel:oid"];
+				let obj = jsonObj["objects"][objIdx[oid]];
+				
+				obj["attributes"].push({"name": change["ocel:name"], "time": change["ocel:timestamp"], "value": change["ocel:value"]});
+				
+				jsonObj["objects"][objIdx[oid]] = obj;
+			}
+			catch (err) {
+			}
 		}
 		
 		return JSON.stringify(jsonObj);
