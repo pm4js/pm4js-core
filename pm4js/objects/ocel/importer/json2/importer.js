@@ -6,6 +6,13 @@ class JsonOcel2Importer {
 		legacyObj["ocel:events"] = {};
 		legacyObj["ocel:objects"] = {};
 		legacyObj["ocel:objectChanges"] = [];
+		legacyObj["ocel:global-log"] = {};
+		legacyObj["ocel:global-event"] = {};
+		legacyObj["ocel:global-object"] = {};
+		
+		let objectTypes = {};
+		let attributeNames = {};
+
 		
 		for (let eve of jsonObj["events"]) {
 			let dct = {};
@@ -16,6 +23,8 @@ class JsonOcel2Importer {
 				if (eve["attributes"].length > 0) {
 					for (let v of eve["attributes"]) {
 						dct["ocel:vmap"][v["name"]] = v["value"];
+						
+						attributeNames[v["name"]] = 0;
 					}
 				}
 			}
@@ -37,10 +46,15 @@ class JsonOcel2Importer {
 		for (let obj of jsonObj["objects"]) {
 			let dct = {};
 			dct["ocel:type"] = obj["type"];
+			
+			objectTypes[obj["type"]] = 0;
+			
 			dct["ocel:ovmap"] = {};
 			if ("attributes" in obj) {
 				if (obj["attributes"].length > 0) {
 					for (let x of obj["attributes"]) {
+						attributeNames[x["name"]] = 0;
+
 						if (x["name"] in dct["ocel:ovmap"]) {
 							legacyObj["ocel:objectChanges"].push({"ocel:oid": obj["id"], "ocel:type": obj["type"], "ocel:name": x["name"], "ocel:value": x["value"], "ocel:timestamp": new Date(x["time"])});
 						}
@@ -60,6 +74,9 @@ class JsonOcel2Importer {
 			}
 			legacyObj["ocel:objects"][obj["id"]] = dct;
 		}
+		
+		legacyObj["ocel:global-log"]["ocel:object-types"] = Object.keys(objectTypes);
+		legacyObj["ocel:global-log"]["ocel:attribute-names"] = Object.keys(attributeNames);
 				
 		return legacyObj;
 	}
