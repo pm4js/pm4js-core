@@ -50,7 +50,7 @@ class Xml2OcelExporter {
 			for (let entry of obj["ocel:o2o"]) {
 				let objId = entry["ocel:oid"];
 				let qualifier = entry["ocel:qualifier"];
-				let xmlObj = document.createElement("object");
+				let xmlObj = document.createElement("relationship");
 				xmlObj.setAttribute("object-id", objId);
 				xmlObj.setAttribute("qualifier", qualifier);
 				innerObjects.appendChild(xmlObj);
@@ -69,7 +69,7 @@ class Xml2OcelExporter {
 				let xmlAtt = document.createElement("attribute");
 				attributes.appendChild(xmlAtt);
 				xmlAtt.setAttribute("name", att);
-				xmlAtt.setAttribute("time", "1970-01-01T00:00:00");
+				xmlAtt.setAttribute("time", "1970-01-01T00:00:00Z");
 				xmlAtt.innerHTML = attValue;
 			}
 			
@@ -110,7 +110,7 @@ class Xml2OcelExporter {
 			for (let entry of ev["ocel:typedOmap"]) {
 				let objId = entry["ocel:oid"];
 				let qualifier = entry["ocel:qualifier"];
-				let xmlObj = document.createElement("object");
+				let xmlObj = document.createElement("relationship");
 				xmlObj.setAttribute("object-id", objId);
 				xmlObj.setAttribute("qualifier", qualifier);
 				innerObjects.appendChild(xmlObj);
