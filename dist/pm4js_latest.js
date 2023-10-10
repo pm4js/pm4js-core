@@ -112,7 +112,7 @@ class Pm4JSObserverExample {
 	}
 }
 
-Pm4JS.VERSION = "0.0.37";
+Pm4JS.VERSION = "0.0.38";
 Pm4JS.registrationEnabled = false;
 Pm4JS.objects = [];
 Pm4JS.algorithms = [];
@@ -140,7 +140,6 @@ class DateUtils {
 }
 
 try {
-	require('../../pm4js.js');
 	module.exports = {DateUtils: DateUtils};
 	global.DateUtils = DateUtils;
 }
@@ -7680,7 +7679,6 @@ BusinessHours.DEFAULT_WEEKENDS = [0, 6];
 BusinessHours.ENABLED = false;
 
 try {
-	require('../../pm4js.js');
 	global.BusinessHours = BusinessHours;
 	module.exports = {BusinessHours: BusinessHours};
 }
@@ -7728,7 +7726,6 @@ class Attribute {
 
 
 try {
-	require('../../pm4js.js');
 	module.exports = {EventLog: EventLog, Trace: Trace, Event: Event, LogGlobal: LogGlobal, Attribute: Attribute};
 	global.EventLog = EventLog;
 	global.Trace = Trace;
@@ -8087,7 +8084,6 @@ class GeneralLogStatistics {
 }
 
 try {
-	require('../../pm4js.js');
 	module.exports = {GeneralLogStatistics: GeneralLogStatistics};
 	global.GeneralLogStatistics = GeneralLogStatistics;
 }
@@ -8156,8 +8152,6 @@ class XesImporter {
 }
 
 try {
-	require('../../../../pm4js.js');
-	require('../../log.js');
 	module.exports = {XesImporter: XesImporter};
 	global.XesImporter = XesImporter;
 	global.DOMParser = require('xmldom').DOMParser;
@@ -8248,8 +8242,6 @@ CsvImporter.DEFAULT_SEPARATOR = ',';
 CsvImporter.DEFAULT_QUOTECHAR = '"';
 
 try {
-	require('../../../../pm4js.js');
-	require('../../log.js');
 	module.exports = {CsvImporter: CsvImporter};
 	global.CsvImporter = CsvImporter;
 }
@@ -8341,9 +8333,6 @@ CsvExporter.DEFAULT_QUOTECHAR = '"';
 CsvExporter.DEFAULT_NEWLINE = '\n';
 
 try {
-	require('../../../../pm4js.js');
-	require('../../log.js');
-	require('../../../../statistics/log/general.js');
 	module.exports = {CsvExporter: CsvExporter};
 	global.CsvExporter = CsvExporter;
 }
@@ -8435,8 +8424,6 @@ class XesExporter {
 }
 
 try {
-	require('../../../../pm4js.js');
-	require('../../log.js');
 	module.exports = {XesExporter: XesExporter};
 	global.XesExporter = XesExporter;
 	const jsdom = require("jsdom");
@@ -8707,7 +8694,6 @@ class AcceptingPetriNet {
 }
 
 try {
-	require('../../pm4js.js');
 	module.exports = {PetriNet: PetriNet, PetriNetPlace: PetriNetPlace, PetriNetTransition: PetriNetTransition, PetriNetArc: PetriNetArc, Marking: Marking, AcceptingPetriNet: AcceptingPetriNet};
 	global.PetriNet = PetriNet;
 	global.PetriNetPlace = PetriNetPlace;
@@ -8810,8 +8796,6 @@ class PetriNetReduction {
 }
 
 try {
-	require('../../../pm4js.js');
-	require('../petri_net.js');
 	module.exports = {PetriNetReduction: PetriNetReduction};
 	global.PetriNetReduction = PetriNetReduction;
 }
@@ -8854,8 +8838,6 @@ class PetriNetReachableVisibleTransitions {
 }
 
 try {
-	require('../../../pm4js.js');
-	require('../petri_net.js');
 	module.exports = {PetriNetReachableVisibleTransitions: PetriNetReachableVisibleTransitions};
 	global.PetriNetReachableVisibleTransitions = PetriNetReachableVisibleTransitions;
 }
@@ -8994,8 +8976,6 @@ class PnmlImporter {
 }
 
 try {
-	require('../../../pm4js.js');
-	require('../petri_net.js');
 	module.exports = {PnmlImporter: PnmlImporter};
 	global.PnmlImporter = PnmlImporter;
 	global.DOMParser = require('xmldom').DOMParser;
@@ -9110,8 +9090,6 @@ class PnmlExporter {
 }
 
 try {
-	require('../../../pm4js.js');
-	require('../petri_net.js');
 	module.exports = {PnmlExporter: PnmlExporter};
 	global.PnmlExporter = PnmlExporter;
 	const jsdom = require("jsdom");
@@ -9181,7 +9159,6 @@ class ProcessTree {
 }
 
 try {
-	require('../../pm4js.js');
 	module.exports = { ProcessTree: ProcessTree, ProcessTreeOperator: ProcessTreeOperator };
 	global.ProcessTree = ProcessTree;
 	global.ProcessTreeOperator = ProcessTreeOperator;
@@ -9344,10 +9321,6 @@ class ProcessTreeToPetriNetConverter {
 }
 
 try {
-	require('../../../pm4js.js');
-	require('../../process_tree/process_tree.js');
-	require('../../petri_net/petri_net.js');
-	require('../../petri_net/util/reduction.js');
 	module.exports = {ProcessTreeToPetriNetConverter: ProcessTreeToPetriNetConverter};
 	global.ProcessTreeToPetriNetConverter = ProcessTreeToPetriNetConverter;
 }
@@ -9424,8 +9397,6 @@ class PtmlImporter {
 }
 
 try {
-	require('../../../pm4js.js');
-	require('../process_tree.js');
 	module.exports = {PtmlImporter: PtmlImporter};
 	global.PtmlImporter = PtmlImporter;
 	global.DOMParser = require('xmldom').DOMParser;
@@ -9513,8 +9484,6 @@ class ProcessTreeVanillaVisualizer {
 }
 
 try {
-	require('../../pm4js.js');
-	require('../../objects/process_tree/process_tree.js');
 	module.exports = {ProcessTreeVanillaVisualizer: ProcessTreeVanillaVisualizer};
 	global.ProcessTreeVanillaVisualizer = ProcessTreeVanillaVisualizer;
 }
@@ -9590,7 +9559,6 @@ class PetriNetVanillaVisualizer {
 }
 
 try {
-	require('../../pm4js.js');
 	module.exports = {PetriNetVanillaVisualizer: PetriNetVanillaVisualizer};
 	global.PetriNetVanillaVisualizer = PetriNetVanillaVisualizer;
 }
@@ -9848,7 +9816,6 @@ class LogGeneralFiltering {
 }
 
 try {
-	require('../../../pm4js.js');
 	module.exports = {LogGeneralFiltering: LogGeneralFiltering};
 	global.LogGeneralFiltering = LogGeneralFiltering;
 }
@@ -9971,7 +9938,6 @@ class LtlFiltering {
 }
 
 try {
-	require('../../../pm4js.js');
 	module.exports = {LtlFiltering: LtlFiltering};
 	global.LtlFiltering = LtlFiltering;
 }
@@ -9998,10 +9964,6 @@ class FlowerMiner {
 }
 
 try {
-	require('../../../pm4js.js');
-	require('../../../objects/log/log.js');
-	require('../../../objects/process_tree/process_tree.js');
-	require('../../../statistics/log/general.js');
 	module.exports = {FlowerMiner: FlowerMiner};
 	global.FlowerMiner = FlowerMiner;
 }
@@ -10529,7 +10491,6 @@ class TokenBasedReplay {
 }
 
 try {
-	require('../../../pm4js.js');
 	module.exports = {TokenBasedReplay: TokenBasedReplay};
 	global.TokenBasedReplay = TokenBasedReplay
 }
@@ -10565,8 +10526,6 @@ class GeneralizationTbr {
 }
 
 try {
-	require("../../../../pm4js.js");
-	require("../../../conformance/tokenreplay/algorithm.js");
 	module.exports = {GeneralizationTbr: GeneralizationTbr, GeneralizationTbrResults: GeneralizationTbrResults};
 	global.GeneralizationTbr = GeneralizationTbr;
 	global.GeneralizationTbrResults = GeneralizationTbrResults;
@@ -10617,8 +10576,6 @@ class SimplicityArcDegree {
 }
 
 try {
-	require("../../../../pm4js.js");
-	require("../../../../objects/petri_net/petri_net.js");
 	module.exports = {SimplicityArcDegree: SimplicityArcDegree, SimplicityArcDegreeResults: SimplicityArcDegreeResults};
 	global.SimplicityArcDegree = SimplicityArcDegree;
 	global.SimplicityArcDegreeResults = SimplicityArcDegreeResults;
@@ -10684,7 +10641,6 @@ class FrequencyDfg {
 }
 
 try {
-	require("../../../pm4js.js");
 	module.exports = {FrequencyDfg: FrequencyDfg};
 	global.FrequencyDfg = FrequencyDfg;
 }
@@ -10760,7 +10716,6 @@ class PerformanceDfg {
 }
 
 try {
-	require("../../../pm4js.js");
 	module.exports = {PerformanceDfg: PerformanceDfg};
 	global.PerformanceDfg = PerformanceDfg;
 }
@@ -10942,7 +10897,6 @@ class DfgSliders {
 }
 
 try {
-	require("../../../pm4js.js");
 	module.exports = {DfgSliders: DfgSliders};
 	global.DfgSliders = DfgSliders;
 }
@@ -11109,10 +11063,6 @@ class PerformanceDfgDiscovery {
 }
 
 try {
-	require("../../../pm4js.js");
-	require("../../../statistics/log/general.js");
-	require("../../../objects/dfg/frequency/obj.js");
-	require("../../../objects/dfg/performance/obj.js");
 	module.exports = {FrequencyDfgDiscovery: FrequencyDfgDiscovery, PerformanceDfgDiscovery: PerformanceDfgDiscovery};
 	global.FrequencyDfgDiscovery = FrequencyDfgDiscovery;
 	global.PerformanceDfgDiscovery = PerformanceDfgDiscovery;
@@ -12382,12 +12332,6 @@ class InductiveMinerGeneralUtilities {
 }
 
 try {
-	require('../../../pm4js.js');
-	require('../../../objects/log/log.js');
-	require('../../../objects/process_tree/process_tree.js');
-	require('../../../objects/dfg/frequency/obj.js');
-	require('../../../algo/discovery/dfg/algorithm.js');
-	require('../../../statistics/log/general.js');
 	module.exports = {InductiveMiner: InductiveMiner, InductiveMinerSequenceCutDetector: InductiveMinerSequenceCutDetector};
 	global.InductiveMiner = InductiveMiner;
 	global.InductiveMinerSequenceCutDetector = InductiveMinerSequenceCutDetector;
@@ -12451,8 +12395,6 @@ class FrequencyDfgGraphvizVisualizer {
 }
 
 try {
-	require('../../pm4js.js');
-	require('../../objects/dfg/frequency/obj.js');
 	module.exports = {FrequencyDfgGraphvizVisualizer: FrequencyDfgGraphvizVisualizer};
 	global.FrequencyDfgGraphvizVisualizer = FrequencyDfgGraphvizVisualizer;
 }
@@ -12506,8 +12448,6 @@ class PerformanceDfgGraphvizVisualizer {
 }
 
 try {
-	require('../../pm4js.js');
-	require('../../objects/dfg/performance/obj.js');
 	module.exports = {PerformanceDfgGraphvizVisualizer: PerformanceDfgGraphvizVisualizer};
 	global.PerformanceDfgGraphvizVisualizer = PerformanceDfgGraphvizVisualizer;
 }
@@ -12606,7 +12546,6 @@ class PetriNetFrequencyVisualizer {
 }
 
 try {
-	require('../../pm4js.js');
 	module.exports = {PetriNetFrequencyVisualizer: PetriNetFrequencyVisualizer};
 	global.PetriNetFrequencyVisualizer = PetriNetFrequencyVisualizer;
 }
@@ -12672,7 +12611,6 @@ class LogSkeleton {
 }
 
 try {
-	require('../../pm4js.js');
 	module.exports = { LogSkeleton: LogSkeleton };
 	global.LogSkeleton = LogSkeleton;
 }
@@ -12809,10 +12747,6 @@ class LogSkeletonDiscovery {
 }
 
 try {
-	require('../../../pm4js.js');
-	require('../../../objects/log/log.js');
-	require('../../../objects/skeleton/log_skeleton.js');
-	require('../../../statistics/log/general.js');
 	module.exports = {LogSkeletonDiscovery: LogSkeletonDiscovery};
 	global.LogSkeletonDiscovery = LogSkeletonDiscovery;
 }
@@ -13014,7 +12948,6 @@ class LogSkeletonConformanceChecking {
 }
 
 try {
-	require('../../../pm4js.js');
 	module.exports = {LogSkeletonConformanceChecking: LogSkeletonConformanceChecking, LogSkeletonConformanceCheckingResult: LogSkeletonConformanceCheckingResult};
 	global.LogSkeletonConformanceChecking = LogSkeletonConformanceChecking;
 	global.LogSkeletonConformanceCheckingResult = LogSkeletonConformanceCheckingResult;
@@ -13592,9 +13525,6 @@ class CaseFeatures {
 CaseFeatures.INCLUDE_WIP = false;
 CaseFeatures.INCLUDE_RESOURCE_WORKLOAD = false;
 try {
-	require('../../pm4js.js');
-	require('../discovery/dfg/algorithm.js');
-	require('../../statistics/log/general.js');
 	module.exports = {CaseFeatures: CaseFeatures};
 	global.CaseFeatures = CaseFeatures;
 }
@@ -13720,7 +13650,6 @@ class IntervalTreeAlgorithms {
 }
 
 try {
-	require('../../pm4js.js');
 	module.exports = {IntervalTreeBuilder: IntervalTreeBuilder, IntervalTreeAlgorithms: IntervalTreeAlgorithms};
 	global.IntervalTreeBuilder = IntervalTreeBuilder;
 	global.IntervalTreeAlgorithms = IntervalTreeAlgorithms;
@@ -13800,7 +13729,6 @@ class PriorityQueue {
 }
 
 try {
-	require('../../../pm4js.js');
 	module.exports = {PriorityQueue: PriorityQueue};
 	global.PriorityQueue = PriorityQueue;
 }
@@ -14045,9 +13973,6 @@ class PetriNetAlignments {
 }
 
 try {
-	require('../../../../pm4js.js');
-	require('../heapq.js');
-	require('../../../../statistics/log/general.js');
 	module.exports = {PetriNetAlignments: PetriNetAlignments, PetriNetAlignmentsResults: PetriNetAlignmentsResults};
 	global.PetriNetAlignments = PetriNetAlignments;
 	global.PetriNetAlignmentsResults = PetriNetAlignmentsResults;
@@ -14274,9 +14199,6 @@ class DfgAlignments {
 }
 
 try {
-	require('../../../../pm4js.js');
-	require('../heapq.js');
-	require('../../../../statistics/log/general.js');
 	module.exports = {DfgAlignments: DfgAlignments, DfgAlignmentsResults: DfgAlignmentsResults};
 	global.DfgAlignments = DfgAlignments;
 	global.DfgAlignmentsResults = DfgAlignmentsResults;
@@ -14345,8 +14267,6 @@ class DfgPlayout {
 }
 
 try {
-	require('../../../../pm4js.js');
-	require('../../../conformance/alignments/heapq.js');
 	module.exports = {DfgPlayout: DfgPlayout};
 	global.DfgPlayout = DfgPlayout;
 }
@@ -14465,7 +14385,6 @@ class FilteredDfgMaximization {
 }
 
 try {
-	require("../../../pm4js.js");
 	module.exports = {FilteredDfgMaximization: FilteredDfgMaximization};
 	global.FilteredDfgMaximization = FilteredDfgMaximization;
 }
@@ -14503,8 +14422,6 @@ class EventLogPrefixes {
 }
 
 try {
-	require('../../../pm4js.js');
-	require('../log.js');
 	module.exports = {EventLogPrefixes: EventLogPrefixes};
 	global.EventLogPrefixes = EventLogPrefixes;
 }
@@ -14525,8 +14442,6 @@ class TbrFitness {
 }
 
 try {
-	require("../../../../pm4js.js");
-	require("../../../conformance/tokenreplay/algorithm.js");
 	module.exports = {TbrFitness: TbrFitness};
 	global.TbrFitness = TbrFitness;
 }
@@ -14547,8 +14462,6 @@ class AlignmentsFitness {
 }
 
 try {
-	require("../../../../pm4js.js");
-	require("../../../conformance/alignments/petri_net/algorithm.js");
 	module.exports = {AlignmentsFitness: AlignmentsFitness};
 	global.AlignmentsFitness = AlignmentsFitness;
 }
@@ -14616,10 +14529,6 @@ class ETConformance {
 }
 
 try {
-	require("../../../../pm4js.js");
-	require("../../../../objects/petri_net/petri_net.js");
-	require("../../../../objects/petri_net/util/reachable_visible_transitions.js");
-	require("../../../../statistics/log/general.js");
 	module.exports = {ETConformance: ETConformance, ETConformanceResult: ETConformanceResult};
 	global.ETConformance = ETConformance;
 	global.ETConformanceResult = ETConformanceResult;
@@ -14831,7 +14740,6 @@ class BpmnEdge {
 }
 
 try {
-	require('../../pm4js.js');
 	module.exports = {BpmnGraph: BpmnGraph, BpmnNode: BpmnNode, BpmnEdge: BpmnEdge};
 	global.BpmnGraph = BpmnGraph;
 	global.BpmnNode = BpmnNode;
@@ -15020,8 +14928,6 @@ class BpmnImporter {
 }
 
 try {
-	require('../../../pm4js.js');
-	require('../bpmn_graph.js');
 	module.exports = {BpmnImporter: BpmnImporter};
 	global.BpmnImporter = BpmnImporter;
 	global.DOMParser = require('xmldom').DOMParser;
@@ -15163,8 +15069,6 @@ class BpmnExporter {
 BpmnExporter.DUMMY_SEP = "AIOEWFRIUOERWQIO";
 
 try {
-	require('../../../pm4js.js');
-	require('../bpmn_graph.js');
 	module.exports = {BpmnExporter: BpmnExporter};
 	global.BpmnExporter = BpmnExporter;
 	const jsdom = require("jsdom");
@@ -15338,10 +15242,6 @@ class BpmnToPetriNetConverter {
 }
 
 try {
-	require('../../../pm4js.js');
-	require('../../bpmn/bpmn_graph.js');
-	require('../../petri_net/petri_net.js');
-	require('../../petri_net/util/reduction.js');
 	module.exports = {BpmnToPetriNetConverter: BpmnToPetriNetConverter};
 	global.BpmnToPetriNetConverter = BpmnToPetriNetConverter;
 }
@@ -15474,9 +15374,6 @@ class WfNetToBpmnConverter {
 }
 
 try {
-	require('../../../pm4js.js');
-	require('../../petri_net/petri_net.js');
-	require('../../bpmn/bpmn_graph.js');
 	module.exports = {WfNetToBpmnConverter: WfNetToBpmnConverter};
 	global.WfNetToBpmnConverter = WfNetToBpmnConverter;
 }
@@ -15582,7 +15479,6 @@ class PtmlExporter {
 PtmlExporter.DUMMY_SEP = "AIOEWFRIUOERWQIO";
 
 try {
-	require('../../../pm4js.js');
 	global.PtmlExporter = PtmlExporter;
 	module.exports = {PtmlExporter: PtmlExporter};
 	const jsdom = require("jsdom");
@@ -15625,7 +15521,6 @@ class FrequencyDfgExporter {
 }
 
 try {
-	require('../../../pm4js.js');
 	global.FrequencyDfgExporter = FrequencyDfgExporter;
 	module.exports = {FrequencyDfgExporter: FrequencyDfgExporter};
 }
@@ -15694,7 +15589,6 @@ class FrequencyDfgImporter {
 }
 
 try {
-	require('../../../pm4js.js');
 	global.FrequencyDfgImporter = FrequencyDfgImporter;
 	module.exports = {FrequencyDfgImporter: FrequencyDfgImporter};
 }
@@ -15741,7 +15635,6 @@ class PetriNetPlayout {
 }
 
 try {
-	require('../../../../pm4js.js');
 	global.PetriNetPlayout = PetriNetPlayout;
 	module.exports = {PetriNetPlayout: PetriNetPlayout};
 }
@@ -15831,7 +15724,6 @@ ExponentialRandomVariable.C = 1;
 
 
 try {
-	require('../../pm4js.js');
 	global.ExponentialRandomVariable = ExponentialRandomVariable;
 	module.exports = {ExponentialRandomVariable: ExponentialRandomVariable};
 }
@@ -15948,7 +15840,6 @@ NormalRandomVariable.C = 1;
 
 
 try {
-	require('../../pm4js.js');
 	global.NormalRandomVariable = NormalRandomVariable;
 	module.exports = {NormalRandomVariable: NormalRandomVariable};
 }
@@ -16076,7 +15967,6 @@ LogNormalRandomVariable.C = 1;
 
 
 try {
-	require('../../pm4js.js');
 	global.LogNormalRandomVariable = LogNormalRandomVariable;
 	module.exports = {LogNormalRandomVariable: LogNormalRandomVariable};
 }
@@ -16193,7 +16083,6 @@ GammaRandomVariable.P = 2147483647;
 GammaRandomVariable.C = 1;
 
 try {
-	require('../../pm4js.js');
 	global.GammaRandomVariable = GammaRandomVariable;
 	module.exports = {GammaRandomVariable: GammaRandomVariable};
 }
@@ -16291,7 +16180,6 @@ class ExponentiallyModifiedGaussian {
 }
 
 try {
-	require('../../pm4js.js');
 	global.ExponentiallyModifiedGaussian = ExponentiallyModifiedGaussian;
 	module.exports = {ExponentiallyModifiedGaussian: ExponentiallyModifiedGaussian};
 }
@@ -16392,7 +16280,6 @@ UniformRandomVariable.P = 2147483647;
 UniformRandomVariable.C = 1;
 
 try {
-	require('../../pm4js.js');
 	global.UniformRandomVariable = UniformRandomVariable;
 	module.exports = {UniformRandomVariable: UniformRandomVariable};
 }
@@ -16496,7 +16383,6 @@ class RandomVariableFitter {
 }
 
 try {
-	require('../../pm4js.js');
 	global.RandomVariableFitter = RandomVariableFitter;
 	module.exports = {RandomVariableFitter: RandomVariableFitter};
 }
@@ -16572,7 +16458,6 @@ class PerformanceDfgSimulation {
 }
 
 try {
-	require("../../../../pm4js.js");
 	module.exports = {PerformanceDfgSimulation: PerformanceDfgSimulation};
 	global.PerformanceDfgSimulation = PerformanceDfgSimulation;
 }
@@ -16674,7 +16559,6 @@ class Ocel20FormatFixer {
 }
 
 try {
-	require('../../../pm4js.js');
 	module.exports = {Ocel20FormatFixer: Ocel20FormatFixer};
 	global.Ocel20FormatFixer = Ocel20FormatFixer;
 }
@@ -16705,7 +16589,6 @@ class JsonOcelImporter {
 }
 
 try {
-	require('../../../../pm4js.js');
 	module.exports = {JsonOcelImporter: JsonOcelImporter};
 	global.JsonOcelImporter = JsonOcelImporter;
 }
@@ -16800,7 +16683,6 @@ class JsonOcel2Importer {
 }
 
 try {
-	require('../../../../pm4js.js');
 	module.exports = {JsonOcel2Importer: JsonOcel2Importer};
 	global.JsonOcel2Importer = JsonOcel2Importer;
 }
@@ -16961,7 +16843,6 @@ class XmlOcelImporter {
 }
 
 try {
-	require('../../../../pm4js.js');
 	module.exports = {XmlOcelImporter: XmlOcelImporter};
 	global.XmlOcelImporter = XmlOcelImporter;
 	global.DOMParser = require('xmldom').DOMParser;
@@ -17171,7 +17052,6 @@ class Xml2OcelImporter {
 }
 
 try {
-	require('../../../../pm4js.js');
 	module.exports = {Xml2OcelImporter: Xml2OcelImporter};
 	global.Xml2OcelImporter = Xml2OcelImporter;
 	global.DOMParser = require('xmldom').DOMParser;
@@ -17451,7 +17331,6 @@ class SqliteOcel2Importer {
 }
 
 try {
-	require('../../../../pm4js.js');
 	module.exports = {SqliteOcel2Importer: SqliteOcel2Importer};
 	global.SqliteOcel2Importer = SqliteOcel2Importer;
 }
@@ -17473,7 +17352,6 @@ class JsonOcelExporter {
 }
 
 try {
-	require('../../../../pm4js.js');
 	module.exports = {JsonOcelExporter: JsonOcelExporter};
 	global.JsonOcelExporter = JsonOcelExporter;
 }
@@ -17591,7 +17469,6 @@ class JsonOcel2Exporter {
 }
 
 try {
-	require('../../../../pm4js.js');
 	module.exports = {JsonOcel2Exporter: JsonOcel2Exporter};
 	global.JsonOcel2Exporter = JsonOcel2Exporter;
 }
@@ -17757,7 +17634,6 @@ class XmlOcelExporter {
 }
 
 try {
-	require('../../../../pm4js.js');
 	module.exports = {XmlOcelExporter: XmlOcelExporter};
 	global.XmlOcelExporter = XmlOcelExporter;
 	const jsdom = require("jsdom");
@@ -17924,7 +17800,6 @@ class Xml2OcelExporter {
 }
 
 try {
-	require('../../../../pm4js.js');
 	module.exports = {Xml2OcelExporter: Xml2OcelExporter};
 	global.Xml2OcelExporter = Xml2OcelExporter;
 	const jsdom = require("jsdom");
@@ -18066,7 +17941,6 @@ class SqliteOcel2Exporter {
 }
 
 try {
-	require('../../../../pm4js.js');
 	module.exports = {SqliteOcel2Exporter: SqliteOcel2Exporter};
 	global.SqliteOcel2Exporter = SqliteOcel2Exporter;
 }
@@ -18114,7 +17988,6 @@ class OcelFlattening {
 }
 
 try {
-	require('../../../pm4js.js');
 	module.exports = {OcelFlattening: OcelFlattening};
 	global.OcelFlattening = OcelFlattening;
 }
@@ -18238,7 +18111,6 @@ class OcelToCelonis {
 }
 
 try {
-	require('../../../pm4js.js');
 	module.exports = {OcelToCelonis: OcelToCelonis};
 	global.OcelToCelonis = OcelToCelonis;
 }
@@ -18277,7 +18149,6 @@ class OcelParentChildrenAttribute {
 }
 
 try {
-	require('../../../pm4js.js');
 	module.exports = {OcelParentChildrenAttribute: OcelParentChildrenAttribute};
 	global.OcelParentChildrenAttribute = OcelParentChildrenAttribute;
 }
@@ -18690,7 +18561,6 @@ CelonisMapper.PROXY_URL_POST = "http://localhost:5004/postWrapper";
 CelonisMapper.PROXY_URL_PUT = "http://localhost:5004/putWrapper";
 try {
 	global.retus = require("retus");
-	require('../../pm4js.js');
 	global.CelonisMapper = CelonisMapper;
 	module.exports = {CelonisMapper: CelonisMapper};
 	CelonisMapper.IS_NODE = true;
@@ -19031,7 +18901,6 @@ class Celonis1DWrapper {
 }
 
 try {
-	require('../../pm4js.js');
 	global.Celonis1DWrapper = Celonis1DWrapper;
 	module.exports = {Celonis1DWrapper: Celonis1DWrapper};
 }
@@ -19264,7 +19133,6 @@ class CelonisNDWrapper {
 }
 
 try {
-	require('../../pm4js.js');
 	global.CelonisNDWrapper = CelonisNDWrapper;
 	module.exports = {CelonisNDWrapper: CelonisNDWrapper};
 }
@@ -19345,8 +19213,6 @@ class AlignmentsDfgGraphvizVisualizer {
 }
 
 try {
-	require('../../pm4js.js');
-	require('../../objects/dfg/frequency/obj.js');
 	module.exports = {AlignmentsDfgGraphvizVisualizer: AlignmentsDfgGraphvizVisualizer};
 	global.AlignmentsDfgGraphvizVisualizer = AlignmentsDfgGraphvizVisualizer;
 }
@@ -19424,7 +19290,6 @@ class TemporalProfileDiscovery {
 }
 
 try {
-	require("../../../pm4js.js");
 	module.exports = {TemporalProfileDiscovery: TemporalProfileDiscovery};
 	global.TemporalProfileDiscovery = TemporalProfileDiscovery;
 }
@@ -19491,7 +19356,6 @@ class TemporalProfileConformance {
 }
 
 try {
-	require("../../../pm4js.js");
 	module.exports = {TemporalProfileConformance: TemporalProfileConformance};
 	global.TemporalProfileConformance = TemporalProfileConformance;
 }
@@ -19967,7 +19831,6 @@ class OcelGraphs {
 }
 
 try {
-	require('../../pm4js.js');
 	module.exports = {OcelGraphs: OcelGraphs};
 	global.OcelGraphs = OcelGraphs;
 }
@@ -20014,7 +19877,6 @@ class OcelConnectedComponents {
 }
 
 try {
-	require('../../pm4js.js');
 	module.exports = {OcelConnectedComponents: OcelConnectedComponents};
 	global.OcelConnectedComponents = OcelConnectedComponents;
 }
@@ -20095,7 +19957,6 @@ class OcelIntervalTree {
 }
 
 try {
-	require('../../pm4js.js');
 	module.exports = {OcelIntervalTree: OcelIntervalTree};
 	global.OcelIntervalTree = OcelIntervalTree;
 }
@@ -20489,7 +20350,6 @@ class OcelEventFeatures {
 }
 
 try {
-	require('../../pm4js.js');
 	module.exports = {OcelEventFeatures: OcelEventFeatures};
 	global.OcelEventFeatures = OcelEventFeatures;
 }
@@ -20918,7 +20778,6 @@ class OcelObjectFeatures {
 }
 
 try {
-	require('../../pm4js.js');
 	module.exports = {OcelObjectFeatures: OcelObjectFeatures};
 	global.OcelObjectFeatures = OcelObjectFeatures;
 }
@@ -20955,7 +20814,6 @@ class EventLogToStream {
 }
 
 try {
-	require('../../../pm4js.js');
 	module.exports = {EventLogToStream: EventLogToStream};
 	global.EventLogToStream = EventLogToStream;
 }
@@ -21023,7 +20881,6 @@ class StreamAttrWrapper {
 }
 
 try {
-	require('../../pm4js.js');
 	module.exports = {StreamAttrWrapper: StreamAttrWrapper};
 	global.StreamAttrWrapper = StreamAttrWrapper;
 }
@@ -21193,7 +21050,6 @@ class OcelLinkAnalysis {
 }
 
 try {
-	require('../../pm4js.js');
 	module.exports = {OcelLinkAnalysis: OcelLinkAnalysis};
 	global.OcelLinkAnalysis = OcelLinkAnalysis;
 }
@@ -21333,7 +21189,6 @@ class LogLinksAnalysis {
 }
 
 try {
-	require('../../pm4js.js');
 	module.exports = {LogLinksAnalysis: LogLinksAnalysis};
 	global.LogLinksAnalysis = LogLinksAnalysis;
 }
@@ -21394,7 +21249,6 @@ class NetworkAnalysis {
 }
 
 try {
-	require('../../../pm4js.js');
 	module.exports = {NetworkAnalysis: NetworkAnalysis};
 	global.NetworkAnalysis = NetworkAnalysis;
 }
@@ -21461,7 +21315,6 @@ class NetworkAnalysisGraphvizVisualizer {
 }
 
 try {
-	require('../../pm4js.js');
 	module.exports = {NetworkAnalysisGraphvizVisualizer: NetworkAnalysisGraphvizVisualizer};
 	global.NetworkAnalysisGraphvizVisualizer = NetworkAnalysisGraphvizVisualizer;
 }
@@ -21720,7 +21573,6 @@ class GeneralOcelStatistics {
 }
 
 try {
-	require('../../pm4js.js');
 	module.exports = {GeneralOcelStatistics: GeneralOcelStatistics};
 	global.GeneralOcelStatistics = GeneralOcelStatistics;
 }
@@ -21858,7 +21710,6 @@ class DtUtils {
 }
 
 try {
-	require('../../pm4js.js');
 	module.exports = {DtUtils: DtUtils};
 	global.DtUtils = DtUtils;
 }
@@ -21933,8 +21784,6 @@ class DagreBPMNLayouting {
 }
 
 try {
-	require('../../../pm4js.js');
-	require('../bpmn_graph.js');
 	module.exports = {DagreBPMNLayouting: DagreBPMNLayouting};
 	global.DagreBPMNLayouting = DagreBPMNLayouting;
 }
@@ -21995,7 +21844,6 @@ class StatisticsUtils {
 }
 
 try {
-	require('../../pm4js.js');
 	module.exports = {StatisticsUtils: StatisticsUtils};
 	global.StatisticsUtils = StatisticsUtils;
 }
@@ -22737,7 +22585,6 @@ class OcelGeneralFiltering {
 }
 
 try {
-	require('../../../pm4js.js');
 	module.exports = {OcelGeneralFiltering: OcelGeneralFiltering};
 	global.OcelGeneralFiltering = OcelGeneralFiltering;
 }
@@ -22834,7 +22681,6 @@ class MlRules {
 }
 
 try {
-	require('../../pm4js.js');
 	module.exports = {MlRules: MlRules};
 	global.MlRules = MlRules;
 }
@@ -22928,7 +22774,6 @@ CsvOcelImporter.DEFAULT_SEPARATOR = ',';
 CsvOcelImporter.DEFAULT_QUOTECHAR = '"';
 
 try {
-	require('../../../../pm4js.js');
 	module.exports = {CsvOcelImporter: CsvOcelImporter};
 	global.CsvOcelImporter = CsvOcelImporter;
 }
@@ -22993,7 +22838,6 @@ CsvOcelExporter.DEFAULT_QUOTECHAR = '"';
 CsvOcelExporter.DEFAULT_NEWLINE = '\n';
 
 try {
-	require('../../../../pm4js.js');
 	module.exports = {CsvOcelExporter: CsvOcelExporter};
 	global.CsvOcelExporter = CsvOcelExporter;
 }
@@ -23124,7 +22968,6 @@ class OcelObjRelationsVisualizer {
 }
 
 try {
-	require('../../pm4js.js');
 	module.exports = {OcelObjRelationsVisualizer: OcelObjRelationsVisualizer};
 	global.OcelObjRelationsVisualizer = OcelObjRelationsVisualizer;
 }
@@ -23250,7 +23093,6 @@ class OcelObjRelations2Visualizer {
 }
 
 try {
-	require('../../pm4js.js');
 	module.exports = {OcelObjRelations2Visualizer: OcelObjRelations2Visualizer};
 	global.OcelObjRelations2Visualizer = OcelObjRelations2Visualizer;
 }
