@@ -89,7 +89,6 @@ class Ocel20FormatFixer {
 }
 
 try {
-	require('../../../pm4js.js');
 	module.exports = {Ocel20FormatFixer: Ocel20FormatFixer};
 	global.Ocel20FormatFixer = Ocel20FormatFixer;
 }

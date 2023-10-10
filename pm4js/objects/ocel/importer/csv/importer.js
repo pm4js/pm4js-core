@@ -83,7 +83,6 @@ CsvOcelImporter.DEFAULT_SEPARATOR = ',';
 CsvOcelImporter.DEFAULT_QUOTECHAR = '"';
 
 try {
-	require('../../../../pm4js.js');
 	module.exports = {CsvOcelImporter: CsvOcelImporter};
 	global.CsvOcelImporter = CsvOcelImporter;
 }

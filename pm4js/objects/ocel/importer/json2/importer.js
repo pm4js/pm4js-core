@@ -83,7 +83,6 @@ class JsonOcel2Importer {
 }
 
 try {
-	require('../../../../pm4js.js');
 	module.exports = {JsonOcel2Importer: JsonOcel2Importer};
 	global.JsonOcel2Importer = JsonOcel2Importer;
 }

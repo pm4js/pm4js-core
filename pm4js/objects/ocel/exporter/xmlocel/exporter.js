@@ -153,7 +153,6 @@ class XmlOcelExporter {
 }
 
 try {
-	require('../../../../pm4js.js');
 	module.exports = {XmlOcelExporter: XmlOcelExporter};
 	global.XmlOcelExporter = XmlOcelExporter;
 	const jsdom = require("jsdom");

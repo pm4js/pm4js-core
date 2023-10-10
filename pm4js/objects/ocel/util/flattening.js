@@ -36,7 +36,6 @@ class OcelFlattening {
 }
 
 try {
-	require('../../../pm4js.js');
 	module.exports = {OcelFlattening: OcelFlattening};
 	global.OcelFlattening = OcelFlattening;
 }
