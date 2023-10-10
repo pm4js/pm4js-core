@@ -112,7 +112,7 @@ class Pm4JSObserverExample {
 	}
 }
 
-Pm4JS.VERSION = "0.0.37";
+Pm4JS.VERSION = "0.0.38";
 Pm4JS.registrationEnabled = false;
 Pm4JS.objects = [];
 Pm4JS.algorithms = [];
