@@ -49,7 +49,6 @@ class StatisticsUtils {
 }
 
 try {
-	require('../../pm4js.js');
 	module.exports = {StatisticsUtils: StatisticsUtils};
 	global.StatisticsUtils = StatisticsUtils;
 }

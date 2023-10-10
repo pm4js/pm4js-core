@@ -222,7 +222,6 @@ class CelonisNDWrapper {
 }
 
 try {
-	require('../../pm4js.js');
 	global.CelonisNDWrapper = CelonisNDWrapper;
 	module.exports = {CelonisNDWrapper: CelonisNDWrapper};
 }

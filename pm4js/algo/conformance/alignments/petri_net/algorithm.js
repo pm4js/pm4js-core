@@ -233,9 +233,6 @@ class PetriNetAlignments {
 }
 
 try {
-	require('../../../../pm4js.js');
-	require('../heapq.js');
-	require('../../../../statistics/log/general.js');
 	module.exports = {PetriNetAlignments: PetriNetAlignments, PetriNetAlignmentsResults: PetriNetAlignmentsResults};
 	global.PetriNetAlignments = PetriNetAlignments;
 	global.PetriNetAlignmentsResults = PetriNetAlignmentsResults;

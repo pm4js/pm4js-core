@@ -24,8 +24,6 @@ class EventLogPrefixes {
 }
 
 try {
-	require('../../../pm4js.js');
-	require('../log.js');
 	module.exports = {EventLogPrefixes: EventLogPrefixes};
 	global.EventLogPrefixes = EventLogPrefixes;
 }

@@ -248,7 +248,6 @@ class GeneralOcelStatistics {
 }
 
 try {
-	require('../../pm4js.js');
 	module.exports = {GeneralOcelStatistics: GeneralOcelStatistics};
 	global.GeneralOcelStatistics = GeneralOcelStatistics;
 }

@@ -44,8 +44,6 @@ class PerformanceDfgGraphvizVisualizer {
 }
 
 try {
-	require('../../pm4js.js');
-	require('../../objects/dfg/performance/obj.js');
 	module.exports = {PerformanceDfgGraphvizVisualizer: PerformanceDfgGraphvizVisualizer};
 	global.PerformanceDfgGraphvizVisualizer = PerformanceDfgGraphvizVisualizer;
 }

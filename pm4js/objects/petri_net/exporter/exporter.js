@@ -100,8 +100,6 @@ class PnmlExporter {
 }
 
 try {
-	require('../../../pm4js.js');
-	require('../petri_net.js');
 	module.exports = {PnmlExporter: PnmlExporter};
 	global.PnmlExporter = PnmlExporter;
 	const jsdom = require("jsdom");

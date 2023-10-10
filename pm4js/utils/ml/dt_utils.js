@@ -126,7 +126,6 @@ class DtUtils {
 }
 
 try {
-	require('../../pm4js.js');
 	module.exports = {DtUtils: DtUtils};
 	global.DtUtils = DtUtils;
 }

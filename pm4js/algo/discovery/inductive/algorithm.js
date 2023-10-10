@@ -1255,12 +1255,6 @@ class InductiveMinerGeneralUtilities {
 }
 
 try {
-	require('../../../pm4js.js');
-	require('../../../objects/log/log.js');
-	require('../../../objects/process_tree/process_tree.js');
-	require('../../../objects/dfg/frequency/obj.js');
-	require('../../../algo/discovery/dfg/algorithm.js');
-	require('../../../statistics/log/general.js');
 	module.exports = {InductiveMiner: InductiveMiner, InductiveMinerSequenceCutDetector: InductiveMinerSequenceCutDetector};
 	global.InductiveMiner = InductiveMiner;
 	global.InductiveMinerSequenceCutDetector = InductiveMinerSequenceCutDetector;

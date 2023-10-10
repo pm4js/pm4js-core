@@ -177,8 +177,6 @@ class BpmnImporter {
 }
 
 try {
-	require('../../../pm4js.js');
-	require('../bpmn_graph.js');
 	module.exports = {BpmnImporter: BpmnImporter};
 	global.BpmnImporter = BpmnImporter;
 	global.DOMParser = require('xmldom').DOMParser;

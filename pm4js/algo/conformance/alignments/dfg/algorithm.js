@@ -212,9 +212,6 @@ class DfgAlignments {
 }
 
 try {
-	require('../../../../pm4js.js');
-	require('../heapq.js');
-	require('../../../../statistics/log/general.js');
 	module.exports = {DfgAlignments: DfgAlignments, DfgAlignmentsResults: DfgAlignmentsResults};
 	global.DfgAlignments = DfgAlignments;
 	global.DfgAlignmentsResults = DfgAlignmentsResults;

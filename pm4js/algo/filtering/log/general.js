@@ -248,7 +248,6 @@ class LogGeneralFiltering {
 }
 
 try {
-	require('../../../pm4js.js');
 	module.exports = {LogGeneralFiltering: LogGeneralFiltering};
 	global.LogGeneralFiltering = LogGeneralFiltering;
 }

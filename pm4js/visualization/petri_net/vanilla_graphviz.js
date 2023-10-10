@@ -64,7 +64,6 @@ class PetriNetVanillaVisualizer {
 }
 
 try {
-	require('../../pm4js.js');
 	module.exports = {PetriNetVanillaVisualizer: PetriNetVanillaVisualizer};
 	global.PetriNetVanillaVisualizer = PetriNetVanillaVisualizer;
 }

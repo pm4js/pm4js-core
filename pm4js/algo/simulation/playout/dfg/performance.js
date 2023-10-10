@@ -63,7 +63,6 @@ class PerformanceDfgSimulation {
 }
 
 try {
-	require("../../../../pm4js.js");
 	module.exports = {PerformanceDfgSimulation: PerformanceDfgSimulation};
 	global.PerformanceDfgSimulation = PerformanceDfgSimulation;
 }

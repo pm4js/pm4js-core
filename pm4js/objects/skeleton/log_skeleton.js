@@ -56,7 +56,6 @@ class LogSkeleton {
 }
 
 try {
-	require('../../pm4js.js');
 	module.exports = { LogSkeleton: LogSkeleton };
 	global.LogSkeleton = LogSkeleton;
 }

@@ -127,8 +127,6 @@ class BpmnExporter {
 BpmnExporter.DUMMY_SEP = "AIOEWFRIUOERWQIO";
 
 try {
-	require('../../../pm4js.js');
-	require('../bpmn_graph.js');
 	module.exports = {BpmnExporter: BpmnExporter};
 	global.BpmnExporter = BpmnExporter;
 	const jsdom = require("jsdom");

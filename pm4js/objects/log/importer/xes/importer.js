@@ -57,8 +57,6 @@ class XesImporter {
 }
 
 try {
-	require('../../../../pm4js.js');
-	require('../../log.js');
 	module.exports = {XesImporter: XesImporter};
 	global.XesImporter = XesImporter;
 	global.DOMParser = require('xmldom').DOMParser;

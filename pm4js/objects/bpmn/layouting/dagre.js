@@ -64,8 +64,6 @@ class DagreBPMNLayouting {
 }
 
 try {
-	require('../../../pm4js.js');
-	require('../bpmn_graph.js');
 	module.exports = {DagreBPMNLayouting: DagreBPMNLayouting};
 	global.DagreBPMNLayouting = DagreBPMNLayouting;
 }

@@ -383,7 +383,6 @@ class OcelEventFeatures {
 }
 
 try {
-	require('../../pm4js.js');
 	module.exports = {OcelEventFeatures: OcelEventFeatures};
 	global.OcelEventFeatures = OcelEventFeatures;
 }

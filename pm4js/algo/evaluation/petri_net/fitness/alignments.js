@@ -9,8 +9,6 @@ class AlignmentsFitness {
 }
 
 try {
-	require("../../../../pm4js.js");
-	require("../../../conformance/alignments/petri_net/algorithm.js");
 	module.exports = {AlignmentsFitness: AlignmentsFitness};
 	global.AlignmentsFitness = AlignmentsFitness;
 }

@@ -154,10 +154,6 @@ class BpmnToPetriNetConverter {
 }
 
 try {
-	require('../../../pm4js.js');
-	require('../../bpmn/bpmn_graph.js');
-	require('../../petri_net/petri_net.js');
-	require('../../petri_net/util/reduction.js');
 	module.exports = {BpmnToPetriNetConverter: BpmnToPetriNetConverter};
 	global.BpmnToPetriNetConverter = BpmnToPetriNetConverter;
 }

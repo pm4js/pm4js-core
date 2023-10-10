@@ -79,9 +79,6 @@ CsvExporter.DEFAULT_QUOTECHAR = '"';
 CsvExporter.DEFAULT_NEWLINE = '\n';
 
 try {
-	require('../../../../pm4js.js');
-	require('../../log.js');
-	require('../../../../statistics/log/general.js');
 	module.exports = {CsvExporter: CsvExporter};
 	global.CsvExporter = CsvExporter;
 }

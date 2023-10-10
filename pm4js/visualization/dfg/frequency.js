@@ -47,8 +47,6 @@ class FrequencyDfgGraphvizVisualizer {
 }
 
 try {
-	require('../../pm4js.js');
-	require('../../objects/dfg/frequency/obj.js');
 	module.exports = {FrequencyDfgGraphvizVisualizer: FrequencyDfgGraphvizVisualizer};
 	global.FrequencyDfgGraphvizVisualizer = FrequencyDfgGraphvizVisualizer;
 }

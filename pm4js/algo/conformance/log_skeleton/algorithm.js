@@ -188,7 +188,6 @@ class LogSkeletonConformanceChecking {
 }
 
 try {
-	require('../../../pm4js.js');
 	module.exports = {LogSkeletonConformanceChecking: LogSkeletonConformanceChecking, LogSkeletonConformanceCheckingResult: LogSkeletonConformanceCheckingResult};
 	global.LogSkeletonConformanceChecking = LogSkeletonConformanceChecking;
 	global.LogSkeletonConformanceCheckingResult = LogSkeletonConformanceCheckingResult;

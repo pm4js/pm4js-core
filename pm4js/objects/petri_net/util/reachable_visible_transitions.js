@@ -29,8 +29,6 @@ class PetriNetReachableVisibleTransitions {
 }
 
 try {
-	require('../../../pm4js.js');
-	require('../petri_net.js');
 	module.exports = {PetriNetReachableVisibleTransitions: PetriNetReachableVisibleTransitions};
 	global.PetriNetReachableVisibleTransitions = PetriNetReachableVisibleTransitions;
 }

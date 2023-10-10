@@ -25,7 +25,6 @@ class EventLogToStream {
 }
 
 try {
-	require('../../../pm4js.js');
 	module.exports = {EventLogToStream: EventLogToStream};
 	global.EventLogToStream = EventLogToStream;
 }

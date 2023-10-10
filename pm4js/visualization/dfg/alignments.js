@@ -70,8 +70,6 @@ class AlignmentsDfgGraphvizVisualizer {
 }
 
 try {
-	require('../../pm4js.js');
-	require('../../objects/dfg/frequency/obj.js');
 	module.exports = {AlignmentsDfgGraphvizVisualizer: AlignmentsDfgGraphvizVisualizer};
 	global.AlignmentsDfgGraphvizVisualizer = AlignmentsDfgGraphvizVisualizer;
 }

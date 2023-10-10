@@ -112,7 +112,6 @@ class IntervalTreeAlgorithms {
 }
 
 try {
-	require('../../pm4js.js');
 	module.exports = {IntervalTreeBuilder: IntervalTreeBuilder, IntervalTreeAlgorithms: IntervalTreeAlgorithms};
 	global.IntervalTreeBuilder = IntervalTreeBuilder;
 	global.IntervalTreeAlgorithms = IntervalTreeAlgorithms;

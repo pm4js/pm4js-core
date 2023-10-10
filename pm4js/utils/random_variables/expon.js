@@ -76,7 +76,6 @@ ExponentialRandomVariable.C = 1;
 
 
 try {
-	require('../../pm4js.js');
 	global.ExponentialRandomVariable = ExponentialRandomVariable;
 	module.exports = {ExponentialRandomVariable: ExponentialRandomVariable};
 }

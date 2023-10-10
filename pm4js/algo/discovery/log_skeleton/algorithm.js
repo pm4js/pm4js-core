@@ -126,10 +126,6 @@ class LogSkeletonDiscovery {
 }
 
 try {
-	require('../../../pm4js.js');
-	require('../../../objects/log/log.js');
-	require('../../../objects/skeleton/log_skeleton.js');
-	require('../../../statistics/log/general.js');
 	module.exports = {LogSkeletonDiscovery: LogSkeletonDiscovery};
 	global.LogSkeletonDiscovery = LogSkeletonDiscovery;
 }

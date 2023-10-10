@@ -158,7 +158,6 @@ class OcelLinkAnalysis {
 }
 
 try {
-	require('../../pm4js.js');
 	module.exports = {OcelLinkAnalysis: OcelLinkAnalysis};
 	global.OcelLinkAnalysis = OcelLinkAnalysis;
 }

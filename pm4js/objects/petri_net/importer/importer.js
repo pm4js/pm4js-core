@@ -127,8 +127,6 @@ class PnmlImporter {
 }
 
 try {
-	require('../../../pm4js.js');
-	require('../petri_net.js');
 	module.exports = {PnmlImporter: PnmlImporter};
 	global.PnmlImporter = PnmlImporter;
 	global.DOMParser = require('xmldom').DOMParser;

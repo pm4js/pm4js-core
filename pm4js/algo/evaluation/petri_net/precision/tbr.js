@@ -56,10 +56,6 @@ class ETConformance {
 }
 
 try {
-	require("../../../../pm4js.js");
-	require("../../../../objects/petri_net/petri_net.js");
-	require("../../../../objects/petri_net/util/reachable_visible_transitions.js");
-	require("../../../../statistics/log/general.js");
 	module.exports = {ETConformance: ETConformance, ETConformanceResult: ETConformanceResult};
 	global.ETConformance = ETConformance;
 	global.ETConformanceResult = ETConformanceResult;

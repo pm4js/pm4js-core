@@ -16,10 +16,6 @@ class FlowerMiner {
 }
 
 try {
-	require('../../../pm4js.js');
-	require('../../../objects/log/log.js');
-	require('../../../objects/process_tree/process_tree.js');
-	require('../../../statistics/log/general.js');
 	module.exports = {FlowerMiner: FlowerMiner};
 	global.FlowerMiner = FlowerMiner;
 }

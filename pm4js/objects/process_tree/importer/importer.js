@@ -63,8 +63,6 @@ class PtmlImporter {
 }
 
 try {
-	require('../../../pm4js.js');
-	require('../process_tree.js');
 	module.exports = {PtmlImporter: PtmlImporter};
 	global.PtmlImporter = PtmlImporter;
 	global.DOMParser = require('xmldom').DOMParser;

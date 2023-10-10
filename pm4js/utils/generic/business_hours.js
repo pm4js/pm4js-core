@@ -39,7 +39,6 @@ BusinessHours.DEFAULT_WEEKENDS = [0, 6];
 BusinessHours.ENABLED = false;
 
 try {
-	require('../../pm4js.js');
 	global.BusinessHours = BusinessHours;
 	module.exports = {BusinessHours: BusinessHours};
 }

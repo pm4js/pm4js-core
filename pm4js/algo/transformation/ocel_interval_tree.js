@@ -70,7 +70,6 @@ class OcelIntervalTree {
 }
 
 try {
-	require('../../pm4js.js');
 	module.exports = {OcelIntervalTree: OcelIntervalTree};
 	global.OcelIntervalTree = OcelIntervalTree;
 }

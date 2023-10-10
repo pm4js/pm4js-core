@@ -5,7 +5,6 @@ class DateUtils {
 }
 
 try {
-	require('../../pm4js.js');
 	module.exports = {DateUtils: DateUtils};
 	global.DateUtils = DateUtils;
 }

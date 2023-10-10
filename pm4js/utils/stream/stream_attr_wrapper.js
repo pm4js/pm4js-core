@@ -56,7 +56,6 @@ class StreamAttrWrapper {
 }
 
 try {
-	require('../../pm4js.js');
 	module.exports = {StreamAttrWrapper: StreamAttrWrapper};
 	global.StreamAttrWrapper = StreamAttrWrapper;
 }

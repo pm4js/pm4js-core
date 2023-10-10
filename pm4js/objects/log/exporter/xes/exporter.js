@@ -78,8 +78,6 @@ class XesExporter {
 }
 
 try {
-	require('../../../../pm4js.js');
-	require('../../log.js');
 	module.exports = {XesExporter: XesExporter};
 	global.XesExporter = XesExporter;
 	const jsdom = require("jsdom");

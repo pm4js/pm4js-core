@@ -118,7 +118,6 @@ class OcelObjRelationsVisualizer {
 }
 
 try {
-	require('../../pm4js.js');
 	module.exports = {OcelObjRelationsVisualizer: OcelObjRelationsVisualizer};
 	global.OcelObjRelationsVisualizer = OcelObjRelationsVisualizer;
 }

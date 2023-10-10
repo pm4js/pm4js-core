@@ -36,7 +36,6 @@ class Attribute {
 
 
 try {
-	require('../../pm4js.js');
 	module.exports = {EventLog: EventLog, Trace: Trace, Event: Event, LogGlobal: LogGlobal, Attribute: Attribute};
 	global.EventLog = EventLog;
 	global.Trace = Trace;

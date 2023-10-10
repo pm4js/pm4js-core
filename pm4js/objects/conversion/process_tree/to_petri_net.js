@@ -150,10 +150,6 @@ class ProcessTreeToPetriNetConverter {
 }
 
 try {
-	require('../../../pm4js.js');
-	require('../../process_tree/process_tree.js');
-	require('../../petri_net/petri_net.js');
-	require('../../petri_net/util/reduction.js');
 	module.exports = {ProcessTreeToPetriNetConverter: ProcessTreeToPetriNetConverter};
 	global.ProcessTreeToPetriNetConverter = ProcessTreeToPetriNetConverter;
 }

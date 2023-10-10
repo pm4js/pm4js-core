@@ -128,7 +128,6 @@ class LogLinksAnalysis {
 }
 
 try {
-	require('../../pm4js.js');
 	module.exports = {LogLinksAnalysis: LogLinksAnalysis};
 	global.LogLinksAnalysis = LogLinksAnalysis;
 }

@@ -171,7 +171,6 @@ class DfgSliders {
 }
 
 try {
-	require("../../../pm4js.js");
 	module.exports = {DfgSliders: DfgSliders};
 	global.DfgSliders = DfgSliders;
 }

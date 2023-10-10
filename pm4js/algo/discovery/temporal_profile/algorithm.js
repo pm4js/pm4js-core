@@ -68,7 +68,6 @@ class TemporalProfileDiscovery {
 }
 
 try {
-	require("../../../pm4js.js");
 	module.exports = {TemporalProfileDiscovery: TemporalProfileDiscovery};
 	global.TemporalProfileDiscovery = TemporalProfileDiscovery;
 }

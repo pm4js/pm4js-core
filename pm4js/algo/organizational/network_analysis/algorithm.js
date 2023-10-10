@@ -49,7 +49,6 @@ class NetworkAnalysis {
 }
 
 try {
-	require('../../../pm4js.js');
 	module.exports = {NetworkAnalysis: NetworkAnalysis};
 	global.NetworkAnalysis = NetworkAnalysis;
 }

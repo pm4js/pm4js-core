@@ -22,8 +22,6 @@ class GeneralizationTbr {
 }
 
 try {
-	require("../../../../pm4js.js");
-	require("../../../conformance/tokenreplay/algorithm.js");
 	module.exports = {GeneralizationTbr: GeneralizationTbr, GeneralizationTbrResults: GeneralizationTbrResults};
 	global.GeneralizationTbr = GeneralizationTbr;
 	global.GeneralizationTbrResults = GeneralizationTbrResults;

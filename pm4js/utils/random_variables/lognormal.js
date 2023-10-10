@@ -116,7 +116,6 @@ LogNormalRandomVariable.C = 1;
 
 
 try {
-	require('../../pm4js.js');
 	global.LogNormalRandomVariable = LogNormalRandomVariable;
 	module.exports = {LogNormalRandomVariable: LogNormalRandomVariable};
 }

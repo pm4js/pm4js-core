@@ -563,9 +563,6 @@ class CaseFeatures {
 CaseFeatures.INCLUDE_WIP = false;
 CaseFeatures.INCLUDE_RESOURCE_WORKLOAD = false;
 try {
-	require('../../pm4js.js');
-	require('../discovery/dfg/algorithm.js');
-	require('../../statistics/log/general.js');
 	module.exports = {CaseFeatures: CaseFeatures};
 	global.CaseFeatures = CaseFeatures;
 }

@@ -92,7 +92,6 @@ class PtmlExporter {
 PtmlExporter.DUMMY_SEP = "AIOEWFRIUOERWQIO";
 
 try {
-	require('../../../pm4js.js');
 	global.PtmlExporter = PtmlExporter;
 	module.exports = {PtmlExporter: PtmlExporter};
 	const jsdom = require("jsdom");

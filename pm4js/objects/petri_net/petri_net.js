@@ -252,7 +252,6 @@ class AcceptingPetriNet {
 }
 
 try {
-	require('../../pm4js.js');
 	module.exports = {PetriNet: PetriNet, PetriNetPlace: PetriNetPlace, PetriNetTransition: PetriNetTransition, PetriNetArc: PetriNetArc, Marking: Marking, AcceptingPetriNet: AcceptingPetriNet};
 	global.PetriNet = PetriNet;
 	global.PetriNetPlace = PetriNetPlace;

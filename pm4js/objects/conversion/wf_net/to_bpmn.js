@@ -119,9 +119,6 @@ class WfNetToBpmnConverter {
 }
 
 try {
-	require('../../../pm4js.js');
-	require('../../petri_net/petri_net.js');
-	require('../../bpmn/bpmn_graph.js');
 	module.exports = {WfNetToBpmnConverter: WfNetToBpmnConverter};
 	global.WfNetToBpmnConverter = WfNetToBpmnConverter;
 }

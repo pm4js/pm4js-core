@@ -86,7 +86,6 @@ class MlRules {
 }
 
 try {
-	require('../../pm4js.js');
 	module.exports = {MlRules: MlRules};
 	global.MlRules = MlRules;
 }

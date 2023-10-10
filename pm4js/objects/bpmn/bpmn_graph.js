@@ -197,7 +197,6 @@ class BpmnEdge {
 }
 
 try {
-	require('../../pm4js.js');
 	module.exports = {BpmnGraph: BpmnGraph, BpmnNode: BpmnNode, BpmnEdge: BpmnEdge};
 	global.BpmnGraph = BpmnGraph;
 	global.BpmnNode = BpmnNode;

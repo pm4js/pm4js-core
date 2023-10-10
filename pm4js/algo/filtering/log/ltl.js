@@ -113,7 +113,6 @@ class LtlFiltering {
 }
 
 try {
-	require('../../../pm4js.js');
 	module.exports = {LtlFiltering: LtlFiltering};
 	global.LtlFiltering = LtlFiltering;
 }

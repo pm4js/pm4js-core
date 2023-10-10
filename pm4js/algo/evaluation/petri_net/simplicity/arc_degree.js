@@ -36,8 +36,6 @@ class SimplicityArcDegree {
 }
 
 try {
-	require("../../../../pm4js.js");
-	require("../../../../objects/petri_net/petri_net.js");
 	module.exports = {SimplicityArcDegree: SimplicityArcDegree, SimplicityArcDegreeResults: SimplicityArcDegreeResults};
 	global.SimplicityArcDegree = SimplicityArcDegree;
 	global.SimplicityArcDegreeResults = SimplicityArcDegreeResults;
