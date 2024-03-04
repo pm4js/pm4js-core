@@ -16475,6 +16475,20 @@ class Ocel20FormatFixer {
 		}
 		for (let evId in ocel["ocel:events"]) {
 			let ev = ocel["ocel:events"][evId];
+			let omapIdx = 0;
+			while (omapIdx < ev["ocel:omap"].length) {
+				let objId = ev["ocel:omap"][omapIdx];
+				if (!(objId in ocel["ocel:objects"])) {
+					ev["ocel:omap"].splice(omapIdx, 1);
+					continue;
+				}
+				omapIdx++;
+			}
+			for (let idx in ev["ocel:omap"]) {
+				let objId = ev["ocel:omap"][idx];
+				if (!(objId in ocel["ocel:objects"])) {
+				}
+			}
 			if (!("ocel:typedOmap" in ev)) {
 				let typedOmap = [];
 				for (let objId of ev["ocel:omap"]) {
@@ -16580,6 +16594,7 @@ class JsonOcelImporter {
 			for (let evId in ret["ocel:events"]) {
 				ret["ocel:events"][evId]["ocel:timestamp"] = new Date(ret["ocel:events"][evId]["ocel:timestamp"]);
 			}
+			ret = Ocel20FormatFixer.apply(ret);
 			return ret;
 		}
 		else {
@@ -16677,7 +16692,9 @@ class JsonOcel2Importer {
 		
 		legacyObj["ocel:global-log"]["ocel:object-types"] = Object.keys(objectTypes);
 		legacyObj["ocel:global-log"]["ocel:attribute-names"] = Object.keys(attributeNames);
-				
+		
+		legacyObj = Ocel20FormatFixer.apply(legacyObj);
+		
 		return legacyObj;
 	}
 }
@@ -16703,6 +16720,7 @@ class XmlOcelImporter {
 		let xmlLog = xmlDoc.getElementsByTagName("log")[0];
 		let ocel = {};
 		XmlOcelImporter.parseXmlObj(xmlLog, ocel);
+		ocel = Ocel20FormatFixer.apply(ocel);
 		return ocel;
 	}
 	
@@ -16864,6 +16882,7 @@ class Xml2OcelImporter {
 		let xmlLog = xmlDoc.getElementsByTagName("log")[0];
 		let ocel = {};
 		Xml2OcelImporter.parseXmlObj(xmlLog, ocel, ocel);
+		ocel = Ocel20FormatFixer.apply(ocel);
 		return ocel;
 	}
 
@@ -17048,6 +17067,8 @@ class Xml2OcelImporter {
 		ocel["ocel:objectTypes"] = objectTypes;
 		ocel["ocel:eventTypes"] = eventTypes;
 		ocel["ocel:objectChanges"] = objectChanges;
+		
+		ocel = Ocel20FormatFixer.apply(ocel);
 	}
 }
 
@@ -17325,6 +17346,8 @@ class SqliteOcel2Importer {
 		ocel["ocel:objectTypes"] = objectTypes;
 		ocel["ocel:eventTypes"] = eventTypes;
 		ocel["ocel:objectChanges"] = objectChanges;
+
+		ocel = Ocel20FormatFixer.apply(ocel);
 				
 		return ocel;
 	}

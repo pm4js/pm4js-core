@@ -77,7 +77,9 @@ class JsonOcel2Importer {
 		
 		legacyObj["ocel:global-log"]["ocel:object-types"] = Object.keys(objectTypes);
 		legacyObj["ocel:global-log"]["ocel:attribute-names"] = Object.keys(attributeNames);
-				
+		
+		legacyObj = Ocel20FormatFixer.apply(legacyObj);
+		
 		return legacyObj;
 	}
 }

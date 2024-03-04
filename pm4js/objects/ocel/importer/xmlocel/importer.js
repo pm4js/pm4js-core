@@ -9,6 +9,7 @@ class XmlOcelImporter {
 		let xmlLog = xmlDoc.getElementsByTagName("log")[0];
 		let ocel = {};
 		XmlOcelImporter.parseXmlObj(xmlLog, ocel);
+		ocel = Ocel20FormatFixer.apply(ocel);
 		return ocel;
 	}
 	

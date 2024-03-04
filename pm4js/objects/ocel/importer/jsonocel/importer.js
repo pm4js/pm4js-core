@@ -10,6 +10,7 @@ class JsonOcelImporter {
 			for (let evId in ret["ocel:events"]) {
 				ret["ocel:events"][evId]["ocel:timestamp"] = new Date(ret["ocel:events"][evId]["ocel:timestamp"]);
 			}
+			ret = Ocel20FormatFixer.apply(ret);
 			return ret;
 		}
 		else {

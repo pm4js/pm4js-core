@@ -5,6 +5,20 @@ class Ocel20FormatFixer {
 		}
 		for (let evId in ocel["ocel:events"]) {
 			let ev = ocel["ocel:events"][evId];
+			let omapIdx = 0;
+			while (omapIdx < ev["ocel:omap"].length) {
+				let objId = ev["ocel:omap"][omapIdx];
+				if (!(objId in ocel["ocel:objects"])) {
+					ev["ocel:omap"].splice(omapIdx, 1);
+					continue;
+				}
+				omapIdx++;
+			}
+			for (let idx in ev["ocel:omap"]) {
+				let objId = ev["ocel:omap"][idx];
+				if (!(objId in ocel["ocel:objects"])) {
+				}
+			}
 			if (!("ocel:typedOmap" in ev)) {
 				let typedOmap = [];
 				for (let objId of ev["ocel:omap"]) {

@@ -261,6 +261,8 @@ class SqliteOcel2Importer {
 		ocel["ocel:objectTypes"] = objectTypes;
 		ocel["ocel:eventTypes"] = eventTypes;
 		ocel["ocel:objectChanges"] = objectChanges;
+
+		ocel = Ocel20FormatFixer.apply(ocel);
 				
 		return ocel;
 	}

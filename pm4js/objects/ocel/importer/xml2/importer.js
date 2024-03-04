@@ -9,6 +9,7 @@ class Xml2OcelImporter {
 		let xmlLog = xmlDoc.getElementsByTagName("log")[0];
 		let ocel = {};
 		Xml2OcelImporter.parseXmlObj(xmlLog, ocel, ocel);
+		ocel = Ocel20FormatFixer.apply(ocel);
 		return ocel;
 	}
 
@@ -193,6 +194,8 @@ class Xml2OcelImporter {
 		ocel["ocel:objectTypes"] = objectTypes;
 		ocel["ocel:eventTypes"] = eventTypes;
 		ocel["ocel:objectChanges"] = objectChanges;
+		
+		ocel = Ocel20FormatFixer.apply(ocel);
 	}
 }
 
