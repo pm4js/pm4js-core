@@ -72,6 +72,119 @@ class OcelSegments {
         return childToParent;
     }
 
+    static segmentGivenEvIds(ocel0, leadObjectType, segmentsPrefix, objLifecycle, segmentsEvIds1) {
+        let segmentOt = "SEGMENT_" + segmentsPrefix;
+
+		let ocel = OcelSegments.cloneOcel(ocel0);
+		ocel["ocel:global-log"]["ocel:object-types"].push(segmentOt);
+
+        let objTypeDictio = OcelSegments.getObjectTypeDictio(ocel);
+		let dictioIntervalTrees = OcelIntervalTree.buildIntervalTreeDictioPerObject(ocel, null, objLifecycle);
+
+        let counter = {};
+
+        for (let seg of segmentsEvIds1) {
+            let objId = seg[0];
+            if (!(objId in counter)) {
+                counter[objId] = 1;
+            }
+            else {
+                counter[objId] += 1;
+            }
+            
+            let lif = objLifecycle[objId];
+
+            let timeFirst = lif[seg[1]]["ocel:timestamp"].getTime() / 1000.0;
+            let timeLast = lif[seg[3]]["ocel:timestamp"].getTime() / 1000.0;
+
+            let includedEvs = {};
+            let referencedObjects = {};
+
+            let z = seg[1];
+            while (z <= seg[3]) {
+                includedEvs[z] = 0;
+                let eve = lif[z];
+                for (let objId of eve["ocel:omap"]) {
+                    referencedObjects[objId] = 0;
+                }
+                z++;
+            }
+
+            for (let otherObjId in referencedObjects) {
+                if (otherObjId in dictioIntervalTrees) {
+                    let otherObjType = objTypeDictio[otherObjId];
+                    if (!(otherObjType.startsWith("SEGMENT_"))) {
+                        let intervals = dictioIntervalTrees[otherObjId].queryInterval(timeFirst, timeLast);
+                        for (let inte of intervals) {
+                            let eve = inte.value;
+                            includedEvs[eve["ocel:eid"]] = 0;
+                        }
+                    }
+                }
+            }
+
+            let segmentObjectId = segmentOt+"_"+objId+"_"+counter[objId];
+            ocel["ocel:objects"][segmentObjectId] = {"ocel:type": segmentOt, "ocel:ovmap": {... ocel["ocel:objects"][objId]["ocel:ovmap"]}};
+
+            for (let evId in includedEvs) {
+                let eve = ocel["ocel:events"][evId];
+
+                eve["ocel:omap"].push(segmentObjectId);
+                eve["ocel:typedOmap"][segmentObjectId] = segmentOt;
+            }
+        }
+
+        return ocel;
+    }
+
+    static segmentFromOrTo(ocel0, leadObjectType, activity, segmentsPrefix, isFrom) {
+        let objectsPerType = OcelSegments.collectObjectsPerType(ocel0);
+		let objLifecycle = OcelIntervalTree.getObjectsLifecycle(ocel0);
+
+        let segmentsEvIds1 = [];
+
+        for (let objId of objectsPerType[leadObjectType]) {
+            let lif = objLifecycle[objId];
+            
+            if (lif.length > 0) {
+                if (isFrom) {
+                    let i = 0;
+                    while (i < lif.length) {
+                        if (lif[i]["ocel:activity"] == activity) {
+                            let j = i+1;
+                            while (j < lif.length) {
+                                if (lif[j]["ocel:activity"] == activity) {
+                                    break;
+                                }
+                                j++;
+                            }
+                            segmentsEvIds1.push([objId, i, lif[i]["ocel:activity"], j-1, lif[j-1]["ocel:activity"]]);
+                        }
+                        i++;
+                    }
+                }
+                else {
+                    let i = 0;
+                    while (i < lif.length) {
+                        if (lif[i]["ocel:activity"] == activity) {
+                            let j = i - 1;
+                            while (j >= 0) {
+                                if (lif[j]["ocel:activity"] == activity) {
+                                    break;
+                                }
+                                j--;
+                            }
+                            segmentsEvIds1.push([objId, j+1, lif[j+1]["ocel:activity"], i, lif[i]["ocel:activity"]]);
+                        }
+                        i++;
+                    }
+                }
+            }
+        }
+
+        return OcelSegments.segmentGivenEvIds(ocel0, leadObjectType, segmentsPrefix, objLifecycle, segmentsEvIds1);
+    }
+
 	static segmentBasedOnChildObjType(ocel0, leadObjType, childObjType, segmentsPrefix) {
         let segmentOt = "SEGMENT_" + segmentsPrefix;
 
