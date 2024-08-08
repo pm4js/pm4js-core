@@ -1,4 +1,39 @@
 class OcelIntervalTree {
+	static buildIntervalTreeDictioPerObject(ocel, objects) {
+		if (objects == null) {
+			objects = Object.keys(ocel["ocel:objects"]);
+		}
+		let objLifecycle = OcelIntervalTree.getObjectsLifecycle(ocel);
+		let dictio = {};
+
+		for (let objId of objects) {
+			let lif = objLifecycle[objId];
+			if (lif.length > 0) {
+				let tree = new IntervalTree();
+				for (let eve of lif) {
+					let evTimest = eve["ocel:timestamp"].getTime() / 1000.0;
+					tree.insert(evTimest-0.00001, evTimest+0.00001, eve);
+				}
+				let mintime = null;
+				for (let n of tree.ascending()) {
+					mintime = n.low;
+					break;
+				}
+				let maxtime = null;
+				for (let n of tree.descending()) {
+					maxtime = n.high;
+					break;
+				}
+				tree.mintime = mintime;
+				tree.maxtime = maxtime;
+
+				dictio[objId] = tree;
+			}
+		}
+
+		return dictio;
+	}
+
 	static buildEventTimestampIntervalTree(ocel) {
 		let events = ocel["ocel:events"];
 		let tree = new IntervalTree();
