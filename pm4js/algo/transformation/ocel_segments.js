@@ -53,19 +53,11 @@ class OcelSegments {
 		return ocel;
 	}
 
-	static segmentBasedOnChildObjType(ocel0, leadObjType, childObjType, segmentOt) {
-		let ocel = OcelSegments.cloneOcel(ocel0);
-
-		ocel["ocel:global-log"]["ocel:object-types"].push(segmentOt);
-
-		let objTypeDictio = OcelSegments.getObjectTypeDictio(ocel);
-		let objectsPerType = OcelSegments.collectObjectsPerType(ocel);
-		let objLifecycle = OcelIntervalTree.getObjectsLifecycle(ocel);
-		let dictioIntervalTrees = OcelIntervalTree.buildIntervalTreeDictioPerObject(ocel, null, objLifecycle);
-
-		let objectInteractionGraph = OcelGraphs.objectInteractionGraph(ocel);
-
+    static buildParentsDictionary(ocel, leadObjType, childObjType, objectsPerType) {
 		let childToParent = {};
+
+        let objectInteractionGraph = OcelGraphs.objectInteractionGraph(ocel);
+        let objTypeDictio = OcelSegments.getObjectTypeDictio(ocel);
 
 		for (let childId of objectsPerType[childObjType]) {
 			let interacting = objectInteractionGraph[childId];
@@ -78,38 +70,69 @@ class OcelSegments {
 			}
 		}
 
+        return childToParent;
+    }
+
+	static segmentBasedOnChildObjType(ocel0, leadObjType, childObjType, segmentOt) {
+		let ocel = OcelSegments.cloneOcel(ocel0);
+
+		ocel["ocel:global-log"]["ocel:object-types"].push(segmentOt);
+
+		let objectsPerType = OcelSegments.collectObjectsPerType(ocel);
+		let objLifecycle = OcelIntervalTree.getObjectsLifecycle(ocel);
+		let dictioIntervalTrees = OcelIntervalTree.buildIntervalTreeDictioPerObject(ocel, null, objLifecycle);
+
+        let childToParent = OcelSegments.buildParentsDictionary(ocel, leadObjType, childObjType, objectsPerType);
+
 		for (let childId of objectsPerType[childObjType]) {
-			let lif = objLifecycle[childId];
-			let includedEvs = {};
-			let referencedObjects = {};
+            let parentId = childToParent[childId];
 
-			for (let eve of lif) {
-				includedEvs[eve["ocel:eid"]] = 0;
-			}
+            if (parentId != null) {
+                let lif = objLifecycle[childId];
+                let includedEvs = {};
+                let referencedObjects = {};
+                referencedObjects[childId] = 0;
+                referencedObjects[parentId] = 0;
 
-			let timeFirst = lif[0]["ocel:timestamp"].getTime() / 1000.0;
-			let timeLast = lif[lif.length - 1]["ocel:timestamp"].getTime() / 1000.0;
+                for (let eve of lif) {
+                    includedEvs[eve["ocel:eid"]] = 0;
+                }
 
-			let parentId = childToParent[childId];
-			let intervals = dictioIntervalTrees[parentId].queryInterval(timeFirst, timeLast);
+                let timeFirst = lif[0]["ocel:timestamp"].getTime() / 1000.0;
+                let timeLast = lif[lif.length - 1]["ocel:timestamp"].getTime() / 1000.0;
 
-			for (let inte of intervals) {
-				let eve = inte.value;
-				includedEvs[eve["ocel:eid"]] = 0;
-				for (let objId of eve["ocel:omap"]) {
-					referencedObjects[objId] = 0;
-				}
-			}
+                let intervals = dictioIntervalTrees[parentId].queryInterval(timeFirst, timeLast);
 
-			for (let otherObjId in referencedObjects) {
-				if (otherObjId != childId && otherObjId != parentId) {
-					intervals = dictioIntervalTrees[otherObjId].queryInterval(timeFirst, timeLast);
-					for (let inte of intervals) {
-						let eve = inte.value;
-						includedEvs[eve["ocel:eid"]] = 0;
-					}
-				}
-			}
+                for (let inte of intervals) {
+                    let eve = inte.value;
+                    includedEvs[eve["ocel:eid"]] = 0;
+                    for (let objId of eve["ocel:omap"]) {
+                        referencedObjects[objId] = 0;
+                    }
+                }
+
+                for (let otherObjId in referencedObjects) {
+                    if (otherObjId != childId && otherObjId != parentId) {
+                        if (otherObjId in dictioIntervalTrees) {
+                            intervals = dictioIntervalTrees[otherObjId].queryInterval(timeFirst, timeLast);
+                            for (let inte of intervals) {
+                                let eve = inte.value;
+                                includedEvs[eve["ocel:eid"]] = 0;
+                            }
+                        }
+                    }
+                }
+
+                let segmentObjectId = segmentOt+"_"+childId;
+                ocel["ocel:objects"][segmentObjectId] = {"ocel:type": segmentOt, "ocel:ovmap": {... ocel["ocel:objects"][parentId]["ocel:ovmap"]}};
+
+                for (let evId in includedEvs) {
+                    let eve = ocel["ocel:events"][evId];
+
+                    eve["ocel:omap"].push(segmentObjectId);
+                    eve["ocel:typedOmap"][segmentObjectId] = segmentOt;
+                }
+            }
 		}
 
 		return ocel;
