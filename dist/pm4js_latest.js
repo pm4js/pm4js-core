@@ -112,7 +112,7 @@ class Pm4JSObserverExample {
 	}
 }
 
-Pm4JS.VERSION = "0.0.38";
+Pm4JS.VERSION = "0.0.39";
 Pm4JS.registrationEnabled = false;
 Pm4JS.objects = [];
 Pm4JS.algorithms = [];
@@ -23325,6 +23325,10 @@ class OcelSegments {
                         while (j < lif.length) {
                             if (lif[j]["ocel:activity"] == activity2) {
                                 isFound = true;
+                                break;
+                            }
+                            else if (lif[j]["ocel:activity"] == activity1) {
+                                isFound = false;
                                 break;
                             }
                             j++;
