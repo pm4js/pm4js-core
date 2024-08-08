@@ -106,3 +106,4 @@ require('./pm4js/objects/ocel/importer/csv/importer.js');
 require('./pm4js/objects/ocel/exporter/csv/exporter.js');
 require('./pm4js/visualization/ocel/ocel_obj_relations.js');
 require('./pm4js/visualization/ocel/ocel_obj_relations2.js');
+require('./pm4js/algo/transformation/ocel_segments.js');
