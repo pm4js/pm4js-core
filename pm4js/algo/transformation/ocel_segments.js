@@ -157,6 +157,10 @@ class OcelSegments {
                                 isFound = true;
                                 break;
                             }
+                            else if (lif[j]["ocel:activity"] == activity1) {
+                                isFound = false;
+                                break;
+                            }
                             j++;
                         }
                         if (isFound) {
