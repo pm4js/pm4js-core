@@ -1,9 +1,11 @@
 class OcelIntervalTree {
-	static buildIntervalTreeDictioPerObject(ocel, objects) {
+	static buildIntervalTreeDictioPerObject(ocel, objects, objLifecycle) {
 		if (objects == null) {
 			objects = Object.keys(ocel["ocel:objects"]);
 		}
-		let objLifecycle = OcelIntervalTree.getObjectsLifecycle(ocel);
+		if (objLifecycle == null) {
+			objLifecycle = OcelIntervalTree.getObjectsLifecycle(ocel);
+		}
 		let dictio = {};
 
 		for (let objId of objects) {
@@ -65,7 +67,9 @@ class OcelIntervalTree {
 		}
 		let events = ocel["ocel:events"];
 		for (let evId in events) {
-			let eve = events[evId];
+			let eve = {... events[evId]};
+			eve["ocel:eid"] = evId;
+
 			for (let objId of eve["ocel:omap"]) {
 				lif[objId].push(eve);
 			}
