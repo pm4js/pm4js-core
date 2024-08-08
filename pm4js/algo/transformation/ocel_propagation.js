@@ -53,6 +53,8 @@ class OcelAttributePropagation {
 				}
 			}
 		}
+		
+		return ocel;
 	}
 }
 

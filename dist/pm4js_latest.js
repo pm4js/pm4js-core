@@ -23531,6 +23531,8 @@ class OcelAttributePropagation {
 				}
 			}
 		}
+		
+		return ocel;
 	}
 }
 
