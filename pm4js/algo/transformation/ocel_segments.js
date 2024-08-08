@@ -53,11 +53,10 @@ class OcelSegments {
 		return ocel;
 	}
 
-    static buildParentsDictionary(ocel, leadObjType, childObjType, objectsPerType) {
+    static buildParentsDictionary(ocel, leadObjType, childObjType, objectsPerType, objTypeDictio) {
 		let childToParent = {};
 
         let objectInteractionGraph = OcelGraphs.objectInteractionGraph(ocel);
-        let objTypeDictio = OcelSegments.getObjectTypeDictio(ocel);
 
 		for (let childId of objectsPerType[childObjType]) {
 			let interacting = objectInteractionGraph[childId];
@@ -73,16 +72,18 @@ class OcelSegments {
         return childToParent;
     }
 
-	static segmentBasedOnChildObjType(ocel0, leadObjType, childObjType, segmentOt) {
-		let ocel = OcelSegments.cloneOcel(ocel0);
+	static segmentBasedOnChildObjType(ocel0, leadObjType, childObjType, segmentsPrefix) {
+        let segmentOt = "SEGMENT_" + segmentsPrefix;
 
+		let ocel = OcelSegments.cloneOcel(ocel0);
 		ocel["ocel:global-log"]["ocel:object-types"].push(segmentOt);
 
+        let objTypeDictio = OcelSegments.getObjectTypeDictio(ocel);
 		let objectsPerType = OcelSegments.collectObjectsPerType(ocel);
 		let objLifecycle = OcelIntervalTree.getObjectsLifecycle(ocel);
 		let dictioIntervalTrees = OcelIntervalTree.buildIntervalTreeDictioPerObject(ocel, null, objLifecycle);
 
-        let childToParent = OcelSegments.buildParentsDictionary(ocel, leadObjType, childObjType, objectsPerType);
+        let childToParent = OcelSegments.buildParentsDictionary(ocel, leadObjType, childObjType, objectsPerType, objTypeDictio);
 
 		for (let childId of objectsPerType[childObjType]) {
             let parentId = childToParent[childId];
@@ -114,10 +115,13 @@ class OcelSegments {
                 for (let otherObjId in referencedObjects) {
                     if (otherObjId != childId && otherObjId != parentId) {
                         if (otherObjId in dictioIntervalTrees) {
-                            intervals = dictioIntervalTrees[otherObjId].queryInterval(timeFirst, timeLast);
-                            for (let inte of intervals) {
-                                let eve = inte.value;
-                                includedEvs[eve["ocel:eid"]] = 0;
+                            let otherObjType = objTypeDictio[otherObjId];
+                            if (!(otherObjType.startsWith("SEGMENT_"))) {
+                                intervals = dictioIntervalTrees[otherObjId].queryInterval(timeFirst, timeLast);
+                                for (let inte of intervals) {
+                                    let eve = inte.value;
+                                    includedEvs[eve["ocel:eid"]] = 0;
+                                }
                             }
                         }
                     }
