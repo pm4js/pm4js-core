@@ -137,6 +137,42 @@ class OcelSegments {
         return ocel;
     }
 
+    static segmentBetween(ocel0, leadObjectType, activity1, activity2, segmentsPrefix) {
+        let objectsPerType = OcelSegments.collectObjectsPerType(ocel0);
+		let objLifecycle = OcelIntervalTree.getObjectsLifecycle(ocel0);
+
+        let segmentsEvIds1 = [];
+
+        for (let objId of objectsPerType[leadObjectType]) {
+            let lif = objLifecycle[objId];
+            
+            if (lif.length > 0) {
+                let i = 0;
+                while (i < lif.length) {
+                    if (lif[i]["ocel:activity"] == activity1) {
+                        let j = i + 1;
+                        let isFound = false;
+                        while (j < lif.length) {
+                            if (lif[j]["ocel:activity"] == activity2) {
+                                isFound = true;
+                                break;
+                            }
+                            j++;
+                        }
+                        if (isFound) {
+                            segmentsEvIds1.push([objId, i, lif[i]["ocel:activity"], j, lif[j]["ocel:activity"]]);
+                            i++;
+                            continue;
+                        }
+                    }
+                    i++;
+                }
+            }
+        }
+
+        return OcelSegments.segmentGivenEvIds(ocel0, leadObjectType, segmentsPrefix, objLifecycle, segmentsEvIds1);
+    }
+
     static segmentFromOrTo(ocel0, leadObjectType, activity, segmentsPrefix, isFrom) {
         let objectsPerType = OcelSegments.collectObjectsPerType(ocel0);
 		let objLifecycle = OcelIntervalTree.getObjectsLifecycle(ocel0);
