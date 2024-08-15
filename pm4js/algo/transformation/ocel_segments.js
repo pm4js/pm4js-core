@@ -42,7 +42,7 @@ class OcelSegments {
 		for (let eveId in ocel["ocel:events"]) {
 			ocel["ocel:events"][eveId] = {... ocel["ocel:events"][eveId]};
 			ocel["ocel:events"][eveId]["ocel:omap"] = [... ocel["ocel:events"][eveId]["ocel:omap"]];
-			ocel["ocel:events"][eveId]["ocel:typedOmap"] = {... ocel["ocel:events"][eveId]["ocel:typedOmap"]};
+			ocel["ocel:events"][eveId]["ocel:typedOmap"] = [... ocel["ocel:events"][eveId]["ocel:typedOmap"]];
 		}
 
 		for (let objId in ocel["ocel:objects"]) {
@@ -130,7 +130,7 @@ class OcelSegments {
                 let eve = ocel["ocel:events"][evId];
 
                 eve["ocel:omap"].push(segmentObjectId);
-                eve["ocel:typedOmap"][segmentObjectId] = segmentOt;
+                eve["ocel:typedOmap"].push({"ocel:oid": segmentObjectId, "qualifier": "EMPTY"});
             }
         }
 
@@ -287,7 +287,7 @@ class OcelSegments {
                     let eve = ocel["ocel:events"][evId];
 
                     eve["ocel:omap"].push(segmentObjectId);
-                    eve["ocel:typedOmap"][segmentObjectId] = segmentOt;
+                    eve["ocel:typedOmap"].push({"ocel:oid": segmentObjectId, "qualifier": "EMPTY"});
                 }
             }
 		}
