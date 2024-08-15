@@ -469,7 +469,12 @@ class OcelObjectFeatures {
 
 					for (let eve of lif) {
 						if (attr in eve["ocel:vmap"]) {
-							thisValues.push(eve["ocel:vmap"][attr]);
+							let thisV = eve["ocel:vmap"][attr];
+							if (isNaN(thisV)) {
+							}
+							else {
+								thisValues.push(thisV);
+							}
 						}
 					}
 
