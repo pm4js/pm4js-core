@@ -506,7 +506,11 @@ class OcelObjectFeatures {
 		return {"data": data, "featureNames": featureNames};
 	}
 
-	static encodeStringEventAttributes(ocel) {
+	static encodeStringEventAttributes(ocel, maxDiffFeatures) {
+		if (maxDiffFeatures == null) {
+			maxDiffFeatures = 15;
+		}
+
 		let data = [];
 		let featureNames = [];
 		let objLifecycle = OcelObjectFeatures.getObjectsLifecycle(ocel);
@@ -545,25 +549,27 @@ class OcelObjectFeatures {
 			}
 
 			if (allStrings) {
-				for (let val of values) {
-					featureNames.push("@@object_ev_attr_"+attr.replace(/[\W_]+/g,"")+"_"+val.replace(/[\W_]+/g,""));
-				}
-
-				let idx = 0;
-				for (let objId in ocel["ocel:objects"]) {
-					let lif = objLifecycle[objId];
-
+				if (values.length <= maxDiffFeatures) {
 					for (let val of values) {
-						let counter = 0;
-						for (let eve of lif) {
-							if (attr in eve["ocel:vmap"] && eve["ocel:vmap"][attr] == val) {
-								counter++;
-							}
-						}
-						data[idx].push(counter);
+						featureNames.push("@@object_ev_attr_"+attr.replace(/[\W_]+/g,"")+"_"+val.replace(/[\W_]+/g,""));
 					}
 
-					idx++;
+					let idx = 0;
+					for (let objId in ocel["ocel:objects"]) {
+						let lif = objLifecycle[objId];
+
+						for (let val of values) {
+							let counter = 0;
+							for (let eve of lif) {
+								if (attr in eve["ocel:vmap"] && eve["ocel:vmap"][attr] == val) {
+									counter++;
+								}
+							}
+							data[idx].push(counter);
+						}
+
+						idx++;
+					}
 				}
 			}
 		}
@@ -627,7 +633,11 @@ class OcelObjectFeatures {
 		return {"data": data, "featureNames": featureNames};
 	}
 	
-	static encodeStringObjectAttributes(ocel) {
+	static encodeStringObjectAttributes(ocel, maxDiffFeatures) {
+		if (maxDiffFeatures == null) {
+			maxDiffFeatures = 15;
+		}
+
 		let data = [];
 		let featureNames = [];
 		
@@ -664,23 +674,25 @@ class OcelObjectFeatures {
 			}
 			
 			if (allStrings) {
-				for (let val of values) {
-					featureNames.push("@@object_obj_attr_"+attr.replace(/[\W_]+/g,"")+"_"+val.replace(/[\W_]+/g,""));
-				}
-				
-				let idx = 0;
-				for (let objId in ocel["ocel:objects"]) {
-					let ovmap = ocel["ocel:objects"][objId]["ocel:ovmap"];
+				if (values.length <= maxDiffFeatures) {
 					for (let val of values) {
-						if (attr in ovmap && ovmap[attr] == val) {
-							data[idx].push(1);
-						}
-						else {
-							data[idx].push(0);
-						}
+						featureNames.push("@@object_obj_attr_"+attr.replace(/[\W_]+/g,"")+"_"+val.replace(/[\W_]+/g,""));
 					}
 					
-					idx++;
+					let idx = 0;
+					for (let objId in ocel["ocel:objects"]) {
+						let ovmap = ocel["ocel:objects"][objId]["ocel:ovmap"];
+						for (let val of values) {
+							if (attr in ovmap && ovmap[attr] == val) {
+								data[idx].push(1);
+							}
+							else {
+								data[idx].push(0);
+							}
+						}
+						
+						idx++;
+					}
 				}
 			}
 		}
