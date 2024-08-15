@@ -153,7 +153,7 @@ class OcelObjectFeatures {
 		while (i < fea["data"].length) {
 			data.push([...fea["data"][i]]);
 			data[i].unshift(objects[i]);
-			i = i + 1;
+ 			i = i + 1;
 		}
 		featureNames.unshift("OBJECT_ID");
 		i = 0;
@@ -479,6 +479,17 @@ class OcelObjectFeatures {
 					}
 
 					if (thisValues.length > 0) {
+						let minv = 99999999999999;
+						let maxv = -99999999999999;
+						for (let val of thisValues) {
+							if (val < minv) {
+								minv = val;
+							}
+							if (val > maxv) {
+								maxv = val;
+							}
+						}
+
 						data[idx].push(Math.min(thisValues));
 						data[idx].push(Math.max(thisValues));
 					}
