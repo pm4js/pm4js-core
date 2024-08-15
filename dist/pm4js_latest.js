@@ -20436,12 +20436,17 @@ class OcelObjectFeatures {
 		let overallObjectGraphs = OcelObjectFeatures.encodeOverallObjectGraphs(ocel);
 		let interactionGraphOt = OcelObjectFeatures.encodeInteractionGraphOt(ocel);
 		let wip = OcelObjectFeatures.encodeWip(ocel);
-		let featureNames = [...objStrAttr["featureNames"], ...objNumAttr["featureNames"], ...objLifecycleActivities["featureNames"], ...objLifecycleDuration["featureNames"], ...objLifecycleLength["featureNames"], ...overallObjectGraphs["featureNames"], ...interactionGraphOt["featureNames"], ...wip["featureNames"]];
+		let stringObjectAttributes = OcelObjectFeatures.encodeStringObjectAttributes(ocel);
+		let numericalObjectAttributes = OcelObjectFeatures.encodeNumericalObjectAttributes(ocel);
+		let stringEventAttributes = OcelObjectFeatures.encodeStringEventAttributes(ocel);
+		let numericalEventAttributes = OcelObjectFeatures.encodeNumericalEventAttributes(ocel);
+
+		let featureNames = [...objStrAttr["featureNames"], ...objNumAttr["featureNames"], ...objLifecycleActivities["featureNames"], ...objLifecycleDuration["featureNames"], ...objLifecycleLength["featureNames"], ...overallObjectGraphs["featureNames"], ...interactionGraphOt["featureNames"], ...wip["featureNames"], ...stringObjectAttributes["featureNames"], ...numericalObjectAttributes["featureNames"], ...stringEventAttributes["featureNames"], ...numericalEventAttributes["featureNames"]];
 		let data = [];
 		let objects = ocel["ocel:objects"];
 		let count = 0;
 		for (let objId in objects) {
-			data.push([...objStrAttr["data"][count], ...objNumAttr["data"][count], ...objLifecycleActivities["data"][count], ...objLifecycleDuration["data"][count], ...objLifecycleLength["data"][count], ...overallObjectGraphs["data"][count], ...interactionGraphOt["data"][count], ...wip["data"][count]]);
+			data.push([...objStrAttr["data"][count], ...objNumAttr["data"][count], ...objLifecycleActivities["data"][count], ...objLifecycleDuration["data"][count], ...objLifecycleLength["data"][count], ...overallObjectGraphs["data"][count], ...interactionGraphOt["data"][count], ...wip["data"][count], ...stringObjectAttributes["data"][count], ...numericalObjectAttributes["data"][count], ...stringEventAttributes["data"][count], ...numericalEventAttributes["data"][count]]);
 			count = count + 1;
 		}
 		return {"data": data, "featureNames": featureNames};
@@ -20840,6 +20845,258 @@ class OcelObjectFeatures {
 				data.push([0]);
 			}
 		}
+		return {"data": data, "featureNames": featureNames};
+	}
+
+	static encodeNumericalEventAttributes(ocel) {
+		let data = [];
+		let featureNames = [];
+		let objLifecycle = OcelObjectFeatures.getObjectsLifecycle(ocel);
+
+		let allValues0 = {};
+
+		for (let evId in ocel["ocel:events"]) {
+			let eve = ocel["ocel:events"][evId];
+
+			for (let attr in eve["ocel:vmap"]) {
+				let thisVal = eve["ocel:vmap"][attr];
+				if (!(attr in allValues0)) {
+					allValues0[attr] = [];
+				}
+				if (!(allValues0[attr].includes(thisVal))) {
+					allValues0[attr].push(thisVal);
+				}
+			}
+		}
+
+		for (let objId in ocel["ocel:objects"]) {
+			let row = [];
+			data.push(row);
+		}
+
+		for (let attr in allValues0) {
+			let values = allValues0[attr];
+
+			let allNumerical = true;
+
+			for (let val of values) {
+				if (typeof val != 'number') {
+					allNumerical = false;
+					break;
+				}
+			}
+
+			if (allNumerical) {
+				featureNames.push("@@object_num_ev_attr_min_"+attr.replace(/[\W_]+/g,""));
+				featureNames.push("@@object_num_ev_attr_max_"+attr.replace(/[\W_]+/g,""));
+
+				let idx = 0;
+				for (let objId in ocel["ocel:objects"]) {
+					let lif = objLifecycle[objId];
+					let thisValues = [];
+
+					for (let eve of lif) {
+						if (attr in eve["ocel:vmap"]) {
+							thisValues.push(eve["ocel:vmap"][attr]);
+						}
+					}
+
+					if (thisValues.length > 0) {
+						data[idx].push(Math.min(thisValues));
+						data[idx].push(Math.max(thisValues));
+					}
+					else {
+						data[idx].push(0);
+						data[idx].push(0);
+					}
+
+					idx++;
+				}
+			}
+		}
+
+		return {"data": data, "featureNames": featureNames};
+	}
+
+	static encodeStringEventAttributes(ocel) {
+		let data = [];
+		let featureNames = [];
+		let objLifecycle = OcelObjectFeatures.getObjectsLifecycle(ocel);
+
+		let allValues0 = {};
+
+		for (let evId in ocel["ocel:events"]) {
+			let eve = ocel["ocel:events"][evId];
+
+			for (let attr in eve["ocel:vmap"]) {
+				let thisVal = eve["ocel:vmap"][attr];
+				if (!(attr in allValues0)) {
+					allValues0[attr] = [];
+				}
+				if (!(allValues0[attr].includes(thisVal))) {
+					allValues0[attr].push(thisVal);
+				}
+			}
+		}
+
+		for (let objId in ocel["ocel:objects"]) {
+			let row = [];
+			data.push(row);
+		}
+
+		for (let attr in allValues0) {
+			let values = allValues0[attr];
+
+			let allStrings = true;
+
+			for (let val of values) {
+				if (typeof val != 'string') {
+					allStrings = false;
+					break;
+				}
+			}
+
+			if (allStrings) {
+				for (let val of values) {
+					featureNames.push("@@object_ev_attr_"+attr.replace(/[\W_]+/g,"")+"_"+val.replace(/[\W_]+/g,""));
+				}
+
+				let idx = 0;
+				for (let objId in ocel["ocel:objects"]) {
+					let lif = objLifecycle[objId];
+
+					for (let val of values) {
+						let counter = 0;
+						for (let eve of lif) {
+							if (attr in eve["ocel:vmap"] && eve["ocel:vmap"][attr] == val) {
+								counter++;
+							}
+						}
+						data[idx].push(counter);
+					}
+
+					idx++;
+				}
+			}
+		}
+
+		return {"data": data, "featureNames": featureNames};
+	}
+
+	static encodeNumericalObjectAttributes(ocel) {
+		let data = [];
+		let featureNames = [];
+
+		let allValues0 = {};
+		
+		for (let objId in ocel["ocel:objects"]) {
+			let obj = ocel["ocel:objects"][objId];
+			
+			for (let attr in obj["ocel:ovmap"]) {
+				let thisVal = obj["ocel:ovmap"][attr];
+				if (!(attr in allValues0)) {
+					allValues0[attr] = [];
+				}
+
+				if (!(allValues0[attr].includes(thisVal))) {
+					allValues0[attr].push(thisVal);
+				}
+			}
+			
+			let row = [];
+			data.push(row);
+		}
+
+		for (let attr in allValues0) {
+			let values = allValues0[attr];
+
+			let allNumerical = true;
+
+			for (let val of values) {
+				if (typeof val != 'number') {
+					allNumerical = false;
+					break;
+				}
+			}
+
+			if (allNumerical) {
+				featureNames.push("@@object_num_obj_attr_"+attr.replace(/[\W_]+/g,""));
+
+				let idx = 0;
+				for (let objId in ocel["ocel:objects"]) {
+					let ovmap = ocel["ocel:objects"][objId]["ocel:ovmap"];
+					if (attr in ovmap) {
+						data[idx].push(ovmap[attr]);
+					}
+					else {
+						data[idx].push(0);
+					}
+					idx++;
+				}
+			}
+		}
+
+		return {"data": data, "featureNames": featureNames};
+	}
+	
+	static encodeStringObjectAttributes(ocel) {
+		let data = [];
+		let featureNames = [];
+		
+		let allValues0 = {};
+		
+		for (let objId in ocel["ocel:objects"]) {
+			let obj = ocel["ocel:objects"][objId];
+			
+			for (let attr in obj["ocel:ovmap"]) {
+				let thisVal = obj["ocel:ovmap"][attr];
+				if (!(attr in allValues0)) {
+					allValues0[attr] = [];
+				}
+
+				if (!(allValues0[attr].includes(thisVal))) {
+					allValues0[attr].push(thisVal);
+				}
+			}
+			
+			let row = [];
+			data.push(row);
+		}
+		
+		for (let attr in allValues0) {
+			let values = allValues0[attr];
+
+			let allStrings = true;
+
+			for (let val of values) {
+				if (typeof val != 'string') {
+					allStrings = false;
+					break;
+				}
+			}
+			
+			if (allStrings) {
+				for (let val of values) {
+					featureNames.push("@@object_obj_attr_"+attr.replace(/[\W_]+/g,"")+"_"+val.replace(/[\W_]+/g,""));
+				}
+				
+				let idx = 0;
+				for (let objId in ocel["ocel:objects"]) {
+					let ovmap = ocel["ocel:objects"][objId]["ocel:ovmap"];
+					for (let val of values) {
+						if (attr in ovmap && ovmap[attr] == val) {
+							data[idx].push(1);
+						}
+						else {
+							data[idx].push(0);
+						}
+					}
+					
+					idx++;
+				}
+			}
+		}
+		
 		return {"data": data, "featureNames": featureNames};
 	}
 }
