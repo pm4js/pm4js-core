@@ -20918,8 +20918,8 @@ class OcelObjectFeatures {
 							}
 						}
 
-						data[idx].push(Math.min(thisValues));
-						data[idx].push(Math.max(thisValues));
+						data[idx].push(minv);
+						data[idx].push(maxv);
 					}
 					else {
 						data[idx].push(0);
