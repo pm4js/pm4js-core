@@ -90,3 +90,40 @@ test("OCEL 2.0 CSV rejects object ids used with multiple types", () => {
 	].join('\n');
 	expect(() => CsvOcel2Importer.apply(data)).toThrow(/multiple object types/);
 });
+
+test("OCEL 2.0 CSV exporting", () => {
+	let data = [
+		'id,activity,timestamp,ot:orders,ot:items,n',
+		'e2,update,2024-01-02T10:00:00+00:00,"o1#updated{""price"":11.5}","i1#item{""weight"":3}",7',
+		'e1,place order,2024-01-01T10:00:00+0000,"o1#ordered{""price"":10.5}","i1#item{""weight"":2}",42',
+		',,,"o2{""priority"":""high""}",,',
+		'o1,o2o,,,"i2#contains",',
+		',,2024-01-04T10:00:00Z,,"i1{""weight"":5}",'
+	].join('\n');
+	let ocel = CsvOcel2Importer.apply(data);
+	let exported = CsvOcel2Exporter.apply(ocel);
+	let exportedRows = CsvImporter.parseCSV(exported);
+
+	expect(exportedRows[0]).toEqual(["id", "activity", "timestamp", "ot:orders", "ot:items", "n"]);
+	expect(exportedRows[1][0]).toBe("e1");
+	expect(exportedRows[2][0]).toBe("e2");
+	expect(exportedRows[3][0]).toBe("");
+	expect(exportedRows[3][1]).toBe("");
+	expect(exportedRows[3][2]).toBe("");
+	expect(exportedRows.some(row => row[0] == "o1" && row[1] == "o2o")).toBe(true);
+
+	let roundTrip = CsvOcel2Importer.apply(exported);
+	expect(Object.keys(roundTrip["ocel:events"]).length).toBe(2);
+	expect(roundTrip["ocel:events"]["e1"]["ocel:typedOmap"]).toEqual([
+		{"ocel:oid": "o1", "ocel:qualifier": "ordered"},
+		{"ocel:oid": "i1", "ocel:qualifier": "item"}
+	]);
+	expect(roundTrip["ocel:objects"]["o1"]["ocel:ovmap"]["price"]).toBe(10.5);
+	expect(roundTrip["ocel:objects"]["o1"]["ocel:o2o"]).toEqual([{"ocel:oid": "i2", "ocel:qualifier": "contains"}]);
+	expect(roundTrip["ocel:objects"]["o2"]["ocel:ovmap"]["priority"]).toBe("high");
+	expect(roundTrip["ocel:objectChanges"].map(change => [change["ocel:oid"], change["ocel:name"], change["ocel:value"], change["ocel:timestamp"].toISOString()])).toEqual([
+		["o1", "price", 11.5, "2024-01-02T10:00:00.000Z"],
+		["i1", "weight", 3, "2024-01-02T10:00:00.000Z"],
+		["i1", "weight", 5, "2024-01-04T10:00:00.000Z"]
+	]);
+});
