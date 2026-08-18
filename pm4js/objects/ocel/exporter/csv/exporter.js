@@ -55,8 +55,9 @@ class CsvOcel2Exporter {
 		let objectTypes = CsvOcel2Exporter.collectObjectTypes(ocel);
 		let eventAttributes = CsvOcel2Exporter.collectEventAttributes(ocel);
 		CsvOcel2Exporter.validateHeader(objectTypes, eventAttributes);
+		let objectAssignments = CsvOcel2Exporter.collectObjectAssignments(ocel);
 
-		let objectTypeColumns = {};
+		let objectTypeColumns = Object.create(null);
 		let header = ["id", "activity", "timestamp"];
 		for (let objectType of objectTypes) {
 			objectTypeColumns[objectType] = header.length;
@@ -67,11 +68,11 @@ class CsvOcel2Exporter {
 		}
 
 		let rows = [header];
-		let eventEstablishedObjects = {};
+		let eventEstablishedObjects = Object.create(null);
 		let eventRows = CsvOcel2Exporter.collectEventRows(ocel, objectTypes, objectTypeColumns, eventAttributes, eventEstablishedObjects);
-		let declarationRows = CsvOcel2Exporter.collectDeclarationRows(ocel, objectTypes, objectTypeColumns, eventAttributes, eventEstablishedObjects);
+		let declarationRows = CsvOcel2Exporter.collectDeclarationRows(ocel, objectTypes, objectTypeColumns, eventAttributes, eventEstablishedObjects, objectAssignments.baseAttributes);
 		let o2oRows = CsvOcel2Exporter.collectO2ORows(ocel, objectTypes, objectTypeColumns, eventAttributes);
-		let objectAttributeRows = CsvOcel2Exporter.collectObjectAttributeRows(ocel, objectTypes, objectTypeColumns, eventAttributes);
+		let objectAttributeRows = CsvOcel2Exporter.collectObjectAttributeRows(ocel, objectTypes, objectTypeColumns, eventAttributes, objectAssignments.changes);
 
 		for (let row of eventRows) {
 			rows.push(row);
@@ -99,9 +100,9 @@ class CsvOcel2Exporter {
 
 	static collectObjectTypes(ocel) {
 		let objectTypes = [];
-		let seen = {};
+		let seen = Object.create(null);
 		let addObjectType = function(objectType) {
-			if (objectType == null || objectType.length == 0) {
+			if (typeof objectType != "string" || objectType.length == 0) {
 				throw new Error("Invalid OCEL: object type names must be non-empty");
 			}
 			if (!(objectType in seen)) {
@@ -128,9 +129,9 @@ class CsvOcel2Exporter {
 
 	static collectEventAttributes(ocel) {
 		let eventAttributes = [];
-		let seen = {};
+		let seen = Object.create(null);
 		let addAttribute = function(attributeName) {
-			if (attributeName == null || attributeName.length == 0) {
+			if (typeof attributeName != "string" || attributeName.length == 0) {
 				throw new Error("Invalid OCEL: event attribute names must be non-empty");
 			}
 			if (!(attributeName in seen)) {
@@ -156,7 +157,10 @@ class CsvOcel2Exporter {
 	}
 
 	static validateHeader(objectTypes, eventAttributes) {
-		let seenColumns = {"id": 0, "activity": 0, "timestamp": 0};
+		let seenColumns = Object.create(null);
+		seenColumns.id = 0;
+		seenColumns.activity = 0;
+		seenColumns.timestamp = 0;
 		for (let objectType of objectTypes) {
 			let columnName = "ot:"+objectType;
 			if (columnName in seenColumns) {
@@ -172,17 +176,94 @@ class CsvOcel2Exporter {
 		}
 	}
 
+	static collectObjectAssignments(ocel) {
+		let baseAttributes = Object.create(null);
+		let assignments = new Map();
+		let changes = [];
+		let addAssignment = function(objectId, attributeName, value, timestamp, index) {
+			if (typeof attributeName != "string") {
+				throw new Error("Invalid OCEL: object attribute names must be strings");
+			}
+			let time = timestamp == null ? 0 : timestamp.getTime();
+			let assignmentKey = JSON.stringify([objectId, attributeName, time]);
+			if (assignments.has(assignmentKey)) {
+				let previous = assignments.get(assignmentKey);
+				if (!CsvOcel2Exporter.valuesEqual(previous.value, value)) {
+					throw new Error("Invalid OCEL: conflicting values for object '"+objectId+"', attribute '"+attributeName+"' at the same timestamp");
+				}
+				return;
+			}
+			assignments.set(assignmentKey, {"value": value});
+			if (time == 0) {
+				baseAttributes[objectId][attributeName] = value;
+			}
+			else {
+				changes.push({"objectId": objectId, "name": attributeName, "value": value, "timestamp": timestamp, "index": index});
+			}
+		};
+
+		for (let objectId in ocel["ocel:objects"]) {
+			baseAttributes[objectId] = Object.create(null);
+			let object = ocel["ocel:objects"][objectId];
+			if (object["ocel:ovmap"] != null) {
+				for (let attributeName in object["ocel:ovmap"]) {
+					addAssignment(objectId, attributeName, object["ocel:ovmap"][attributeName], null, -1);
+				}
+			}
+		}
+
+		let index = 0;
+		for (let change of ocel["ocel:objectChanges"]) {
+			let objectId = change["ocel:oid"];
+			if (!(objectId in ocel["ocel:objects"])) {
+				throw new Error("Invalid OCEL: object change references unknown object '"+objectId+"'");
+			}
+			if (!(change["ocel:timestamp"] instanceof Date) || isNaN(change["ocel:timestamp"].getTime())) {
+				throw new Error("Invalid OCEL: object change for object '"+objectId+"' has a malformed timestamp");
+			}
+			let objectType = ocel["ocel:objects"][objectId]["ocel:type"];
+			if (change["ocel:type"] != null && change["ocel:type"] !== objectType) {
+				throw new Error("Invalid OCEL: object change for object '"+objectId+"' has an inconsistent object type");
+			}
+			addAssignment(objectId, change["ocel:name"], change["ocel:value"], change["ocel:timestamp"], index);
+			index++;
+		}
+
+		changes.sort(function(a, b) {
+			let diff = a.timestamp.getTime() - b.timestamp.getTime();
+			return diff != 0 ? diff : a.index - b.index;
+		});
+		return {"baseAttributes": baseAttributes, "changes": changes};
+	}
+
+	static valuesEqual(a, b) {
+		if (a instanceof Date && b instanceof Date) {
+			return a.getTime() == b.getTime();
+		}
+		return a === b || (typeof a == "number" && typeof b == "number" && isNaN(a) && isNaN(b));
+	}
+
 	static collectEventRows(ocel, objectTypes, objectTypeColumns, eventAttributes, eventEstablishedObjects) {
 		let rows = [];
 		let eventInfos = [];
-		let index = 0;
+		let preservedOrder = ocel["ocel:events"][Symbol.for("pm4js.ocel.csv.eventOrder")] || [];
+		let orderIndexes = new Map();
+		for (let i = 0; i < preservedOrder.length; i++) {
+			orderIndexes.set(preservedOrder[i], i);
+		}
+		let fallbackIndex = preservedOrder.length;
 		for (let eventId in ocel["ocel:events"]) {
 			let event = ocel["ocel:events"][eventId];
+			CsvOcel2Exporter.validateTrimmedNonEmpty(eventId, "event id");
+			CsvOcel2Exporter.validateTrimmedNonEmpty(event["ocel:activity"], "event activity");
+			if (event["ocel:activity"].toLowerCase() == "o2o") {
+				throw new Error("Invalid OCEL: event activity '"+event["ocel:activity"]+"' cannot be represented in OCEL 2.0 CSV");
+			}
 			if (!(event["ocel:timestamp"] instanceof Date) || isNaN(event["ocel:timestamp"].getTime())) {
 				throw new Error("Invalid OCEL: event '"+eventId+"' has a malformed timestamp");
 			}
+			let index = orderIndexes.has(eventId) ? orderIndexes.get(eventId) : fallbackIndex++;
 			eventInfos.push({"eventId": eventId, "event": event, "index": index});
-			index++;
 		}
 		eventInfos.sort(function(a, b) {
 			let diff = a.event["ocel:timestamp"].getTime() - b.event["ocel:timestamp"].getTime();
@@ -200,7 +281,7 @@ class CsvOcel2Exporter {
 			row[1] = event["ocel:activity"];
 			row[2] = event["ocel:timestamp"].toISOString();
 
-			let referencesPerType = {};
+			let referencesPerType = Object.create(null);
 			for (let objectType of objectTypes) {
 				referencesPerType[objectType] = [];
 			}
@@ -211,8 +292,10 @@ class CsvOcel2Exporter {
 					typedOmap.push({"ocel:oid": objectId, "ocel:qualifier": ""});
 				}
 			}
+			let seenRelations = new Map();
 			for (let relation of typedOmap) {
 				let objectId = relation["ocel:oid"];
+				let qualifier = relation["ocel:qualifier"] == null ? "" : relation["ocel:qualifier"];
 				if (!(objectId in ocel["ocel:objects"])) {
 					throw new Error("Invalid OCEL: event '"+eventId+"' references unknown object '"+objectId+"'");
 				}
@@ -221,7 +304,11 @@ class CsvOcel2Exporter {
 				if (!(objectType in referencesPerType)) {
 					throw new Error("Invalid OCEL: object '"+objectId+"' has unknown type '"+objectType+"'");
 				}
-				referencesPerType[objectType].push(CsvOcel2Exporter.formatReference(objectId, relation["ocel:qualifier"], null));
+				let relationKey = JSON.stringify([objectId, qualifier]);
+				if (!seenRelations.has(relationKey)) {
+					seenRelations.set(relationKey, true);
+					referencesPerType[objectType].push(CsvOcel2Exporter.formatReference(objectId, qualifier, null));
+				}
 			}
 			for (let objectType of objectTypes) {
 				row[objectTypeColumns[objectType]] = referencesPerType[objectType].join("/");
@@ -237,13 +324,13 @@ class CsvOcel2Exporter {
 		return rows;
 	}
 
-	static collectDeclarationRows(ocel, objectTypes, objectTypeColumns, eventAttributes, eventEstablishedObjects) {
+	static collectDeclarationRows(ocel, objectTypes, objectTypeColumns, eventAttributes, eventEstablishedObjects, baseAttributes) {
 		let declarations = [];
 		for (let objectId in ocel["ocel:objects"]) {
 			let object = ocel["ocel:objects"][objectId];
-			let hasBaseAttributes = object["ocel:ovmap"] != null && Object.keys(object["ocel:ovmap"]).length > 0;
+			let hasBaseAttributes = Object.keys(baseAttributes[objectId]).length > 0;
 			if (!(objectId in eventEstablishedObjects) || hasBaseAttributes) {
-				declarations.push({"objectId": objectId, "objectType": object["ocel:type"], "attributes": hasBaseAttributes ? object["ocel:ovmap"] : null});
+				declarations.push({"objectId": objectId, "objectType": object["ocel:type"], "attributes": hasBaseAttributes ? baseAttributes[objectId] : null});
 			}
 		}
 		declarations.sort(function(a, b) {
@@ -290,12 +377,14 @@ class CsvOcel2Exporter {
 			let row = CsvOcel2Exporter.emptyRow(objectTypes, eventAttributes);
 			row[0] = sourceObjectId;
 			row[1] = "o2o";
-			let referencesPerType = {};
+			let referencesPerType = Object.create(null);
 			for (let objectType of objectTypes) {
 				referencesPerType[objectType] = [];
 			}
+			let seenRelations = new Map();
 			for (let relation of object["ocel:o2o"]) {
 				let targetObjectId = relation["ocel:oid"];
+				let qualifier = relation["ocel:qualifier"] == null ? "" : relation["ocel:qualifier"];
 				if (!(targetObjectId in ocel["ocel:objects"])) {
 					throw new Error("Invalid OCEL: object '"+sourceObjectId+"' has an object-object relation to unknown object '"+targetObjectId+"'");
 				}
@@ -303,7 +392,11 @@ class CsvOcel2Exporter {
 				if (!(targetObjectType in referencesPerType)) {
 					throw new Error("Invalid OCEL: object '"+targetObjectId+"' has unknown type '"+targetObjectType+"'");
 				}
-				referencesPerType[targetObjectType].push(CsvOcel2Exporter.formatReference(targetObjectId, relation["ocel:qualifier"], null));
+				let relationKey = JSON.stringify([targetObjectId, qualifier]);
+				if (!seenRelations.has(relationKey)) {
+					seenRelations.set(relationKey, true);
+					referencesPerType[targetObjectType].push(CsvOcel2Exporter.formatReference(targetObjectId, qualifier, null));
+				}
 			}
 			for (let objectType of objectTypes) {
 				row[objectTypeColumns[objectType]] = referencesPerType[objectType].join("/");
@@ -313,36 +406,15 @@ class CsvOcel2Exporter {
 		return rows;
 	}
 
-	static collectObjectAttributeRows(ocel, objectTypes, objectTypeColumns, eventAttributes) {
-		let changes = [];
-		let index = 0;
-		for (let change of ocel["ocel:objectChanges"]) {
-			if (!(change["ocel:timestamp"] instanceof Date) || isNaN(change["ocel:timestamp"].getTime())) {
-				throw new Error("Invalid OCEL: object change for object '"+change["ocel:oid"]+"' has a malformed timestamp");
-			}
-			changes.push({"change": change, "index": index});
-			index++;
-		}
-		changes.sort(function(a, b) {
-			let diff = a.change["ocel:timestamp"].getTime() - b.change["ocel:timestamp"].getTime();
-			if (diff != 0) {
-				return diff;
-			}
-			return a.index - b.index;
-		});
-
+	static collectObjectAttributeRows(ocel, objectTypes, objectTypeColumns, eventAttributes, changes) {
 		let rows = [];
-		for (let changeInfo of changes) {
-			let change = changeInfo.change;
-			let objectId = change["ocel:oid"];
-			if (!(objectId in ocel["ocel:objects"])) {
-				throw new Error("Invalid OCEL: object change references unknown object '"+objectId+"'");
-			}
+		for (let change of changes) {
+			let objectId = change.objectId;
 			let objectType = ocel["ocel:objects"][objectId]["ocel:type"];
-			let attributes = {};
-			attributes[change["ocel:name"]] = change["ocel:value"];
+			let attributes = Object.create(null);
+			attributes[change.name] = change.value;
 			let row = CsvOcel2Exporter.emptyRow(objectTypes, eventAttributes);
-			row[2] = change["ocel:timestamp"].toISOString();
+			row[2] = change.timestamp.toISOString();
 			row[objectTypeColumns[objectType]] = CsvOcel2Exporter.formatReference(objectId, "", attributes);
 			rows.push(row);
 		}
@@ -361,58 +433,96 @@ class CsvOcel2Exporter {
 	}
 
 	static formatReference(objectId, qualifier, attributes) {
-		CsvOcel2Exporter.validateReferencePart(objectId, "object id");
-		let ret = objectId;
+		let ret = CsvOcel2Exporter.escapeReferencePart(objectId, "object id");
 		if (qualifier != null && qualifier !== "") {
-			CsvOcel2Exporter.validateReferencePart(qualifier, "qualifier");
-			ret += "#"+qualifier;
+			ret += "#"+CsvOcel2Exporter.escapeReferencePart(qualifier, "qualifier");
 		}
 		if (attributes != null && Object.keys(attributes).length > 0) {
-			ret += JSON.stringify(CsvOcel2Exporter.formatJsonAttributes(attributes));
+			ret += CsvOcel2Exporter.stringifyJsonAttributes(attributes);
 		}
 		return ret;
 	}
 
-	static validateReferencePart(value, fieldName) {
-		if (value == null || value.length == 0) {
-			throw new Error("Invalid OCEL: "+fieldName+" must be non-empty");
+	static validateTrimmedNonEmpty(value, fieldName) {
+		if (typeof value != "string" || value.length == 0) {
+			throw new Error("Invalid OCEL: "+fieldName+" must be a non-empty string");
 		}
-		if (value.indexOf("/") >= 0 || value.indexOf("#") >= 0 || value.indexOf("{") >= 0) {
-			throw new Error("Invalid OCEL: "+fieldName+" '"+value+"' contains a reserved OCEL 2.0 CSV reference character");
+		if (value.trim() !== value) {
+			throw new Error("Invalid OCEL: "+fieldName+" '"+value+"' has leading or trailing whitespace that OCEL 2.0 CSV cannot preserve");
 		}
 	}
 
-	static formatJsonAttributes(attributes) {
-		let ret = {};
+	static escapeReferencePart(value, fieldName) {
+		CsvOcel2Exporter.validateTrimmedNonEmpty(value, fieldName);
+		let ret = "";
+		for (let ch of value) {
+			if (ch == "/" || ch == "#" || ch == "{" || ch == "\\") {
+				ret += "\\";
+			}
+			ret += ch;
+		}
+		return ret;
+	}
+
+	static stringifyJsonAttributes(attributes) {
+		let entries = [];
 		for (let attributeName in attributes) {
-			let value = attributes[attributeName];
-			if (value instanceof Date) {
-				ret[attributeName] = value.toISOString();
-			}
-			else if (value === null || typeof value == "string" || typeof value == "number" || typeof value == "boolean") {
-				ret[attributeName] = value;
-			}
-			else {
-				throw new Error("Invalid OCEL: object attribute '"+attributeName+"' cannot be represented as an OCEL 2.0 CSV JSON primitive");
-			}
+			entries.push(JSON.stringify(attributeName)+":"+CsvOcel2Exporter.formatJsonPrimitive(attributes[attributeName], attributeName));
 		}
-		return ret;
+		return "{"+entries.join(",")+"}";
+	}
+
+	static formatJsonPrimitive(value, attributeName) {
+		if (value instanceof Date) {
+			if (isNaN(value.getTime())) {
+				throw new Error("Invalid OCEL: object attribute '"+attributeName+"' contains a malformed timestamp");
+			}
+			return JSON.stringify(value.toISOString());
+		}
+		if (value === null) {
+			return "null";
+		}
+		if (typeof value == "string" || typeof value == "boolean") {
+			return JSON.stringify(value);
+		}
+		if (typeof value == "bigint") {
+			if (value < -9223372036854775808n || value > 9223372036854775807n) {
+				throw new Error("Invalid OCEL: object attribute '"+attributeName+"' contains an integer outside the signed 64-bit range");
+			}
+			return String(value);
+		}
+		if (typeof value == "number" && isFinite(value)) {
+			return Object.is(value, -0) ? "-0" : String(value);
+		}
+		throw new Error("Invalid OCEL: object attribute '"+attributeName+"' cannot be represented as an OCEL 2.0 CSV JSON primitive");
 	}
 
 	static formatAttributeValue(value) {
-		if (value == null) {
-			return "";
-		}
-		else if (value instanceof Date) {
+		if (value instanceof Date) {
+			if (isNaN(value.getTime())) {
+				throw new Error("Invalid OCEL: event attribute contains a malformed timestamp");
+			}
 			return value.toISOString();
 		}
 		else if (typeof value == "string") {
+			if (value.length == 0) {
+				throw new Error("Invalid OCEL: an empty event attribute string cannot be represented distinctly from a missing value in OCEL 2.0 CSV");
+			}
 			return value;
 		}
-		else if (typeof value == "number" || typeof value == "boolean") {
-			return ""+value;
+		else if (typeof value == "bigint") {
+			if (value < -9223372036854775808n || value > 9223372036854775807n) {
+				throw new Error("Invalid OCEL: event attribute integer is outside the signed 64-bit range");
+			}
+			return String(value);
 		}
-		return JSON.stringify(value);
+		else if (typeof value == "number" && isFinite(value)) {
+			return Object.is(value, -0) ? "-0" : String(value);
+		}
+		else if (typeof value == "boolean") {
+			return String(value);
+		}
+		throw new Error("Invalid OCEL: event attribute cannot be represented as an OCEL 2.0 CSV primitive");
 	}
 
 	static escapeCsvCell(value, sep, quotechar) {
@@ -435,7 +545,7 @@ CsvOcelExporter.DEFAULT_QUOTECHAR = '"';
 CsvOcelExporter.DEFAULT_NEWLINE = '\n';
 CsvOcel2Exporter.DEFAULT_SEPARATOR = ',';
 CsvOcel2Exporter.DEFAULT_QUOTECHAR = '"';
-CsvOcel2Exporter.DEFAULT_NEWLINE = '\n';
+CsvOcel2Exporter.DEFAULT_NEWLINE = '\r\n';
 
 try {
 	module.exports = {CsvOcelExporter: CsvOcelExporter, CsvOcel2Exporter: CsvOcel2Exporter};
@@ -446,4 +556,3 @@ catch (err) {
 	// not in node
 	//console.log(err);
 }
-

@@ -89,7 +89,7 @@ class CsvOcelImporter {
 
 class CsvOcel2Importer {
 	static apply(txt, sep=CsvOcel2Importer.DEFAULT_SEPARATOR, quotechar=CsvOcel2Importer.DEFAULT_QUOTECHAR) {
-		let arr = CsvImporter.parseCSV(txt, sep, quotechar);
+		let arr = CsvOcel2Importer.parseCsv(txt, sep, quotechar);
 		if (arr.length == 0) {
 			throw new Error("Invalid OCEL 2.0 CSV: empty file");
 		}
@@ -100,17 +100,18 @@ class CsvOcel2Importer {
 		}
 		let columns = CsvOcel2Importer.parseHeader(header);
 
-		let events = {};
-		let objects = {};
-		let objectTypes = {};
-		let eventTypes = {};
-		let attributeNames = {};
+		let events = Object.create(null);
+		let objects = Object.create(null);
+		let objectTypes = Object.create(null);
+		let eventTypes = Object.create(null);
+		let attributeNames = Object.create(null);
 		let eventAttributeEntries = [];
 		let objectAttributeEntries = [];
 		let assignmentSeq = 0;
+		Object.defineProperty(events, Symbol.for("pm4js.ocel.csv.eventOrder"), {"value": [], "enumerable": false});
 
 		for (let objectColumn of columns.objectColumns) {
-			objectTypes[objectColumn.type] = {};
+			objectTypes[objectColumn.type] = Object.create(null);
 		}
 
 		for (let rowIndex = 1; rowIndex < arr.length; rowIndex++) {
@@ -144,7 +145,7 @@ class CsvOcel2Importer {
 					let references = CsvOcel2Importer.parseReferenceCell(row[objectColumn.index], rowIndex, header[objectColumn.index]);
 					for (let reference of references) {
 						CsvOcel2Importer.ensureObject(objects, reference.objectId, objectColumn.type, rowIndex);
-						objects[rowId]["ocel:o2o"].push({"ocel:oid": reference.objectId, "ocel:qualifier": reference.qualifier});
+						CsvOcel2Importer.addUniqueRelation(objects[rowId]["ocel:o2o"], reference.objectId, reference.qualifier);
 						if (reference.attributes != null) {
 							if (rowDate == null) {
 								throw new Error("Invalid OCEL 2.0 CSV at row "+(rowIndex + 1)+": object-to-object JSON attributes require a timestamp");
@@ -186,10 +187,11 @@ class CsvOcel2Importer {
 				if (rowId in events) {
 					throw new Error("Invalid OCEL 2.0 CSV at row "+(rowIndex + 1)+": duplicate event id '"+rowId+"'");
 				}
-				let event = {"ocel:activity": rowActivity, "ocel:timestamp": rowDate, "ocel:omap": [], "ocel:typedOmap": [], "ocel:vmap": {}};
+				let event = {"ocel:activity": rowActivity, "ocel:timestamp": rowDate, "ocel:omap": [], "ocel:typedOmap": [], "ocel:vmap": Object.create(null)};
 				events[rowId] = event;
+				events[Symbol.for("pm4js.ocel.csv.eventOrder")].push(rowId);
 				if (!(rowActivity in eventTypes)) {
-					eventTypes[rowActivity] = {};
+					eventTypes[rowActivity] = Object.create(null);
 				}
 
 				for (let eventAttributeColumn of columns.eventAttributeColumns) {
@@ -204,7 +206,7 @@ class CsvOcel2Importer {
 					let references = CsvOcel2Importer.parseReferenceCell(row[objectColumn.index], rowIndex, header[objectColumn.index]);
 					for (let reference of references) {
 						CsvOcel2Importer.ensureObject(objects, reference.objectId, objectColumn.type, rowIndex);
-						event["ocel:typedOmap"].push({"ocel:oid": reference.objectId, "ocel:qualifier": reference.qualifier});
+						CsvOcel2Importer.addUniqueRelation(event["ocel:typedOmap"], reference.objectId, reference.qualifier);
 						if (!(event["ocel:omap"].includes(reference.objectId))) {
 							event["ocel:omap"].push(reference.objectId);
 						}
@@ -220,7 +222,7 @@ class CsvOcel2Importer {
 		}
 
 		CsvOcel2Importer.applyEventAttributes(events, eventTypes, eventAttributeEntries);
-		CsvOcel2Importer.applyObjectAttributes(objects, objectTypes, objectAttributeEntries);
+		let objectChanges = CsvOcel2Importer.applyObjectAttributes(objects, objectTypes, objectAttributeEntries);
 		for (let entry of objectAttributeEntries) {
 			attributeNames[entry.name] = 0;
 		}
@@ -237,13 +239,97 @@ class CsvOcel2Importer {
 		ocel["ocel:objects"] = objects;
 		ocel["ocel:objectTypes"] = objectTypes;
 		ocel["ocel:eventTypes"] = eventTypes;
-		ocel["ocel:objectChanges"] = CsvOcel2Importer.objectChanges;
+		ocel["ocel:objectChanges"] = objectChanges;
 
 		return Ocel20FormatFixer.apply(ocel);
 	}
 
+	static parseCsv(txt, sep, quotechar) {
+		if (typeof txt != "string") {
+			throw new Error("Invalid OCEL 2.0 CSV: input must be a UTF-8 string");
+		}
+		if (sep.length != 1 || quotechar.length != 1 || sep == quotechar) {
+			throw new Error("Invalid OCEL 2.0 CSV: separator and quote character must be distinct single characters");
+		}
+		if (txt.length == 0) {
+			return [];
+		}
+
+		let rows = [];
+		let row = [];
+		let field = "";
+		let state = "start";
+		let justEndedRecord = false;
+		let i = 0;
+		while (i < txt.length) {
+			let ch = txt[i];
+			if (state == "quoted") {
+				if (ch == quotechar) {
+					if (i + 1 < txt.length && txt[i + 1] == quotechar) {
+						field += quotechar;
+						i += 2;
+						continue;
+					}
+					state = "afterQuote";
+					i++;
+					continue;
+				}
+				field += ch;
+				i++;
+				continue;
+			}
+
+			if (state == "afterQuote" && ch != sep && ch != "\r" && ch != "\n") {
+				throw new Error("Invalid OCEL 2.0 CSV at record "+(rows.length + 1)+": unexpected character after closing quote");
+			}
+			if (state == "unquoted" && ch == quotechar) {
+				throw new Error("Invalid OCEL 2.0 CSV at record "+(rows.length + 1)+": quote inside an unquoted field");
+			}
+			if (state == "start" && ch == quotechar) {
+				state = "quoted";
+				justEndedRecord = false;
+				i++;
+				continue;
+			}
+			if (ch == sep) {
+				row.push(field);
+				field = "";
+				state = "start";
+				justEndedRecord = false;
+				i++;
+				continue;
+			}
+			if (ch == "\r" || ch == "\n") {
+				row.push(field);
+				rows.push(row);
+				row = [];
+				field = "";
+				state = "start";
+				justEndedRecord = true;
+				if (ch == "\r" && i + 1 < txt.length && txt[i + 1] == "\n") {
+					i++;
+				}
+				i++;
+				continue;
+			}
+			field += ch;
+			state = "unquoted";
+			justEndedRecord = false;
+			i++;
+		}
+
+		if (state == "quoted") {
+			throw new Error("Invalid OCEL 2.0 CSV at record "+(rows.length + 1)+": unterminated quoted field");
+		}
+		if (!justEndedRecord) {
+			row.push(field);
+			rows.push(row);
+		}
+		return rows;
+	}
+
 	static parseHeader(header) {
-		let seenColumns = {};
+		let seenColumns = Object.create(null);
 		let idIndex = null;
 		let activityIndex = null;
 		let timestampIndex = null;
@@ -333,12 +419,21 @@ class CsvOcel2Importer {
 			}
 		}
 		else {
-			objects[objectId] = {"ocel:type": objectType, "ocel:ovmap": {}, "ocel:o2o": []};
+			objects[objectId] = {"ocel:type": objectType, "ocel:ovmap": Object.create(null), "ocel:o2o": []};
 		}
 	}
 
+	static addUniqueRelation(relations, objectId, qualifier) {
+		for (let relation of relations) {
+			if (relation["ocel:oid"] === objectId && relation["ocel:qualifier"] === qualifier) {
+				return;
+			}
+		}
+		relations.push({"ocel:oid": objectId, "ocel:qualifier": qualifier});
+	}
+
 	static parseReferenceCell(cell, rowIndex, columnName) {
-		if (cell == null || cell.trim().length == 0) {
+		if (cell == null || cell === "") {
 			return [];
 		}
 		let referenceStrings = CsvOcel2Importer.splitReferenceCell(cell, rowIndex, columnName);
@@ -355,23 +450,38 @@ class CsvOcel2Importer {
 		let inJson = false;
 		let jsonDepth = 0;
 		let inJsonString = false;
-		let escaped = false;
+		let jsonEscaped = false;
+		let headEscaped = false;
+		let jsonComplete = false;
 		for (let i = 0; i < cell.length; i++) {
 			let ch = cell[i];
-			if (ch == "/" && (!inJson || jsonDepth == 0)) {
+			if (!inJson && !jsonComplete && headEscaped) {
+				if (!(ch == "/" || ch == "#" || ch == "{" || ch == "\\")) {
+					throw new Error("Invalid OCEL 2.0 CSV at row "+(rowIndex + 1)+", column '"+columnName+"': invalid reference escape");
+				}
+				current += ch;
+				headEscaped = false;
+				continue;
+			}
+			if (!inJson && !jsonComplete && ch == "\\") {
+				current += ch;
+				headEscaped = true;
+				continue;
+			}
+			if (ch == "/" && !inJson) {
 				references.push(current);
 				current = "";
-				inJson = false;
+				jsonComplete = false;
 				continue;
 			}
 			current += ch;
 			if (inJson) {
 				if (inJsonString) {
-					if (escaped) {
-						escaped = false;
+					if (jsonEscaped) {
+						jsonEscaped = false;
 					}
 					else if (ch == "\\") {
-						escaped = true;
+						jsonEscaped = true;
 					}
 					else if (ch == "\"") {
 						inJsonString = false;
@@ -389,13 +499,20 @@ class CsvOcel2Importer {
 						if (jsonDepth < 0) {
 							throw new Error("Invalid OCEL 2.0 CSV at row "+(rowIndex + 1)+", column '"+columnName+"': malformed JSON attributes");
 						}
+						if (jsonDepth == 0) {
+							inJson = false;
+							jsonComplete = true;
+						}
 					}
 				}
 			}
-			else if (ch == "{") {
+			else if (!jsonComplete && ch == "{") {
 				inJson = true;
 				jsonDepth = 1;
 			}
+		}
+		if (headEscaped) {
+			throw new Error("Invalid OCEL 2.0 CSV at row "+(rowIndex + 1)+", column '"+columnName+"': trailing reference escape");
 		}
 		if (inJson && jsonDepth != 0) {
 			throw new Error("Invalid OCEL 2.0 CSV at row "+(rowIndex + 1)+", column '"+columnName+"': malformed JSON attributes");
@@ -405,13 +522,13 @@ class CsvOcel2Importer {
 	}
 
 	static parseReference(referenceString, rowIndex, columnName) {
-		let jsonStart = referenceString.indexOf("{");
+		let jsonStart = CsvOcel2Importer.findUnescapedJsonStart(referenceString, rowIndex, columnName);
 		let referenceHead = jsonStart >= 0 ? referenceString.substring(0, jsonStart) : referenceString;
 		let jsonText = jsonStart >= 0 ? referenceString.substring(jsonStart) : null;
-		let qualifierStart = referenceHead.indexOf("#");
-		let hasQualifier = qualifierStart >= 0;
-		let objectId = hasQualifier ? referenceHead.substring(0, qualifierStart).trim() : referenceHead.trim();
-		let qualifier = hasQualifier ? referenceHead.substring(qualifierStart + 1).trim() : "";
+		let parsedHead = CsvOcel2Importer.parseReferenceHead(referenceHead, rowIndex, columnName);
+		let hasQualifier = parsedHead.hasQualifier;
+		let objectId = parsedHead.objectId.trim();
+		let qualifier = parsedHead.qualifier.trim();
 		if (objectId.length == 0) {
 			throw new Error("Invalid OCEL 2.0 CSV at row "+(rowIndex + 1)+", column '"+columnName+"': object id is mandatory");
 		}
@@ -419,22 +536,208 @@ class CsvOcel2Importer {
 		let attributes = null;
 		if (jsonText != null) {
 			try {
-				attributes = JSON.parse(jsonText);
+				attributes = CsvOcel2Importer.parseJsonAttributes(jsonText);
 			}
 			catch (err) {
-				throw new Error("Invalid OCEL 2.0 CSV at row "+(rowIndex + 1)+", column '"+columnName+"': malformed JSON attributes");
-			}
-			if (attributes == null || Array.isArray(attributes) || typeof attributes != "object") {
-				throw new Error("Invalid OCEL 2.0 CSV at row "+(rowIndex + 1)+", column '"+columnName+"': JSON attributes must be an object");
-			}
-			for (let attributeName in attributes) {
-				let attributeValue = attributes[attributeName];
-				if (Array.isArray(attributeValue) || (typeof attributeValue == "object" && attributeValue !== null)) {
+				if (err != null && err.ocelPrimitiveError) {
 					throw new Error("Invalid OCEL 2.0 CSV at row "+(rowIndex + 1)+", column '"+columnName+"': JSON attribute values must be primitive");
 				}
+				throw new Error("Invalid OCEL 2.0 CSV at row "+(rowIndex + 1)+", column '"+columnName+"': malformed JSON attributes");
 			}
 		}
 		return {"objectId": objectId, "qualifier": qualifier, "hasQualifier": hasQualifier, "attributes": attributes};
+	}
+
+	static parseJsonAttributes(jsonText) {
+		let attributes = Object.create(null);
+		let i = 0;
+		let skipWhitespace = function() {
+			while (i < jsonText.length && (jsonText[i] == " " || jsonText[i] == "\t" || jsonText[i] == "\r" || jsonText[i] == "\n")) {
+				i++;
+			}
+		};
+		let parseString = function() {
+			if (jsonText[i] != '"') {
+				throw new Error("expected JSON string");
+			}
+			let start = i;
+			i++;
+			let escaped = false;
+			while (i < jsonText.length) {
+				let ch = jsonText[i];
+				if (escaped) {
+					escaped = false;
+				}
+				else if (ch == "\\") {
+					escaped = true;
+				}
+				else if (ch == '"') {
+					i++;
+					return JSON.parse(jsonText.substring(start, i));
+				}
+				i++;
+			}
+			throw new Error("unterminated JSON string");
+		};
+		let primitiveError = function() {
+			let err = new Error("non-primitive JSON attribute");
+			err.ocelPrimitiveError = true;
+			throw err;
+		};
+		let parseValue = function() {
+			if (jsonText[i] == '"') {
+				return parseString();
+			}
+			if (jsonText.startsWith("true", i)) {
+				i += 4;
+				return true;
+			}
+			if (jsonText.startsWith("false", i)) {
+				i += 5;
+				return false;
+			}
+			if (jsonText.startsWith("null", i)) {
+				i += 4;
+				return null;
+			}
+			if (jsonText[i] == "{" || jsonText[i] == "[") {
+				primitiveError();
+			}
+			let match = jsonText.substring(i).match(/^-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?/);
+			if (match == null) {
+				throw new Error("invalid JSON value");
+			}
+			let raw = match[0];
+			i += raw.length;
+			if (/^-?(?:0|[1-9][0-9]*)$/.test(raw)) {
+				let integer = BigInt(raw);
+				if (integer >= -9223372036854775808n && integer <= 9223372036854775807n) {
+					if (raw === "-0") {
+						return -0;
+					}
+					if (integer >= BigInt(Number.MIN_SAFE_INTEGER) && integer <= BigInt(Number.MAX_SAFE_INTEGER)) {
+						return Number(integer);
+					}
+					return integer;
+				}
+			}
+			let number = Number(raw);
+			if (!isFinite(number)) {
+				throw new Error("non-finite JSON number");
+			}
+			return number;
+		};
+
+		skipWhitespace();
+		if (jsonText[i] != "{") {
+			throw new Error("JSON attributes must be an object");
+		}
+		i++;
+		skipWhitespace();
+		if (i >= jsonText.length) {
+			throw new Error("unterminated JSON object");
+		}
+		if (jsonText[i] == "}") {
+			i++;
+			skipWhitespace();
+			if (i != jsonText.length) {
+				throw new Error("trailing JSON content");
+			}
+			return attributes;
+		}
+		let closed = false;
+		while (i < jsonText.length) {
+			let name = parseString();
+			skipWhitespace();
+			if (jsonText[i] != ":") {
+				throw new Error("expected ':'");
+			}
+			i++;
+			skipWhitespace();
+			attributes[name] = parseValue();
+			skipWhitespace();
+			if (jsonText[i] == "}") {
+				i++;
+				closed = true;
+				break;
+			}
+			if (jsonText[i] != ",") {
+				throw new Error("expected ','");
+			}
+			i++;
+				skipWhitespace();
+		}
+		if (!closed) {
+			throw new Error("unterminated JSON object");
+		}
+		skipWhitespace();
+		if (i != jsonText.length) {
+			throw new Error("trailing JSON content");
+		}
+		return attributes;
+	}
+
+	static findUnescapedJsonStart(referenceString, rowIndex, columnName) {
+		let escaped = false;
+		for (let i = 0; i < referenceString.length; i++) {
+			let ch = referenceString[i];
+			if (escaped) {
+				if (!(ch == "/" || ch == "#" || ch == "{" || ch == "\\")) {
+					throw new Error("Invalid OCEL 2.0 CSV at row "+(rowIndex + 1)+", column '"+columnName+"': invalid reference escape");
+				}
+				escaped = false;
+			}
+			else if (ch == "\\") {
+				escaped = true;
+			}
+			else if (ch == "{") {
+				return i;
+			}
+		}
+		if (escaped) {
+			throw new Error("Invalid OCEL 2.0 CSV at row "+(rowIndex + 1)+", column '"+columnName+"': trailing reference escape");
+		}
+		return -1;
+	}
+
+	static parseReferenceHead(referenceHead, rowIndex, columnName) {
+		let objectId = "";
+		let qualifier = "";
+		let hasQualifier = false;
+		let escaped = false;
+		for (let ch of referenceHead) {
+			if (escaped) {
+				if (!(ch == "/" || ch == "#" || ch == "{" || ch == "\\")) {
+					throw new Error("Invalid OCEL 2.0 CSV at row "+(rowIndex + 1)+", column '"+columnName+"': invalid reference escape");
+				}
+				if (hasQualifier) {
+					qualifier += ch;
+				}
+				else {
+					objectId += ch;
+				}
+				escaped = false;
+			}
+			else if (ch == "\\") {
+				escaped = true;
+			}
+			else if (ch == "#") {
+				if (hasQualifier) {
+					throw new Error("Invalid OCEL 2.0 CSV at row "+(rowIndex + 1)+", column '"+columnName+"': unescaped '#' in qualifier");
+				}
+				hasQualifier = true;
+			}
+			else if (hasQualifier) {
+				qualifier += ch;
+			}
+			else {
+				objectId += ch;
+			}
+		}
+		if (escaped) {
+			throw new Error("Invalid OCEL 2.0 CSV at row "+(rowIndex + 1)+", column '"+columnName+"': trailing reference escape");
+		}
+		return {"objectId": objectId, "qualifier": qualifier, "hasQualifier": hasQualifier};
 	}
 
 	static collectObjectAttributes(reference, objectType, timestamp, rowIndex, assignmentSeq, kind, objectAttributeEntries) {
@@ -459,7 +762,8 @@ class CsvOcel2Importer {
 		if (month < 1 || month > 12 || hour > 23 || minute > 59 || second > 59) {
 			throw new Error("Invalid OCEL 2.0 CSV timestamp in "+context+": '"+value+"'");
 		}
-		let maxDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
+		let daysPerMonth = [31, ((year % 4 == 0 && year % 100 != 0) || year % 400 == 0) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+		let maxDay = daysPerMonth[month - 1];
 		if (day < 1 || day > maxDay) {
 			throw new Error("Invalid OCEL 2.0 CSV timestamp in "+context+": '"+value+"'");
 		}
@@ -468,7 +772,7 @@ class CsvOcel2Importer {
 			let offsetParts = offset.substring(1).replace(":", "");
 			let offsetHours = parseInt(offsetParts.substring(0, 2));
 			let offsetMinutes = parseInt(offsetParts.substring(2, 4));
-			if (offsetHours > 23 || offsetMinutes > 59) {
+			if (offsetHours > 14 || offsetMinutes > 59 || (offsetHours == 14 && offsetMinutes != 0)) {
 				throw new Error("Invalid OCEL 2.0 CSV timestamp in "+context+": '"+value+"'");
 			}
 		}
@@ -480,14 +784,14 @@ class CsvOcel2Importer {
 	}
 
 	static applyEventAttributes(events, eventTypes, eventAttributeEntries) {
-		let entriesPerScope = {};
+		let entriesPerScope = Object.create(null);
 		for (let entry of eventAttributeEntries) {
 			if (!(entry.name in entriesPerScope)) {
 				entriesPerScope[entry.name] = [];
 			}
 			entriesPerScope[entry.name].push(entry.value);
 		}
-		let scopeTypes = {};
+		let scopeTypes = Object.create(null);
 		for (let name in entriesPerScope) {
 			scopeTypes[name] = CsvOcel2Importer.inferType(entriesPerScope[name]);
 		}
@@ -499,7 +803,7 @@ class CsvOcel2Importer {
 	}
 
 	static applyObjectAttributes(objects, objectTypes, objectAttributeEntries) {
-		let entriesPerScope = {};
+		let entriesPerScope = Object.create(null);
 		for (let entry of objectAttributeEntries) {
 			let scope = CsvOcel2Importer.objectAttributeScope(entry.objectType, entry.name);
 			if (!(scope in entriesPerScope)) {
@@ -507,7 +811,7 @@ class CsvOcel2Importer {
 			}
 			entriesPerScope[scope].push(entry.value);
 		}
-		let scopeTypes = {};
+		let scopeTypes = Object.create(null);
 		for (let scope in entriesPerScope) {
 			scopeTypes[scope] = CsvOcel2Importer.inferType(entriesPerScope[scope]);
 		}
@@ -517,24 +821,41 @@ class CsvOcel2Importer {
 			objectTypes[entry.objectType][entry.name] = CsvOcel2Importer.toOcelType(scopeTypes[scope]);
 		}
 
-		CsvOcel2Importer.objectChanges = [];
-		let baseEntries = objectAttributeEntries.filter(entry => entry.kind == "base");
-		baseEntries.sort(CsvOcel2Importer.compareAssignments);
-		for (let entry of baseEntries) {
-			objects[entry.objectId]["ocel:ovmap"][entry.name] = entry.value;
+		let sortedEntries = objectAttributeEntries.slice().sort(CsvOcel2Importer.compareAssignments);
+		let uniqueEntries = [];
+		let assignments = new Map();
+		for (let entry of sortedEntries) {
+			let timestamp = entry.timestamp == null ? 0 : entry.timestamp.getTime();
+			let assignmentKey = JSON.stringify([entry.objectId, entry.name, timestamp]);
+			if (assignments.has(assignmentKey)) {
+				let previous = assignments.get(assignmentKey);
+				if (!CsvOcel2Importer.valuesEqual(previous.value, entry.value)) {
+					throw new Error("Invalid OCEL 2.0 CSV at row "+(entry.rowIndex + 1)+": conflicting values for object '"+entry.objectId+"', attribute '"+entry.name+"' at the same timestamp");
+				}
+				continue;
+			}
+			assignments.set(assignmentKey, entry);
+			uniqueEntries.push(entry);
 		}
 
-		let timedEntries = objectAttributeEntries.filter(entry => entry.kind == "timed");
-		timedEntries.sort(CsvOcel2Importer.compareAssignments);
-		for (let entry of timedEntries) {
-			let object = objects[entry.objectId];
-			if (entry.name in object["ocel:ovmap"]) {
-				CsvOcel2Importer.objectChanges.push({"ocel:oid": entry.objectId, "ocel:type": entry.objectType, "ocel:name": entry.name, "ocel:value": entry.value, "ocel:timestamp": entry.timestamp});
+		let objectChanges = [];
+		for (let entry of uniqueEntries) {
+			let timestamp = entry.timestamp == null ? 0 : entry.timestamp.getTime();
+			if (timestamp == 0) {
+				objects[entry.objectId]["ocel:ovmap"][entry.name] = entry.value;
 			}
 			else {
-				object["ocel:ovmap"][entry.name] = entry.value;
+				objectChanges.push({"ocel:oid": entry.objectId, "ocel:type": entry.objectType, "ocel:name": entry.name, "ocel:value": entry.value, "ocel:timestamp": entry.timestamp});
 			}
 		}
+		return objectChanges;
+	}
+
+	static valuesEqual(a, b) {
+		if (a instanceof Date && b instanceof Date) {
+			return a.getTime() == b.getTime();
+		}
+		return a === b || (typeof a == "number" && typeof b == "number" && isNaN(a) && isNaN(b));
 	}
 
 	static objectAttributeScope(objectType, attributeName) {
@@ -577,15 +898,39 @@ class CsvOcel2Importer {
 	static canParseValue(value, typeName) {
 		if (typeName == "integer") {
 			if (typeof value == "number") {
-				return isFinite(value) && Number.isInteger(value);
+				if (!isFinite(value) || !Number.isInteger(value)) {
+					return false;
+				}
+				let integer = BigInt(value);
+				return integer >= -9223372036854775808n && integer <= 9223372036854775807n;
 			}
-			return typeof value == "string" && /^[+-]?[0-9]+$/.test(value);
+			if (typeof value == "bigint") {
+				return value >= -9223372036854775808n && value <= 9223372036854775807n;
+			}
+			if (typeof value != "string" || !/^-?(?:0|[1-9][0-9]*)$/.test(value)) {
+				return false;
+			}
+			let parsed = BigInt(value);
+			return parsed >= -9223372036854775808n && parsed <= 9223372036854775807n;
 		}
 		else if (typeName == "float") {
 			if (typeof value == "number") {
 				return isFinite(value);
 			}
-			return typeof value == "string" && /^[+-]?(?:(?:[0-9]+(?:\.[0-9]*)?)|(?:\.[0-9]+))(?:[eE][+-]?[0-9]+)?$/.test(value) && isFinite(parseFloat(value));
+			if (typeof value == "bigint") {
+				let parsed = Number(value);
+				return isFinite(parsed) && BigInt(parsed) == value;
+			}
+			if (typeof value != "string") {
+				return false;
+			}
+			if (CsvOcel2Importer.canParseValue(value, "integer")) {
+				let integer = BigInt(value);
+				let parsedInteger = Number(integer);
+				return isFinite(parsedInteger) && BigInt(parsedInteger) == integer;
+			}
+			let parsed = Number(value);
+			return isFinite(parsed) && String(parsed) === value;
 		}
 		else if (typeName == "boolean") {
 			return typeof value == "boolean" || (typeof value == "string" && /^(true|false)$/i.test(value));
@@ -613,10 +958,20 @@ class CsvOcel2Importer {
 			return null;
 		}
 		if (typeName == "integer") {
-			return typeof value == "number" ? parseInt(value) : parseInt(value, 10);
+			if (typeof value == "number" || typeof value == "bigint") {
+				return value;
+			}
+			if (value === "-0") {
+				return -0;
+			}
+			let parsed = BigInt(value);
+			if (parsed >= BigInt(Number.MIN_SAFE_INTEGER) && parsed <= BigInt(Number.MAX_SAFE_INTEGER)) {
+				return Number(parsed);
+			}
+			return parsed;
 		}
 		else if (typeName == "float") {
-			return typeof value == "number" ? value : parseFloat(value);
+			return typeof value == "number" ? value : Number(value);
 		}
 		else if (typeName == "boolean") {
 			return typeof value == "boolean" ? value : value.toLowerCase() == "true";
@@ -627,7 +982,7 @@ class CsvOcel2Importer {
 		else if (typeof value == "string") {
 			return value;
 		}
-		return ""+value;
+		return String(value);
 	}
 
 	static toOcelType(typeName) {
@@ -646,7 +1001,6 @@ CsvOcelImporter.DEFAULT_SEPARATOR = ',';
 CsvOcelImporter.DEFAULT_QUOTECHAR = '"';
 CsvOcel2Importer.DEFAULT_SEPARATOR = ',';
 CsvOcel2Importer.DEFAULT_QUOTECHAR = '"';
-CsvOcel2Importer.objectChanges = [];
 
 try {
 	module.exports = {CsvOcelImporter: CsvOcelImporter, CsvOcel2Importer: CsvOcel2Importer};
